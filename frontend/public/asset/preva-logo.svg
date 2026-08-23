@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 96" width="420" height="96" role="img" aria-label="PREVA">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F9EBBE"/>
+      <stop offset=".38" stop-color="#E3C077"/>
+      <stop offset=".62" stop-color="#C9A34E"/>
+      <stop offset="1" stop-color="#8F6B2C"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fff" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#fff" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-40%" width="140%" height="180%">
+      <feGaussianBlur stdDeviation="2.2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <g filter="url(#glow)">
+    <text x="210" y="58" text-anchor="middle"
+      font-family="Playfair Display, Didot, 'Times New Roman', serif"
+      font-size="52" font-weight="700" letter-spacing="16"
+      fill="url(#gold)">PREVA</text>
+    <text x="210" y="58" text-anchor="middle"
+      font-family="Playfair Display, Didot, 'Times New Roman', serif"
+      font-size="52" font-weight="700" letter-spacing="16"
+      fill="url(#sheen)" opacity=".28">PREVA</text>
+  </g>
+  <line x1="86" y1="74" x2="334" y2="74" stroke="url(#gold)" stroke-width="1.4" opacity=".9"/>
+  <text x="210" y="90" text-anchor="middle"
+    font-family="Inter, Arial, sans-serif" font-size="11" letter-spacing="7"
+    fill="#D8BE85" opacity=".92">KITCHEN &#183; NIGHTCLUB</text>
+</svg>

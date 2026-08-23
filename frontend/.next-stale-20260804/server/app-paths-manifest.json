@@ -1,0 +1,9 @@
+{
+  "/(site)/preva-kitchen/page": "app/(site)/preva-kitchen/page.js",
+  "/(site)/preva-kitchen-menu/page": "app/(site)/preva-kitchen-menu/page.js",
+  "/(site)/shop/page": "app/(site)/shop/page.js",
+  "/(site)/page": "app/(site)/page.js",
+  "/(site)/blog/page": "app/(site)/blog/page.js",
+  "/(site)/contact/page": "app/(site)/contact/page.js",
+  "/(site)/[slug]/page": "app/(site)/[slug]/page.js"
+}

@@ -1,0 +1,516 @@
+"use client";
+
+import { useRef, useEffect, useCallback, useState } from 'react';
+import { usePathname } from 'next/navigation';
+import SvgIcon from './SvgIcon';
+
+/* ── Module-level constants — stable, never trigger re-renders ── */
+const ORBIT_RADIUS = 390;
+
+const FALLBACK_INSTAGRAM_POSTS = [
+  { shortcode: 'DbYY080Ez5X', caption: 'Fresh Flavors & Late-Night Bites at Preva Kitchen', image: 'https://prevaclub.com/wp-content/uploads/2026/08/Preva-Burger-768x768.jpg' },
+  { shortcode: 'DbTZCiolhU8', caption: 'Preva Signature Crispy Jumbo Wings', image: 'https://prevaclub.com/wp-content/uploads/2026/08/Preva-Wings-768x768.jpg' },
+  { shortcode: 'Da9zZp5S-4j', caption: 'Creamy Caribbean Rasta Pasta', image: 'https://prevaclub.com/wp-content/uploads/2026/08/Rasta-Pasta.webp' },
+  { shortcode: 'Da7H3G3So-I', caption: 'Preva Double Smash Burger & Fries', image: 'https://prevaclub.com/wp-content/uploads/2026/08/Preva-Double-Smash-Burger-768x768.jpg' },
+  { shortcode: 'DbdkwJMDv4F', caption: 'Grilled Quesadillas & House Dipping Sauces', image: 'https://prevaclub.com/wp-content/uploads/2026/08/Preva-Quesadilla-768x768.jpg' },
+  { shortcode: 'DayD3BIJafZ', caption: 'Crisp Seasoned Shrimp Tacos', image: 'https://prevaclub.com/wp-content/uploads/2026/08/Shrimp-Tacos-768x768.jpg' },
+  { shortcode: 'DZqdAH7BZEQ', caption: 'Golden Fried Catfish & Lobster Bites', image: 'https://prevaclub.com/wp-content/uploads/2026/08/Preva-Catfish-768x768.jpg' },
+  { shortcode: 'DYDvxvzDp1GtaRKJsKoezu3AcOhFzo-kD3vkSc0', caption: 'Gourmet Seasoned Lamb Chops & Sides', image: 'https://prevaclub.com/wp-content/uploads/2026/08/preva-Lamb-768x768.jpg' }
+].map((post) => ({
+  ...post,
+  url: `https://www.instagram.com/p/${post.shortcode}/`
+}));
+
+export default function Footer() {
+  const pathname = usePathname();
+
+  /* DOM refs */
+  const orbitRef = useRef(null);
+  const stageRef = useRef(null);
+
+  /* Animation state — all in refs so rAF loop never needs re-subscribe */
+  const currentAngleRef = useRef(0);
+  const targetAngleRef  = useRef(0);
+  const autoOnRef       = useRef(true);
+  const hoveredIndexRef = useRef(-1);
+  const cardsRef        = useRef([]);
+  const draggingRef     = useRef(false);
+  const dragStartXRef   = useRef(0);
+  const dragStartARef   = useRef(0);
+  const velocityRef     = useRef(0);
+  const lastXRef        = useRef(0);
+  const lastTimeRef     = useRef(0);
+  const rafRef          = useRef(null);
+
+  /* UI state — only for button label */
+  const [autoOn, setAutoOn] = useState(true);
+
+  const [settings, setSettings] = useState({
+    phone: '(313) 286-3586',
+    contactEmail: 'info@prevaclub.com',
+    reservationsEmail: 'reservations@prevaclub.com',
+    eventsEmail: 'events@prevaclub.com',
+    supportEmail: 'support@prevaclub.com',
+    address: '13090 Inkster Rd, Redford Township, MI 48239, United States',
+    socialLinks: {
+      instagram: 'https://www.instagram.com/prevakitchen/',
+      facebook: ''
+    }
+  });
+
+  const [menuItems, setMenuItems] = useState([
+    { title: 'Reserve a Table', url: '/#prv-reservations' },
+    { title: 'View Menu', url: '/preva-kitchen-menu' },
+    { title: 'Order Online', url: '/shop' },
+    { title: 'Contact Us', url: '/contact' }
+  ]);
+  const [instagramPosts, setInstagramPosts] = useState(FALLBACK_INSTAGRAM_POSTS);
+
+  useEffect(() => {
+    async function loadData() {
+      const API = '/api';
+      try {
+        const res = await fetch(`${API}/settings`);
+        if (res.ok) {
+          const data = await res.json();
+          setSettings((prev) => ({
+            ...prev,
+            ...data,
+            socialLinks: { ...prev.socialLinks, ...(data.socialLinks || {}) }
+          }));
+        }
+        const menuRes = await fetch(`${API}/menus/footer`);
+        if (menuRes.ok) {
+          const menuData = await menuRes.json();
+          if (menuData && menuData.items && menuData.items.length > 0) {
+            const kitchenItems = menuData.items.filter((item) => !/night\s*life|night\s*club|\bclub\b|\bvip\b|bottle|guest list|tickets?/i.test(`${item.title || ''} ${item.url || ''}`));
+            if (kitchenItems.length) setMenuItems(kitchenItems);
+          }
+        }
+        const instagramRes = await fetch(`${API}/instagram-feed`);
+        if (instagramRes.ok) {
+          const instagramData = await instagramRes.json();
+          if (Array.isArray(instagramData.posts) && instagramData.posts.length > 0)
+            setInstagramPosts(instagramData.posts);
+        }
+      } catch (_) { /* fallback to defaults */ }
+    }
+    loadData();
+  }, []);
+
+  const selectTabAndScroll = (tabId) => {
+    if (window.location.pathname !== '/') { window.location.href = `/#${tabId}`; return; }
+    const el = document.getElementById(tabId) || document.getElementById('prv-reservations');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    if (tabId === 'catering') document.querySelector('.prv-mselect__events')?.click();
+  };
+
+  const isLandingPage = pathname === '/preva-kitchen';
+  const isCareersPage = Boolean(pathname?.startsWith('/careers'));
+  const isShopOrOrderPage = Boolean(
+    pathname?.startsWith('/shop') ||
+    pathname?.startsWith('/order') ||
+    pathname?.startsWith('/checkout')
+  );
+  const showInstagram = !isCareersPage && !isShopOrOrderPage;
+
+  /* ── Orbit carousel engine ─────────────────────────────────
+     ORBIT_RADIUS is a module constant (outside component) so
+     useCallback deps stay stable and don't trigger re-runs.
+  ── */
+  const autoResumeTimerRef = useRef(null);
+  const dragDistanceRef = useRef(0);
+
+  const scheduleAutoResume = useCallback(() => {
+    if (autoResumeTimerRef.current) clearTimeout(autoResumeTimerRef.current);
+    autoResumeTimerRef.current = setTimeout(() => {
+      autoOnRef.current = true;
+      setAutoOn(true);
+    }, 1800);
+  }, []);
+
+  /* Render one frame — reads only refs, no state */
+  const renderFrame = useCallback(() => {
+    const cards = cardsRef.current;
+    const angle = currentAngleRef.current;
+    cards.forEach((item, idx) => {
+      if (!item.wrap || !item.card) return;
+      const total   = ((angle + item.theta) % 360 + 360) % 360;
+      const rad     = total * Math.PI / 180;
+      const depth   = Math.cos(rad);
+      const t       = (depth + 1) / 2;
+      const scale   = 0.70 + t * 0.34;
+      const opacity = 0.22 + t * 0.78;
+      const bright  = 0.42 + t * 0.62;
+      item.card.style.opacity = opacity.toFixed(3);
+      item.card.style.filter  = `brightness(${bright.toFixed(3)})`;
+      if (idx !== hoveredIndexRef.current) {
+        item.wrap.style.transform =
+          `rotateY(${item.theta}deg) translateZ(${ORBIT_RADIUS}px) scale(${scale.toFixed(3)})`;
+      }
+    });
+    if (orbitRef.current) orbitRef.current.style.transform = `rotateY(${angle}deg)`;
+  }, []);
+
+  /* Single rAF loop — starts once, runs forever */
+  const startLoop = useCallback(() => {
+    if (rafRef.current) return;
+    const tick = () => {
+      if (autoOnRef.current && !draggingRef.current && hoveredIndexRef.current === -1) {
+        targetAngleRef.current -= 0.22;
+      }
+      if (!draggingRef.current && Math.abs(velocityRef.current) > 0.01) {
+        targetAngleRef.current += velocityRef.current;
+        velocityRef.current *= 0.92;
+      }
+      currentAngleRef.current += (targetAngleRef.current - currentAngleRef.current) * 0.08;
+      renderFrame();
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+  }, [renderFrame]);
+
+  /* Keep the animation engine pointed at the cards React rendered. */
+  useEffect(() => {
+    const orbit = orbitRef.current;
+    if (!orbit) return;
+    const n = instagramPosts.length;
+    if (n === 0) return;
+
+    cardsRef.current = Array.from(orbit.children).map((wrap, i) => ({
+      wrap,
+      card: wrap.querySelector('.orbit-card'),
+      theta: (360 / n) * i
+    }));
+
+    renderFrame();
+    startLoop();
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+      cardsRef.current = [];
+    };
+  }, [instagramPosts, renderFrame, startLoop]);
+
+  const handleCardEnter = (index, event) => {
+    hoveredIndexRef.current = index;
+    if (event?.currentTarget) {
+      event.currentTarget.style.boxShadow = '0 0 0 1.5px #c9a34e, 0 20px 44px rgba(0,0,0,0.72)';
+      event.currentTarget.style.transform = 'scale(1.09)';
+    }
+  };
+
+  const handleCardLeave = (event) => {
+    hoveredIndexRef.current = -1;
+    if (event?.currentTarget) {
+      event.currentTarget.style.boxShadow = '';
+      event.currentTarget.style.transform = 'scale(1)';
+    }
+    scheduleAutoResume();
+  };
+
+  const openInstagramPost = (post) => {
+    if (dragDistanceRef.current > 8) return; // ignore if user was dragging
+    window.open(post.url, '_blank', 'noopener,noreferrer');
+  };
+
+  // Drag-to-spin on the entire stage
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+
+    const onMouseDown = (e) => {
+      draggingRef.current = true;
+      dragStartXRef.current = e.clientX;
+      dragStartARef.current = targetAngleRef.current;
+      dragDistanceRef.current = 0;
+      velocityRef.current   = 0;
+      lastXRef.current      = e.clientX;
+      lastTimeRef.current   = Date.now();
+      autoOnRef.current = false;
+      setAutoOn(false);
+      stage.style.cursor = 'grabbing';
+      if (autoResumeTimerRef.current) clearTimeout(autoResumeTimerRef.current);
+    };
+
+    const onMouseMove = (e) => {
+      if (!draggingRef.current) return;
+      const dx = e.clientX - dragStartXRef.current;
+      dragDistanceRef.current = Math.max(dragDistanceRef.current, Math.abs(dx));
+      const now = Date.now();
+      const dt  = Math.max(now - lastTimeRef.current, 1);
+      velocityRef.current = (e.clientX - lastXRef.current) / dt * 16 * 0.35;
+      lastXRef.current    = e.clientX;
+      lastTimeRef.current = now;
+      targetAngleRef.current = dragStartARef.current + dx * 0.38;
+    };
+
+    const onMouseUp = () => {
+      if (!draggingRef.current) return;
+      draggingRef.current = false;
+      stage.style.cursor = 'grab';
+      scheduleAutoResume();
+    };
+
+    const onTouchStart = (e) => {
+      const touchX = e.touches[0].clientX;
+      dragStartXRef.current = touchX;
+      dragStartARef.current = targetAngleRef.current;
+      dragDistanceRef.current = 0;
+      velocityRef.current   = 0;
+      lastXRef.current      = touchX;
+      lastTimeRef.current   = Date.now();
+      draggingRef.current   = true;
+      autoOnRef.current     = false;
+      setAutoOn(false);
+      if (autoResumeTimerRef.current) clearTimeout(autoResumeTimerRef.current);
+    };
+
+    const onTouchMove = (e) => {
+      const touchX = e.touches[0].clientX;
+      const dx = touchX - dragStartXRef.current;
+      dragDistanceRef.current = Math.max(dragDistanceRef.current, Math.abs(dx));
+      const now = Date.now();
+      const dt  = Math.max(now - lastTimeRef.current, 1);
+      velocityRef.current = (touchX - lastXRef.current) / dt * 16 * 0.35;
+      lastXRef.current    = touchX;
+      lastTimeRef.current = now;
+      targetAngleRef.current = dragStartARef.current + dx * 0.38;
+    };
+
+    const onTouchEnd = () => {
+      draggingRef.current = false;
+      scheduleAutoResume();
+    };
+
+    stage.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    stage.addEventListener('touchstart', onTouchStart, { passive: true });
+    stage.addEventListener('touchmove', onTouchMove, { passive: true });
+    stage.addEventListener('touchend', onTouchEnd);
+    return () => {
+      stage.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      stage.removeEventListener('touchstart', onTouchStart);
+      stage.removeEventListener('touchmove', onTouchMove);
+      stage.removeEventListener('touchend', onTouchEnd);
+      if (autoResumeTimerRef.current) clearTimeout(autoResumeTimerRef.current);
+    };
+  }, [instagramPosts, scheduleAutoResume]);
+
+  /* Arrow clicks: nudge targetAngle smoothly */
+  const handleRotateLeft = () => {
+    targetAngleRef.current -= 50;
+    scheduleAutoResume();
+  };
+  const handleRotateRight = () => {
+    targetAngleRef.current += 50;
+    scheduleAutoResume();
+  };
+  const handleToggleAuto = () => {
+    const next = !autoOnRef.current;
+    autoOnRef.current = next;
+    setAutoOn(next);
+  };
+
+  return (
+    <>
+      {/* Instagram 3D Orbit Carousel — hidden on careers & ordering flow */}
+      {showInstagram && (
+      <section id="instagram-feed" className="orbit-section">
+        {/* Ambient glow */}
+        <div className="orbit-section-glow" aria-hidden="true" />
+
+        {/* Header */}
+        <div className="orbit-section-header">
+          <span className="orbit-eyebrow">Follow us on Instagram</span>
+          <h2 className="orbit-title">
+            <a href={settings.socialLinks?.instagram || 'https://www.instagram.com/prevakitchen/'} target="_blank" rel="noopener noreferrer" className="orbit-title-link">
+              @PREVAKITCHEN
+            </a>
+          </h2>
+          <p className="orbit-subtitle">A glimpse inside the Preva kitchen experience</p>
+          <div className="orbit-divider" aria-hidden="true">
+            <span className="orbit-divider-line orbit-divider-line-l" />
+            <svg className="orbit-divider-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+            <span className="orbit-divider-line orbit-divider-line-r" />
+          </div>
+        </div>
+
+        {/* 3D Orbit Stage */}
+        <div
+          ref={stageRef}
+          id="orbit-stage"
+          className="orbit-stage"
+          aria-label="Instagram posts carousel — drag to rotate"
+          onMouseLeave={() => {
+            hoveredIndexRef.current = -1;
+            scheduleAutoResume();
+          }}
+        >
+          <div ref={orbitRef} id="orbit" className="orbit-ring">
+            {instagramPosts.map((post, index) => {
+              const theta = instagramPosts.length ? (360 / instagramPosts.length) * index : 0;
+              return (
+                <div
+                  className="orbit-wrap"
+                  key={post.shortcode || post.url || index}
+                  style={{ transform: `rotateY(${theta}deg) translateZ(${ORBIT_RADIUS}px)` }}
+                >
+                  <div
+                    className="orbit-card"
+                    data-index={index}
+                    role="link"
+                    tabIndex={0}
+                    aria-label={post.caption || 'View on Instagram'}
+                    onMouseEnter={(event) => handleCardEnter(index, event)}
+                    onMouseLeave={handleCardLeave}
+                    onClick={() => openInstagramPost(post)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        openInstagramPost(post);
+                      }
+                    }}
+                  >
+                    {post.image ? (
+                      <img
+                        src={post.image}
+                        alt={post.caption || 'Preva Kitchen on Instagram'}
+                        loading="lazy"
+                        className="orbit-card-img"
+                        onError={(event) => { event.currentTarget.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <div className="orbit-card-tile">
+                        <div className="orbit-card-ig-icon">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                        </div>
+                      </div>
+                    )}
+                    <div className="orbit-card-overlay">
+                      <span className="orbit-card-handle">@prevakitchen</span>
+                      <span className="orbit-card-caption">{post.caption || 'View on Instagram'}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <a
+          href={settings.socialLinks?.instagram || 'https://www.instagram.com/prevakitchen/'}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="orbit-cta"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          View Profile
+        </a>
+      </section>
+      )}
+
+      {/* Main Footer */}
+      <footer id="colophon" className="site-footer premium-footer-section">
+        <div className="footer-top-glow"></div>
+        <div className="footer-bg-overlay"></div>
+        <div className="container relative-z2">
+          <div className="premium-footer-grid">
+            {/* Brand Column */}
+            <div className="footer-col brand-col">
+              <img src="/asset/preva-logo-silver.png" alt={settings.siteTitle || 'PREVA'} className="footer-logo-img" />
+              <div className="footer-brand-divider"></div>
+              <p className="footer-tagline">Chef-driven comfort food, made fresh in Redford.</p>
+              <p className="footer-desc">Dine in, order your favorites to go, or let Preva Kitchen feed your next gathering.</p>
+            </div>
+
+            {/* Quick Links Column */}
+            <div className="footer-col links-col">
+              <h4 className="footer-heading">NAVIGATION</h4>
+              <div className="footer-heading-divider"></div>
+              <ul className="footer-links">
+                {menuItems.filter((item) => item.visible !== false).map((item, idx) => (
+                  <li key={idx}>
+                    <a href={item.url} target={item.openInNewTab ? '_blank' : undefined} rel={item.openInNewTab ? 'noopener noreferrer' : undefined}>{item.title}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Hours Column */}
+            <div className="footer-col hours-col">
+              <h4 className="footer-heading">HOURS</h4>
+              <div className="footer-heading-divider"></div>
+              <ul className="footer-info-list">
+                <li>
+                  <span className="icon-gold"><SvgIcon name="clock" size={16} /></span>
+                  <div>
+                    <strong>Tuesday-Sunday:</strong><br />
+                    Dinner service · 5pm-10pm
+                  </div>
+                </li>
+                <li>
+                  <span className="icon-gold"><SvgIcon name="lock" size={16} /></span>
+                  <div>
+                    <strong>Monday:</strong><br />
+                    Closed
+                  </div>
+                </li>
+                <li>
+                  <span className="icon-gold"><SvgIcon name="spark" size={16} /></span>
+                  <div>
+                    <strong>Ordering:</strong><br />
+                    Pickup and delivery available
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            {/* Contact Column */}
+            <div className="footer-col contact-col">
+              <h4 className="footer-heading">CONTACT & LOCATION</h4>
+              <div className="footer-heading-divider"></div>
+              <ul className="footer-info-list">
+                <li>
+                  <span className="icon-gold"><SvgIcon name="location" size={16} /></span>
+                  <span>{settings.address}</span>
+                </li>
+                <li>
+                  <span className="icon-gold"><SvgIcon name="phone" size={16} /></span>
+                  <span><a href={`tel:${settings.phone}`}>{settings.phone}</a></span>
+                </li>
+                <li>
+                  <span className="icon-gold"><SvgIcon name="mail" size={16} /></span>
+                  <span><a href={`mailto:${settings.contactEmail}`}>{settings.contactEmail}</a></span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="site-info-premium">
+            <div className="footer-bottom-divider"></div>
+            <div className="footer-copyright-content">
+              <p>&copy; {new Date().getFullYear()} Preva Kitchen. All rights reserved.</p>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* Mobile kitchen actions */}
+      {!isLandingPage && !isShopOrOrderPage && (
+        <div className="mobile-sticky-cta">
+          <a href="#prv-reservations"
+             onClick={(e) => { e.preventDefault(); selectTabAndScroll('prv-reservations'); }}
+             className="sticky-btn">RESERVE TABLE</a>
+          <a href="/shop" className="sticky-btn">ORDER ONLINE</a>
+          <a href="#prv-reservations"
+             onClick={(e) => { e.preventDefault(); selectTabAndScroll('catering'); }}
+             className="sticky-btn">CATERING</a>
+        </div>
+      )}
+    </>
+  );
+}

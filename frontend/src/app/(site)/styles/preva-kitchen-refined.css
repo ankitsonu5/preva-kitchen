@@ -1,0 +1,1693 @@
+/* Refined /preva-kitchen presentation. Everything is page-scoped. */
+.preva-kitchen-page{
+  --pk-bg:#080809;
+  --pk-panel:#111113;
+  --pk-line:rgba(227,192,119,.18);
+  --pk-text:#f3efe7;
+  --pk-muted:#aaa59d;
+  overflow:hidden;
+  background:var(--pk-bg);
+  color:var(--pk-text);
+}
+
+/* Calm service bar: three useful facts, without a noisy infinite ticker. */
+.preva-kitchen-page .lx-offer-strip{padding:0;border:0;background:#0c0c0e}
+.preva-kitchen-page .lx-offer-track{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  width:100%;
+  max-width:var(--site-container-max,1240px);
+  margin:auto;
+  padding:0 var(--site-gutter,32px);
+  animation:none!important;
+}
+.preva-kitchen-page .lx-offer-chip{
+  justify-content:center;
+  padding:20px 24px;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  text-align:center;
+}
+.preva-kitchen-page .lx-offer-chip:nth-child(n+4){display:none}
+
+/* One concise value strip replaces the two near-identical feature bands. */
+.preva-kitchen-page .lx-features{padding:72px 0 82px;background:#09090a}
+.preva-kitchen-page .lx-features-grid{
+  width:100%;
+  max-width:var(--site-container-max,1240px);
+  margin:auto;
+  padding-inline:0;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
+  overflow:visible;
+  border:0;
+  border-radius:0;
+  background:transparent;
+}
+.preva-kitchen-page .lx-features .lx-feature{
+  position:relative;
+  min-height:230px;
+  overflow:hidden;
+  padding:30px 27px 28px;
+  border:1px solid rgba(227,192,119,.2);
+  border-radius:22px;
+  background:
+    radial-gradient(240px 130px at 8% 0,rgba(227,192,119,.1),transparent 70%),
+    linear-gradient(145deg,rgba(24,24,27,.96),rgba(12,12,14,.98));
+  box-shadow:0 18px 45px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.04);
+  text-align:left;
+  transition:transform .35s ease,border-color .35s ease,box-shadow .35s ease;
+}
+.preva-kitchen-page .lx-features .lx-feature:before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:28px;
+  width:48px;
+  height:2px;
+  background:linear-gradient(90deg,#f0d48d,#9c7431);
+  box-shadow:0 0 16px rgba(227,192,119,.35);
+}
+.preva-kitchen-page .lx-features .lx-feature:hover{
+  transform:translateY(-6px);
+  border-color:rgba(227,192,119,.42);
+  box-shadow:0 26px 58px rgba(0,0,0,.34),0 0 28px rgba(201,163,78,.07);
+}
+.preva-kitchen-page .lx-features .lx-feature-icon{
+  width:54px;
+  height:54px;
+  margin:0 0 24px;
+  border-color:rgba(227,192,119,.32);
+  border-radius:16px;
+  background:linear-gradient(145deg,rgba(227,192,119,.14),rgba(255,255,255,.025));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 12px 26px rgba(0,0,0,.24);
+}
+.preva-kitchen-page .lx-features .lx-feature h3{font-size:.9rem;line-height:1.4;letter-spacing:.07em;margin-bottom:12px}
+.preva-kitchen-page .lx-features .lx-feature p{font-size:.88rem;line-height:1.65;color:var(--pk-muted)}
+.preva-kitchen-page .lx-feature-band{display:none}
+
+/* Editorial introduction */
+.preva-kitchen-page .luxury-statement-section{
+  padding:100px 0!important;
+  background:linear-gradient(180deg,#0b0b0d,#080809)!important;
+}
+.preva-kitchen-page .luxury-statement-section .container{max-width:980px}
+.preva-kitchen-page .luxury-statement-section .section-title{
+  margin:18px 0!important;
+  font-size:clamp(2.35rem,4vw,3.45rem)!important;
+  line-height:1.08!important;
+}
+.preva-kitchen-page .luxury-statement-section .header-separator{margin-bottom:32px!important}
+.preva-kitchen-page .luxury-statement-section .statement-text{
+  max-width:850px;
+  margin:auto;
+  font-size:1.02rem!important;
+  line-height:1.8!important;
+  color:var(--pk-muted)!important;
+}
+
+/* Full-bleed blocks become composed editorial cards. */
+.preva-kitchen-page .split-section{
+  padding:48px 0 28px;
+  border:0!important;
+  background:var(--pk-bg)!important;
+}
+.preva-kitchen-page .split-section .split-container{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:0!important;
+  align-items:stretch!important;
+  max-width:var(--site-container-max,1240px);
+  margin:auto;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:28px;
+  background:linear-gradient(145deg,#121214,#0a0a0b);
+  box-shadow:0 30px 72px rgba(0,0,0,.28);
+}
+.preva-kitchen-page .lunch-premium-split,
+.preva-kitchen-page .lunch-premium-split .split-container,
+.preva-kitchen-page .lunch-premium-split .split-content-col{background:#000!important}
+.preva-kitchen-page .lunch-premium-split .split-content-col{
+  isolation:isolate;
+  overflow:visible!important;
+  background:linear-gradient(120deg,#111214 0%,#121315 55%,#070708 100%)!important;
+}
+.preva-kitchen-page .lunch-premium-split .split-content-col:before{
+  content:"";
+  position:absolute;
+  inset:0 0 0 -52px;
+  z-index:0;
+  pointer-events:none;
+  background:linear-gradient(120deg,#111214 0%,#121315 55%,#070708 100%);
+}
+.preva-kitchen-page .vip-premium-split,
+.preva-kitchen-page .vip-premium-split .split-container,
+.preva-kitchen-page .vip-premium-split .split-content-col{background:#000!important}
+.preva-kitchen-page .dinner-premium-split,
+.preva-kitchen-page .dinner-premium-split .split-container,
+.preva-kitchen-page .dinner-premium-split .split-content-col{background:#000!important}
+.preva-kitchen-page .split-section .split-image-col{
+  min-width:0!important;
+  min-height:570px!important;
+  transform:none!important;
+}
+.preva-kitchen-page .split-section .split-content-col{
+  min-width:0!important;
+  padding:68px clamp(42px,5vw,76px)!important;
+}
+.preva-kitchen-page .split-section .split-inner-content{max-width:560px!important}
+.preva-kitchen-page .split-section h2{
+  margin-bottom:20px!important;
+  font-size:clamp(2.15rem,3.5vw,3.1rem)!important;
+  line-height:1.08!important;
+}
+.preva-kitchen-page .split-section .split-inner-content>p{
+  margin-bottom:30px!important;
+  font-size:1rem!important;
+  line-height:1.75!important;
+  color:var(--pk-muted)!important;
+}
+.preva-kitchen-page .split-section .header-separator{margin-bottom:28px!important}
+.preva-kitchen-page .dinner-premium-split .split-content-col{order:1}
+.preva-kitchen-page .dinner-premium-split .split-image-col{order:2}
+.preva-kitchen-page .lunch-premium-split .split-image-col>div:last-child{
+  right:24px!important;
+  bottom:24px!important;
+  left:24px!important;
+  padding:22px!important;
+  border-radius:18px!important;
+  background:rgba(8,8,10,.84)!important;
+  box-shadow:0 18px 50px rgba(0,0,0,.38);
+}
+.preva-kitchen-page .res-cta-group{gap:10px!important}
+.preva-kitchen-page .res-cta-group .nav-call-cta,
+.preva-kitchen-page .vip-action-area .btn{
+  min-height:52px!important;
+  height:52px!important;
+  margin-bottom:0!important;
+  padding:0 25px!important;
+  border-radius:999px!important;
+  font-size:.72rem!important;
+  letter-spacing:.11em!important;
+  box-shadow:none!important;
+}
+
+/* Signature dishes */
+.preva-kitchen-page .lx-sig-section{
+  padding:100px 0;
+  border-top:1px solid rgba(255,255,255,.07);
+  border-bottom:1px solid rgba(255,255,255,.07);
+  background:linear-gradient(180deg,#0c0c0e,#080809);
+}
+.preva-kitchen-page .lx-sig-section .section-title{font-size:clamp(2.2rem,3.5vw,3rem)!important}
+.preva-kitchen-page .lx-sig-slider{max-width:var(--site-container-max,1240px)}
+.preva-kitchen-page .lx-sig-track{gap:16px;padding:18px 4px 28px}
+.preva-kitchen-page .lx-sig-card{
+  border-color:rgba(255,255,255,.11);
+  border-radius:20px;
+  background:#121214;
+  box-shadow:0 18px 50px rgba(0,0,0,.2);
+}
+.preva-kitchen-page .lx-sig-card:hover{transform:translateY(-6px);border-color:rgba(227,192,119,.38)}
+
+/* Location story */
+.preva-kitchen-page .locals-premium-section{
+  padding:105px 0!important;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+.preva-kitchen-page .locals-premium-section .section-bg-image{opacity:.1!important}
+.preva-kitchen-page .locals-premium-section .container{max-width:850px!important}
+.preva-kitchen-page .locals-premium-section .section-title{
+  margin:18px 0!important;
+  font-size:clamp(2.3rem,4vw,3.4rem)!important;
+}
+.preva-kitchen-page .locals-premium-section .header-separator{margin-bottom:32px!important}
+.preva-kitchen-page .locals-premium-section p{font-size:1rem!important;line-height:1.78!important;color:var(--pk-muted)!important}
+
+/* Gallery */
+.preva-kitchen-page .preva-gallery-wrap{padding:100px 0;background:#0a0a0b}
+.preva-kitchen-page .gallery-header-block{
+  width:min(100%,760px);
+  margin:0 auto 44px;
+  padding-inline:var(--site-gutter,32px);
+}
+.preva-kitchen-page .gallery-header-block .section-title{font-size:clamp(2.2rem,3.8vw,3.2rem)!important}
+.preva-kitchen-page .gallery-header-block p{margin-bottom:0!important;line-height:1.7;letter-spacing:0!important}
+.preva-kitchen-page .preva-gallery-wrap>.container{max-width:var(--site-container-max,1240px);margin-bottom:0!important}
+.preva-kitchen-page .preva-gallery-wrap .grid{
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:14px!important;
+}
+.preva-kitchen-page .preva-gallery-wrap .card{
+  padding:0!important;
+  border:1px solid rgba(255,255,255,.1)!important;
+  border-radius:18px!important;
+  background:#111!important;
+  box-shadow:0 16px 38px rgba(0,0,0,.22);
+}
+.preva-kitchen-page .preva-gallery-wrap .card img{border-radius:17px!important;transition:transform .55s ease,filter .55s ease!important}
+.preva-kitchen-page .preva-gallery-wrap .card:hover img{transform:scale(1.045);filter:brightness(1) contrast(1.04)!important}
+
+/* Social proof + closing CTA */
+.preva-kitchen-page .testimonial-premium-section{padding:100px 0;background:#080809}
+.preva-kitchen-page .testimonial-content-wrapper{
+  max-width:860px;
+  margin:auto;
+  padding:50px clamp(26px,5vw,62px);
+  border:1px solid var(--pk-line);
+  border-radius:26px;
+  background:linear-gradient(145deg,#151517,#0d0d0f);
+  box-shadow:0 30px 70px rgba(0,0,0,.26);
+  text-align:center;
+}
+.preva-kitchen-page .testimonial-heading{font-size:clamp(2.1rem,3.4vw,3rem)}
+.preva-kitchen-page .testimonial-quote-text{font-size:1.05rem!important;line-height:1.75!important;color:#c8c3ba!important}
+.preva-kitchen-page .lx-reserve-band{padding:72px 0}
+.preva-kitchen-page .lx-reserve-inner{max-width:var(--site-container-max,1240px);gap:28px}
+.preva-kitchen-page .lx-reserve-copy h2{max-width:700px;font-size:clamp(1.65rem,2.7vw,2.5rem);line-height:1.2}
+
+@media(max-width:980px){
+  .preva-kitchen-page .lx-features-grid{grid-template-columns:repeat(2,1fr)}
+  .preva-kitchen-page .split-section .split-container{grid-template-columns:1fr}
+  .preva-kitchen-page .split-section .split-image-col,
+  .preva-kitchen-page .dinner-premium-split .split-image-col{order:1;min-height:470px!important}
+  .preva-kitchen-page .split-section .split-content-col,
+  .preva-kitchen-page .dinner-premium-split .split-content-col{order:2;padding:54px 38px!important}
+  .preva-kitchen-page .lunch-premium-split .split-content-col:before{inset:0}
+  .preva-kitchen-page .preva-gallery-wrap .grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+
+@media(max-width:600px){
+  .preva-kitchen-page .lx-offer-track{display:flex;justify-content:flex-start;overflow-x:auto;padding:0 var(--site-gutter,18px);scroll-snap-type:x mandatory}
+  .preva-kitchen-page .lx-offer-chip{flex:0 0 270px;padding:17px 12px;white-space:normal;scroll-snap-align:start}
+  .preva-kitchen-page .lx-features{padding:52px 0}
+  .preva-kitchen-page .lx-features-grid{grid-template-columns:1fr}
+  .preva-kitchen-page .lx-features .lx-feature{min-height:0;border:1px solid rgba(227,192,119,.2)}
+  .preva-kitchen-page .luxury-statement-section{padding:72px 0!important}
+  .preva-kitchen-page .split-section{padding:28px 0 18px}
+  .preva-kitchen-page .split-section .split-container{border-radius:20px}
+  .preva-kitchen-page .split-section .split-image-col{min-height:390px!important}
+  .preva-kitchen-page .split-section .split-content-col{padding:42px 24px!important}
+  .preva-kitchen-page .split-section h2{font-size:2.1rem!important}
+  .preva-kitchen-page .lunch-premium-split .split-image-col>div:last-child{inset:auto 14px 14px!important;padding:18px!important}
+  .preva-kitchen-page .res-cta-group{display:grid!important;grid-template-columns:1fr}
+  .preva-kitchen-page .res-cta-group .nav-call-cta{width:100%}
+  .preva-kitchen-page .lx-sig-section{padding:72px 0}
+  .preva-kitchen-page .locals-premium-section{padding:75px 0!important}
+  .preva-kitchen-page .preva-gallery-wrap{padding:72px 0}
+  .preva-kitchen-page .preva-gallery-wrap .grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+  .preva-kitchen-page .testimonial-premium-section{padding:72px 0}
+  .preva-kitchen-page .testimonial-content-wrapper{padding:38px 22px;border-radius:20px}
+  .preva-kitchen-page .lx-reserve-inner{align-items:flex-start}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .preva-kitchen-page .lx-offer-track{animation:none!important}
+  .preva-kitchen-page .lx-sig-card,.preva-kitchen-page .preva-gallery-wrap img{transition:none!important}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EDITORIAL PILLARS — Feature section redesign
+   ═══════════════════════════════════════════════════════════════ */
+.preva-kitchen-page .lx-pillars-section{padding:0;background:#09090a;border-top:1px solid rgba(227,192,119,.15);border-bottom:1px solid rgba(227,192,119,.1)}
+.preva-kitchen-page .lx-pillars-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  max-width:var(--site-container-max,1240px);
+  margin:0 auto;
+}
+.preva-kitchen-page .lx-pillar{
+  position:relative;
+  padding:52px 36px 48px;
+  border:0;border-radius:0!important;background:transparent;box-shadow:none;
+  border-right:1px solid rgba(227,192,119,.12);
+  overflow:hidden;min-height:280px;
+  transition:background .5s ease;
+}
+.preva-kitchen-page .lx-pillar:last-child{border-right:0}
+.preva-kitchen-page .lx-pillar::before{display:none!important}
+.preva-kitchen-page .lx-pillar::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:0;
+  background:linear-gradient(to top,rgba(201,163,78,.1) 0%,transparent 100%);
+  transition:height .55s ease;
+}
+.preva-kitchen-page .lx-pillar:hover::after{height:80%}
+.preva-kitchen-page .lx-pillar-num{display:none!important}
+.preva-kitchen-page .lx-pillar-line{
+  position:absolute;top:0;left:0;
+  width:0;height:2px;
+  background:linear-gradient(90deg,#c9a34e,transparent);
+  transition:width .55s ease;
+}
+.preva-kitchen-page .lx-pillar:hover .lx-pillar-line{width:70%}
+.preva-kitchen-page .lx-pillar .lx-feature-icon{
+  position:relative;z-index:1;
+  width:48px;height:48px;margin:0 0 20px;
+  border:1px solid rgba(227,192,119,.22);border-radius:14px;
+  background:rgba(227,192,119,.09);box-shadow:none;
+}
+.preva-kitchen-page .lx-pillar h3{
+  position:relative;z-index:1;
+  font-size:.88rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  margin-bottom:10px;color:#f3efe7;
+}
+.preva-kitchen-page .lx-pillar p{
+  position:relative;z-index:1;
+  font-size:.85rem;color:rgba(163,159,157,.82);line-height:1.72;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SPOTLIGHT — Signature Dishes editorial magazine layout
+   ═══════════════════════════════════════════════════════════════ */
+.preva-kitchen-page .lx-sig-spotlight-section .lx-spotlight-wrap{
+  display:grid;grid-template-columns:1fr 440px;gap:28px;
+  min-height:580px;align-items:stretch;
+}
+.preva-kitchen-page .lx-spotlight-hero{border-radius:24px;overflow:hidden;position:relative}
+.preva-kitchen-page .lx-spotlight-img{
+  width:100%;height:100%;min-height:520px;
+  background-size:cover;background-position:center;position:relative;
+}
+.preva-kitchen-page .lx-spotlight-grad{
+  position:absolute;inset:0;
+  background:linear-gradient(to top,rgba(0,0,0,.96) 0%,rgba(0,0,0,.18) 55%,transparent 100%);
+}
+.preva-kitchen-page .lx-spotlight-info{
+  position:absolute;bottom:40px;left:40px;right:40px;z-index:2;
+}
+.preva-kitchen-page .lx-spotlight-price{
+  display:block;font-size:3.8rem;font-weight:900;
+  color:var(--accent-gold,#c9a34e);line-height:1;
+  margin-bottom:6px;letter-spacing:-.03em;
+}
+.preva-kitchen-page .lx-spotlight-name{
+  font-size:1.6rem;font-weight:700;color:#fff;margin:0 0 10px;line-height:1.25;
+}
+.preva-kitchen-page .lx-spotlight-desc{
+  font-size:.88rem;color:rgba(255,255,255,.65);line-height:1.7;
+  margin-bottom:22px;max-width:420px;
+}
+.preva-kitchen-page .lx-spotlight-list{display:flex;flex-direction:column;gap:8px;justify-content:center}
+.preva-kitchen-page .lx-spotlight-row{
+  display:flex;align-items:center;gap:14px;width:100%;
+  padding:14px 16px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.08);border-radius:16px;
+  cursor:pointer;text-align:left;
+  transition:all .3s ease;
+}
+.preva-kitchen-page .lx-spotlight-row:hover,
+.preva-kitchen-page .lx-spotlight-row.is-active{
+  background:rgba(201,163,78,.07);
+  border-color:rgba(201,163,78,.34);
+}
+.preva-kitchen-page .lx-row-thumb{
+  width:56px;height:56px;border-radius:10px;
+  background-size:cover;background-position:center;flex-shrink:0;
+  border:2px solid rgba(255,255,255,.1);transition:border-color .3s;
+}
+.preva-kitchen-page .lx-spotlight-row.is-active .lx-row-thumb{border-color:rgba(201,163,78,.55)}
+.preva-kitchen-page .lx-row-info{flex:1;min-width:0}
+.preva-kitchen-page .lx-row-info h4{
+  font-size:.82rem;font-weight:700;color:#f3efe7;margin:0 0 3px;
+  letter-spacing:.05em;text-transform:uppercase;
+}
+.preva-kitchen-page .lx-row-info p{
+  font-size:.74rem;color:#777;margin:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.preva-kitchen-page .lx-row-price{
+  font-size:.88rem;font-weight:700;
+  color:var(--accent-gold,#c9a34e);white-space:nowrap;flex-shrink:0;
+}
+.preva-kitchen-page .lx-row-arrow{
+  font-size:1rem;color:rgba(201,163,78,.4);flex-shrink:0;
+  transition:transform .3s,color .3s;
+}
+.preva-kitchen-page .lx-spotlight-row:hover .lx-row-arrow,
+.preva-kitchen-page .lx-spotlight-row.is-active .lx-row-arrow{
+  color:var(--accent-gold,#c9a34e);transform:translateX(4px);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MASONRY GALLERY
+   ═══════════════════════════════════════════════════════════════ */
+.preva-kitchen-page .lx-gallery-masonry{
+  columns:4;column-gap:12px;
+  padding:0 var(--site-gutter,32px);
+  max-width:var(--site-container-max,1240px);
+  margin:0 auto 60px;
+}
+.preva-kitchen-page .lx-gallery-card{
+  position:relative;overflow:hidden;
+  border-radius:16px;margin-bottom:12px;break-inside:avoid;
+  cursor:pointer;border:1px solid rgba(255,255,255,.07);
+}
+.preva-kitchen-page .lx-gallery-card img{
+  width:100%;display:block;border-radius:16px;
+  transition:transform .6s ease,filter .6s ease;
+  filter:brightness(.88) contrast(1.06);
+}
+.preva-kitchen-page .lx-gallery-card:hover img{transform:scale(1.07);filter:brightness(1) contrast(1.04)}
+.preva-kitchen-page .lx-gallery-overlay{
+  position:absolute;inset:0;
+  background:linear-gradient(to top,rgba(0,0,0,.84) 0%,transparent 55%);
+  display:flex;align-items:flex-end;padding:16px 18px;
+  opacity:0;transition:opacity .4s ease;border-radius:16px;
+}
+.preva-kitchen-page .lx-gallery-card:hover .lx-gallery-overlay{opacity:1}
+.preva-kitchen-page .lx-gallery-overlay span{
+  color:#f0d48d;font-size:.76rem;text-transform:uppercase;
+  letter-spacing:.12em;font-weight:600;
+}
+
+/* Responsive additions for new sections */
+@media(max-width:980px){
+  .preva-kitchen-page .lx-pillars-grid{grid-template-columns:repeat(2,1fr)}
+  .preva-kitchen-page .lx-pillar:nth-child(2n){border-right:0}
+  .preva-kitchen-page .lx-pillar:nth-child(1),
+  .preva-kitchen-page .lx-pillar:nth-child(2){border-bottom:1px solid rgba(227,192,119,.12)}
+  .preva-kitchen-page .lx-sig-spotlight-section .lx-spotlight-wrap{grid-template-columns:1fr}
+  .preva-kitchen-page .lx-spotlight-img{min-height:400px}
+  .preva-kitchen-page .lx-gallery-masonry{columns:2}
+}
+@media(max-width:600px){
+  .preva-kitchen-page .lx-pillar{padding:36px 20px 32px;min-height:200px}
+  .preva-kitchen-page .lx-pillar-num{font-size:4rem}
+  .preva-kitchen-page .lx-spotlight-info{bottom:22px;left:20px;right:20px}
+  .preva-kitchen-page .lx-spotlight-price{font-size:2.8rem}
+  .preva-kitchen-page .lx-spotlight-name{font-size:1.25rem}
+  .preva-kitchen-page .lx-gallery-masonry{columns:2;column-gap:8px;padding:0 18px}
+  .preva-kitchen-page .lx-gallery-card{margin-bottom:8px}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION 2 — SENSORY TIMELINE & ALL-DAY EXPERIENCE SHOWCASE
+   ═══════════════════════════════════════════════════════════════ */
+.preva-kitchen-page .lx-sensory-timeline-section {
+  padding: 48px 0 56px;
+  background: radial-gradient(circle at 50% 20%, rgba(201, 163, 78, 0.05) 0%, #070708 70%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Floating Timeline Scrubber */
+.preva-kitchen-page .lx-timeline-scrubber {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  max-width: 680px;
+  margin: 0 auto 28px;
+  padding: 6px 10px;
+  background: rgba(18, 18, 22, 0.7);
+  border: 1px solid rgba(201, 163, 78, 0.25);
+  border-radius: 999px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+}
+
+.preva-kitchen-page .lx-scrubber-pill {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #a0a0a5;
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+}
+
+.preva-kitchen-page .lx-scrubber-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #555;
+  transition: all 0.3s ease;
+}
+
+.preva-kitchen-page .lx-scrubber-time {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #d1d1d6;
+}
+
+.preva-kitchen-page .lx-scrubber-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.preva-kitchen-page .lx-scrubber-pill:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.preva-kitchen-page .lx-scrubber-pill.is-active {
+  background: linear-gradient(135deg, rgba(201, 163, 78, 0.22) 0%, rgba(201, 163, 78, 0.08) 100%);
+  border-color: rgba(201, 163, 78, 0.5);
+  color: #fae39b;
+  box-shadow: 0 4px 20px rgba(201, 163, 78, 0.2);
+}
+
+.preva-kitchen-page .lx-scrubber-pill.is-active .lx-scrubber-dot {
+  background: #fae39b;
+  box-shadow: 0 0 10px #fae39b;
+  transform: scale(1.3);
+}
+
+.preva-kitchen-page .lx-scrubber-pill.is-active .lx-scrubber-time {
+  color: #fae39b;
+}
+
+/* Sensory Stage Container */
+.preva-kitchen-page .lx-sensory-stage {
+  background: linear-gradient(145deg, #101013 0%, #09090b 100%);
+  border: 1px solid rgba(201, 163, 78, 0.2);
+  border-radius: 24px;
+  padding: 28px 32px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75);
+  position: relative;
+}
+
+.preva-kitchen-page .lx-sensory-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 36px;
+  align-items: center;
+}
+
+/* Left Visual Column */
+.preva-kitchen-page .lx-sensory-visual-column {
+  position: relative;
+  height: 100%;
+}
+
+.preva-kitchen-page .lx-sensory-hero-image {
+  position: relative;
+  min-height: 410px;
+  height: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 18px;
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.preva-kitchen-page .lx-sensory-hero-image:hover {
+  transform: scale(1.015);
+}
+
+.preva-kitchen-page .lx-sensory-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, transparent 40%, rgba(0, 0, 0, 0.85) 100%);
+}
+
+.preva-kitchen-page .lx-sensory-time-badge {
+  position: relative;
+  z-index: 2;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(8, 8, 10, 0.85);
+  border: 1px solid rgba(201, 163, 78, 0.4);
+  color: #fae39b;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  backdrop-filter: blur(12px);
+}
+
+.preva-kitchen-page .lx-live-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #06c167;
+  box-shadow: 0 0 8px #06c167;
+  animation: lxPulse 2s infinite;
+}
+
+@keyframes lxPulse {
+  0% { transform: scale(0.95); opacity: 0.7; }
+  50% { transform: scale(1.35); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.7; }
+}
+
+.preva-kitchen-page .lx-sensory-atmosphere-card {
+  position: relative;
+  z-index: 2;
+  background: rgba(12, 12, 16, 0.9);
+  border: 1px solid rgba(201, 163, 78, 0.3);
+  border-radius: 14px;
+  padding: 14px 18px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+}
+
+.preva-kitchen-page .lx-atmo-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.preva-kitchen-page .lx-atmo-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #c9a34e;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.preva-kitchen-page .lx-atmo-price {
+  font-size: 0.98rem;
+  font-weight: 900;
+  color: #fae39b;
+  font-family: monospace;
+}
+
+.preva-kitchen-page .lx-atmo-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 2px;
+}
+
+.preva-kitchen-page .lx-atmo-desc {
+  font-size: 0.8rem;
+  color: #a8a8af;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Right Content Column */
+.preva-kitchen-page .lx-sensory-content-column {
+  padding-right: 0;
+}
+
+.preva-kitchen-page .lx-sensory-eyebrow-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.preva-kitchen-page .lx-sensory-heading {
+  font-size: clamp(1.8rem, 2.6vw, 2.35rem);
+  font-weight: 900;
+  line-height: 1.15;
+  color: #ffffff;
+  margin: 4px 0 12px;
+  letter-spacing: -0.02em;
+}
+
+.preva-kitchen-page .lx-sensory-narrative {
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: #b5b5be;
+  margin-bottom: 18px;
+}
+
+/* Numbered Horizon Strips */
+.preva-kitchen-page .lx-horizon-strips {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.preva-kitchen-page .lx-horizon-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-left: 2px solid rgba(201, 163, 78, 0.4);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.preva-kitchen-page .lx-horizon-item:hover {
+  background: rgba(201, 163, 78, 0.06);
+  border-color: rgba(201, 163, 78, 0.35);
+  border-left-color: #fae39b;
+  transform: translateX(4px);
+}
+
+.preva-kitchen-page .lx-horizon-num {
+  font-family: monospace;
+  font-size: 1rem;
+  font-weight: 900;
+  color: #c9a34e;
+  letter-spacing: -0.04em;
+  padding-top: 1px;
+}
+
+.preva-kitchen-page .lx-horizon-body h4 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #f5f5f7;
+  margin: 0 0 2px;
+}
+
+.preva-kitchen-page .lx-horizon-body p {
+  font-size: 0.82rem;
+  color: #92929e;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Action CTA Ribbon */
+.preva-kitchen-page .lx-sensory-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.preva-kitchen-page .lx-sensory-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #fae39b;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  padding: 8px 12px;
+  transition: all 0.3s ease;
+}
+
+.preva-kitchen-page .lx-sensory-text-link:hover {
+  color: #ffffff;
+}
+
+.preva-kitchen-page .lx-sensory-text-link:hover .lx-link-arrow {
+  transform: translateX(5px);
+}
+
+.preva-kitchen-page .lx-link-arrow {
+  transition: transform 0.3s ease;
+}
+
+@media (max-width: 1024px) {
+  .preva-kitchen-page .lx-sensory-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .preva-kitchen-page .lx-sensory-stage {
+    padding: 20px;
+  }
+  .preva-kitchen-page .lx-sensory-hero-image {
+    min-height: 350px;
+  }
+  .preva-kitchen-page .lx-sensory-heading {
+    font-size: 1.6rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .preva-kitchen-page .lx-sensory-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .preva-kitchen-page .lx-sensory-stage {
+    padding: 18px;
+  }
+  .preva-kitchen-page .lx-sensory-hero-image {
+    min-height: 320px;
+  }
+  .preva-kitchen-page .lx-timeline-scrubber {
+    flex-direction: column;
+    border-radius: 18px;
+    padding: 8px;
+  }
+  .preva-kitchen-page .lx-scrubber-pill {
+    width: 100%;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CINEMATIC SCENE BLOCKS — Dinner + Nightlife (no more split cards)
+   ═══════════════════════════════════════════════════════════════ */
+.preva-kitchen-page .lx-scene-block{
+  position:relative;min-height:620px;overflow:hidden;
+  display:flex;align-items:center;padding:90px 0;
+}
+.preva-kitchen-page .lx-scene-photo{
+  position:absolute;inset:0;
+  background-size:cover;background-position:center;
+  transition:transform 14s linear;
+}
+.preva-kitchen-page .lx-scene-block:hover .lx-scene-photo{transform:scale(1.04)}
+.preva-kitchen-page .lx-scene-veil{position:absolute;inset:0}
+.preva-kitchen-page .lx-scene-veil-left{
+  background:linear-gradient(
+    to right,
+    rgba(0,0,0,.96) 0%,
+    rgba(0,0,0,.82) 36%,
+    rgba(0,0,0,.44) 60%,
+    transparent 100%
+  );
+}
+.preva-kitchen-page .lx-scene-veil-right{
+  background:linear-gradient(
+    to left,
+    rgba(0,0,0,.96) 0%,
+    rgba(0,0,0,.82) 36%,
+    rgba(0,0,0,.44) 60%,
+    transparent 100%
+  );
+}
+.preva-kitchen-page .lx-scene-emerald-glow{
+  position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 85% 50%,rgba(15,110,74,.12) 0%,transparent 60%);
+}
+.preva-kitchen-page .lx-scene-body{
+  position:relative;z-index:2;max-width:560px;
+}
+.preva-kitchen-page .lx-scene-body-left{margin-right:auto}
+.preva-kitchen-page .lx-scene-body-right{margin-left:auto}
+.preva-kitchen-page .lx-scene-heading{
+  font-size:clamp(2.4rem,4vw,3.6rem);
+  line-height:1.07;margin:20px 0 22px;
+  color:#fff;font-weight:900;
+}
+.preva-kitchen-page .lx-scene-sep{
+  margin-left:0!important;width:70px!important;margin-bottom:26px!important;
+}
+.preva-kitchen-page .lx-scene-para{
+  font-size:1.05rem;line-height:1.85;
+  color:rgba(200,195,185,.88);
+  margin-bottom:34px;max-width:460px;
+}
+.preva-kitchen-page .lx-scene-cta{
+  height:54px!important;padding:0 32px!important;
+  font-size:.88rem!important;letter-spacing:.08em!important;
+  border-radius:999px!important;display:inline-flex!important;
+  align-items:center!important;
+  box-shadow:0 12px 32px rgba(201,163,78,.4)!important;
+}
+
+/* Responsive scene + story */
+@media(max-width:980px){
+  .preva-kitchen-page .lx-story-grid{grid-template-columns:1fr!important;border-radius:22px}
+  .preva-kitchen-page .lx-story-visual-stage{min-height:380px!important}
+  .preva-kitchen-page .lx-story-content-stage{padding:36px 28px!important}
+}
+@media(max-width:768px){
+  .preva-kitchen-page .lx-scene-block{min-height:auto;padding:72px 0}
+  .preva-kitchen-page .lx-scene-veil-left,
+  .preva-kitchen-page .lx-scene-veil-right{background:rgba(0,0,0,.78)}
+  .preva-kitchen-page .lx-scene-body-left,
+  .preva-kitchen-page .lx-scene-body-right{margin:auto}
+  .preva-kitchen-page .lx-scene-heading{font-size:2.2rem}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LUXURY EDITORIAL STAGES — Dinner & Nightlife Showcases
+   ═══════════════════════════════════════════════════════════════ */
+.preva-kitchen-page .lx-editorial-showcase-section {
+  padding: 85px 0;
+  background: #080809;
+  position: relative;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.preva-kitchen-page .lx-editorial-stage {
+  display: grid;
+  grid-template-columns: 1fr 1.05fr;
+  gap: 50px;
+  align-items: center;
+  background: linear-gradient(145deg, #111114 0%, #0c0c0e 100%);
+  border: 1px solid rgba(227, 192, 119, 0.22);
+  border-radius: 28px;
+  padding: 40px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+  position: relative;
+  overflow: hidden;
+}
+
+.preva-kitchen-page .lx-stage-nightlife {
+  grid-template-columns: 1.05fr 1fr;
+}
+
+.preva-kitchen-page .lx-stage-media-wrap {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  min-height: 480px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
+}
+
+.preva-kitchen-page .lx-stage-media {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.preva-kitchen-page .lx-stage-media-wrap:hover .lx-stage-media {
+  transform: scale(1.04);
+}
+
+.preva-kitchen-page .lx-stage-media-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, transparent 60%);
+}
+
+.preva-kitchen-page .lx-stage-badge {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(201, 163, 78, 0.4);
+  color: #fae39b;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  backdrop-filter: blur(10px);
+}
+
+.preva-kitchen-page .lx-stage-content {
+  padding: 10px 15px;
+}
+
+.preva-kitchen-page .lx-stage-title {
+  font-size: clamp(2rem, 3.4vw, 2.9rem);
+  font-weight: 900;
+  line-height: 1.12;
+  color: #ffffff;
+  margin: 12px 0 16px;
+  letter-spacing: -0.02em;
+}
+
+.preva-kitchen-page .lx-stage-desc {
+  font-size: 1.02rem;
+  line-height: 1.8;
+  color: #b5b5b5;
+  margin-bottom: 28px;
+}
+
+.preva-kitchen-page .lx-stage-features-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 34px;
+}
+
+.preva-kitchen-page .lx-stage-feat {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  transition: border-color 0.3s ease, background 0.3s ease;
+}
+
+.preva-kitchen-page .lx-stage-feat:hover {
+  background: rgba(201, 163, 78, 0.05);
+  border-color: rgba(201, 163, 78, 0.25);
+}
+
+.preva-kitchen-page .lx-feat-icon {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.preva-kitchen-page .lx-stage-feat h4 {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #f3efe7;
+  margin: 0 0 4px;
+}
+
+.preva-kitchen-page .lx-stage-feat p {
+  font-size: 0.8rem;
+  color: #888;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.preva-kitchen-page .lx-stage-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.preva-kitchen-page .lx-stage-actions .luxe-btn,
+.preva-kitchen-page .luxe-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 52px !important;
+  padding: 0 32px !important;
+  font-size: 0.86rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+  border-radius: 999px !important;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.preva-kitchen-page .luxe-btn-gold {
+  background: linear-gradient(135deg, #fae39b, #c5a059) !important;
+  color: #0b0b0b !important;
+  border: none !important;
+  box-shadow: 0 8px 24px rgba(197, 160, 89, 0.35) !important;
+}
+
+.preva-kitchen-page .luxe-btn-gold:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 32px rgba(197, 160, 89, 0.55) !important;
+}
+
+.preva-kitchen-page .luxe-btn-glass {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1.5px solid rgba(201, 163, 78, 0.45) !important;
+  color: #fae39b !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+.preva-kitchen-page .luxe-btn-glass:hover {
+  background: rgba(201, 163, 78, 0.15) !important;
+  border-color: #fae39b !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 24px rgba(201, 163, 78, 0.25) !important;
+}
+
+@media (max-width: 991px) {
+  .preva-kitchen-page .lx-editorial-stage,
+  .preva-kitchen-page .lx-stage-nightlife {
+    grid-template-columns: 1fr;
+    gap: 30px;
+    padding: 24px;
+  }
+  .preva-kitchen-page .lx-stage-media-wrap {
+    min-height: 340px;
+  }
+  .preva-kitchen-page .lx-stage-features-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   AUTHENTIC DISH DETAIL PAGE STYLES (/preva-kitchen-menu/[slug])
+   ═══════════════════════════════════════════════════════════════ */
+.pk-dish-page-wrapper {
+  background: #060607;
+  color: #e5e0d8;
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+  padding: 130px 0 100px;
+  font-family: inherit;
+}
+
+.pk-dish-bg-ambient {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1000px;
+  height: 600px;
+  background: radial-gradient(ellipse at center, rgba(201, 163, 78, 0.08) 0%, rgba(15, 110, 74, 0.03) 40%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.pk-dish-container {
+  position: relative;
+  z-index: 2;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Breadcrumbs */
+.pk-crumbs {
+  margin-bottom: 36px;
+}
+
+.pk-crumbs ol {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.pk-crumbs a {
+  color: #8e8a84;
+  text-decoration: none;
+  transition: color 0.25s ease;
+}
+
+.pk-crumbs a:hover {
+  color: #fae39b;
+}
+
+.pk-crumb-sep {
+  color: rgba(201, 163, 78, 0.4);
+  font-size: 0.7rem;
+}
+
+.pk-crumb-active {
+  color: #f3efe7;
+  font-weight: 600;
+}
+
+/* Dish Showcase 2-Col Card */
+.pk-dish-showcase {
+  background: linear-gradient(160deg, #101013 0%, #0a0a0c 100%);
+  border: 1px solid rgba(201, 163, 78, 0.25);
+  border-radius: 28px;
+  padding: 44px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  margin-bottom: 65px;
+}
+
+.pk-dish-grid {
+  display: grid;
+  grid-template-columns: 460px 1fr;
+  gap: 48px;
+  align-items: center;
+}
+
+.pk-dish-media-box {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.9);
+  aspect-ratio: 1 / 1;
+  background: #000;
+}
+
+.pk-dish-main-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.6s ease;
+}
+
+.pk-dish-media-box:hover .pk-dish-main-img {
+  transform: scale(1.05);
+}
+
+.pk-dish-img-badge {
+  position: absolute;
+  bottom: 18px;
+  left: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(201, 163, 78, 0.4);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fae39b;
+  letter-spacing: 0.06em;
+  backdrop-filter: blur(10px);
+}
+
+.pk-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #c9a34e;
+  box-shadow: 0 0 8px #c9a34e;
+}
+
+/* Info Column */
+.pk-dish-eyebrow {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #c9a34e;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.pk-dish-heading {
+  font-size: clamp(2.2rem, 3.8vw, 3.2rem);
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1.1;
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+}
+
+.pk-dish-price-tag {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #c9a34e;
+  line-height: 1;
+  margin-bottom: 18px;
+  letter-spacing: -0.02em;
+}
+
+/* Tags */
+.pk-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+.pk-tag-pill {
+  padding: 5px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #ccc;
+  text-transform: lowercase;
+  letter-spacing: 0.03em;
+}
+
+.pk-tag-allergen {
+  background: rgba(201, 163, 78, 0.08);
+  border-color: rgba(201, 163, 78, 0.25);
+  color: #fae39b;
+}
+
+.pk-dish-desc {
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: #b5b0a8;
+  margin-bottom: 32px;
+}
+
+/* Order Block */
+.pk-order-block {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 18px;
+  padding: 22px 24px;
+}
+
+.pk-order-label {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.pk-order-label span {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #fae39b;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pk-order-line {
+  flex: 1;
+  height: 1px;
+  background: rgba(201, 163, 78, 0.25);
+}
+
+.pk-order-channels-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.pk-channel-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  text-decoration: none;
+  color: #fff;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pk-channel-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+}
+
+.pk-card-ubereats:hover {
+  border-color: #06c167;
+  box-shadow: 0 6px 20px rgba(6, 193, 103, 0.2);
+}
+
+.pk-card-doordash:hover {
+  border-color: #ff3008;
+  box-shadow: 0 6px 20px rgba(255, 48, 8, 0.2);
+}
+
+.pk-card-grubhub:hover {
+  border-color: #ff8000;
+  box-shadow: 0 6px 20px rgba(255, 128, 0, 0.2);
+}
+
+.pk-card-pickup:hover {
+  border-color: #c9a34e;
+  box-shadow: 0 6px 20px rgba(201, 163, 78, 0.25);
+}
+
+.pk-channel-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.pk-brand-ubergreen {
+  color: #06c167;
+  font-weight: 800;
+}
+
+.pk-brand-dd {
+  color: #ffffff;
+}
+
+.pk-brand-gh {
+  color: #ffffff;
+}
+
+.pk-brand-pickup {
+  color: #fae39b;
+}
+
+.pk-channel-cta {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fae39b;
+  letter-spacing: 0.04em;
+}
+
+/* Pairings Section */
+.pk-pairings-section {
+  margin-bottom: 70px;
+}
+
+.pk-pairings-header {
+  margin-bottom: 26px;
+}
+
+.pk-pairings-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 6px 0 0;
+}
+
+.pk-pairings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.pk-pairing-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.pk-pairing-card:hover {
+  background: rgba(201, 163, 78, 0.06);
+  border-color: rgba(201, 163, 78, 0.3);
+  transform: translateY(-2px);
+}
+
+.pk-pairing-img {
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  background-size: cover;
+  background-position: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.pk-pairing-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pk-pairing-cat {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #c9a34e;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 2px;
+}
+
+.pk-pairing-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f3efe7;
+  margin: 0 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pk-pairing-price {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #fae39b;
+}
+
+/* FAQ Section */
+.pk-faq-section {
+  margin-bottom: 70px;
+}
+
+.pk-faq-header {
+  margin-bottom: 26px;
+}
+
+.pk-faq-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 6px 0 0;
+}
+
+.pk-faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pk-faq-item {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 18px 24px;
+  transition: all 0.3s ease;
+}
+
+.pk-faq-item[open] {
+  background: rgba(201, 163, 78, 0.04);
+  border-color: rgba(201, 163, 78, 0.25);
+}
+
+.pk-faq-question {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: #f3efe7;
+  cursor: pointer;
+  list-style: none;
+}
+
+.pk-faq-question::-webkit-details-marker {
+  display: none;
+}
+
+.pk-faq-toggle-icon {
+  font-size: 1.4rem;
+  color: #c9a34e;
+  transition: transform 0.3s ease;
+}
+
+.pk-faq-item[open] .pk-faq-toggle-icon {
+  transform: rotate(45deg);
+}
+
+.pk-faq-answer {
+  padding-top: 14px;
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: #aaa;
+}
+
+.pk-faq-answer p {
+  margin: 0;
+}
+
+/* Footer Banner */
+.pk-dish-footer-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 40px 48px;
+  background: linear-gradient(135deg, rgba(201, 163, 78, 0.12) 0%, rgba(15, 110, 74, 0.08) 100%);
+  border: 1px solid rgba(201, 163, 78, 0.3);
+  border-radius: 22px;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+
+.pk-footer-cta-content h3 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 6px;
+}
+
+.pk-footer-cta-content p {
+  color: #aaa;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.pk-footer-cta-buttons {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 920px) {
+  .pk-dish-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .pk-dish-showcase {
+    padding: 26px;
+  }
+  .pk-dish-media-box {
+    max-width: 440px;
+    margin: 0 auto;
+  }
+  .pk-order-channels-grid {
+    grid-template-columns: 1fr;
+  }
+  .pk-dish-footer-cta {
+    padding: 28px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GLOBAL & DISH PAGE BUTTON STYLES (Fixes squashed/unpadded buttons)
+   ═══════════════════════════════════════════════════════════════ */
+.pk-dish-page-wrapper .luxe-btn,
+.pk-footer-cta-buttons .luxe-btn,
+.luxe-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 52px !important;
+  padding: 0 32px !important;
+  font-size: 0.86rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+  border-radius: 999px !important;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.pk-dish-page-wrapper .luxe-btn-gold,
+.pk-footer-cta-buttons .luxe-btn-gold,
+.luxe-btn-gold {
+  background: linear-gradient(135deg, #fae39b, #c5a059) !important;
+  color: #0b0b0b !important;
+  border: none !important;
+  box-shadow: 0 8px 24px rgba(197, 160, 89, 0.35) !important;
+}
+
+.pk-dish-page-wrapper .luxe-btn-gold:hover,
+.pk-footer-cta-buttons .luxe-btn-gold:hover,
+.luxe-btn-gold:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 32px rgba(197, 160, 89, 0.55) !important;
+}
+
+.pk-dish-page-wrapper .luxe-btn-glass,
+.pk-footer-cta-buttons .luxe-btn-glass,
+.luxe-btn-glass {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1.5px solid rgba(201, 163, 78, 0.45) !important;
+  color: #fae39b !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+.pk-dish-page-wrapper .luxe-btn-glass:hover,
+.pk-footer-cta-buttons .luxe-btn-glass:hover,
+.luxe-btn-glass:hover {
+  background: rgba(201, 163, 78, 0.15) !important;
+  border-color: #fae39b !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 24px rgba(201, 163, 78, 0.25) !important;
+}
+

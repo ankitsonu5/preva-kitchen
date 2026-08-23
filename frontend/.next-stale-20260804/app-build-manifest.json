@@ -1,0 +1,87 @@
+{
+  "pages": {
+    "/(site)/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/(site)/layout.css",
+      "static/chunks/app/(site)/layout.js"
+    ],
+    "/(site)/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(site)/page.js"
+    ],
+    "/(site)/careers/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(site)/careers/page.js"
+    ],
+    "/(site)/[slug]/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(site)/[slug]/layout.js"
+    ],
+    "/(site)/[slug]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(site)/[slug]/page.js"
+    ],
+    "/(site)/careers/[slug]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(site)/careers/[slug]/page.js"
+    ],
+    "/(site)/preva-kitchen/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(site)/preva-kitchen/page.js"
+    ],
+    "/(site)/preva-kitchen-menu/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(site)/preva-kitchen-menu/page.js"
+    ],
+    "/(site)/careers/apply/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(site)/careers/apply/page.js"
+    ],
+    "/(admin)/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/(admin)/layout.css",
+      "static/chunks/app/(admin)/layout.js"
+    ],
+    "/(admin)/admin/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(admin)/admin/layout.js"
+    ],
+    "/(admin)/admin/login/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(admin)/admin/login/page.js"
+    ],
+    "/(site)/blog/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(site)/blog/page.js"
+    ],
+    "/(site)/sitemap.xml/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(site)/sitemap.xml/route.js"
+    ],
+    "/(site)/shop/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(site)/shop/page.js"
+    ],
+    "/(site)/contact/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/css/app/(site)/contact/page.css",
+      "static/chunks/app/(site)/contact/page.js"
+    ]
+  }
+}

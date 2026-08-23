@@ -1,0 +1,37 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   Token bridge
+   ──────────────────────────────────────────────────────────────────────────
+   style.css declares --font-display / --font-serif / --font-body and the rest
+   of the theme reads them. This file is imported after every theme stylesheet
+   in layout.js, so these declarations win.
+
+   Each var() carries its own fallback on purpose. A var() with no fallback
+   that resolves to nothing makes the entire declaration invalid, which would
+   silently drop the font — so the literal family name is always present.
+   That also means switching to next/font later is a one-line change: define
+   --font-syncopate and friends on <html> and these pick them up automatically.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* One public-site grid shared by the header, pages, shop, careers and footer. */
+  --site-container-max: 1240px;
+  --site-gutter: 32px;
+  --font-display: var(--font-syncopate, 'Syncopate'), sans-serif;
+  --font-heading: var(--font-syncopate, 'Syncopate'), sans-serif;
+  --font-serif:   var(--font-playfair, 'Playfair Display'), Georgia, serif;
+  --font-body:    var(--font-inter, 'Inter'), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-quote:   var(--font-cormorant, 'Cormorant Garamond'), Georgia, serif;
+  --font-mono:    var(--font-dm-mono, 'DM Mono'), ui-monospace, SFMono-Regular, monospace;
+}
+
+@media (max-width: 1024px) {
+  :root { --site-gutter: 24px; }
+}
+
+@media (max-width: 767px) {
+  :root { --site-gutter: 18px; }
+}
+
+body {
+  font-family: var(--font-body);
+}

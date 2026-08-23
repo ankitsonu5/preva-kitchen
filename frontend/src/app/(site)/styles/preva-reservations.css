@@ -1,0 +1,1177 @@
+/* =========================================================================
+   PREVA RESERVATIONS GATE — v1.0 · April 2026
+   Dual-path mistake-proof reservation system stylesheet.
+   ALL classes prefixed with .prv- to avoid conflicts with existing theme.
+   Upload to: /wp-content/themes/YOUR-THEME/preva-reservations.css
+   ========================================================================= */
+
+/* -------- Tokens -------- */
+.prv-gate {
+  --prv-gold:          #C9A84C;
+  --prv-gold-light:    #E8C96A;
+  --prv-gold-dim:      #9A7A35;
+  --prv-gold-bg:       #0D0B08;
+  --prv-gold-surface:  rgba(20,17,12,0.92);
+
+  --prv-purple:        #7B5EA7;
+  --prv-purple-light:  #9E7FCA;
+  --prv-purple-bg:     #080810;
+  --prv-purple-surface:rgba(12,12,20,0.92);
+
+  --prv-confirm: #27AE60;
+  --prv-warn:    #E0B744;
+  --prv-danger:  #D65A5A;
+  --prv-bg:      #0A0906;
+  --prv-text:    #F0EAD8;
+  --prv-muted:   #8A8070;
+  --prv-faint:   #4A4438;
+
+  --prv-r-sm: 6px;
+  --prv-r-md: 10px;
+  --prv-r-lg: 14px;
+  --prv-r-full: 999px;
+
+  --prv-font-display: 'Syncopate', sans-serif;
+  --prv-font-body:    'Satoshi', 'Inter', ui-sans-serif, sans-serif;
+}
+
+/* Font import (safe — doesn't affect theme) */
+@import url('https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,700,800,900&f[]=satoshi@400,500,600,700&display=swap');
+
+/* -------- Section Wrapper -------- */
+.prv-gate,
+.prv-gate *,
+.prv-gate *::before,
+.prv-gate *::after { box-sizing: border-box; }
+
+.prv-gate {
+  position: relative;
+  background: var(--prv-bg);
+  font-family: var(--prv-font-body);
+  color: var(--prv-text);
+  padding: 0;
+  overflow: hidden;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+/* Section header (above the split) */
+.prv-gate__header {
+  text-align: center;
+  padding: 80px var(--site-gutter, 32px) 40px;
+  max-width: var(--site-container-max, 1240px);
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+.prv-gate__eyebrow {
+  display: inline-block;
+  font-size: 0.75rem;
+  letter-spacing: 0.4em;
+  color: var(--prv-gold);
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 18px;
+}
+.prv-gate__title {
+  font-family: var(--prv-font-display);
+  font-weight: 800;
+  font-size: 30px;
+  line-height: 1.05;
+  color: #fff;
+  margin: 0 0 18px;
+  letter-spacing: -0.01em;
+}
+.prv-gate__title em {
+  font-style: normal;
+  color: var(--prv-gold);
+}
+.prv-gate__sub {
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: #aaa;
+  max-width: 680px;
+  margin: 0 auto;
+}
+.prv-gate__rule {
+  width: 120px;
+  height: 2px;
+  background: linear-gradient(to right, transparent, var(--prv-gold), transparent);
+  margin: 22px auto 0;
+}
+
+/* -------- Split Layout -------- */
+.prv-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  position: relative;
+  width: 100%;
+  max-width: var(--site-container-max, 1240px);
+  margin-inline: auto;
+  padding-inline: var(--site-gutter, 32px);
+  min-height: 760px;
+}
+
+.prv-divider {
+  position: absolute;
+  left: 50%; top: 0; bottom: 0;
+  width: 1px;
+  background: linear-gradient(to bottom,
+    transparent 0%,
+    rgba(201,168,76,0.35) 15%,
+    rgba(123,94,167,0.35) 50%,
+    rgba(123,94,167,0.35) 85%,
+    transparent 100%);
+  transform: translateX(-50%);
+  z-index: 5;
+  pointer-events: none;
+}
+.prv-or {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--prv-bg);
+  border: 1px solid rgba(201,168,76,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--prv-font-display);
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: var(--prv-text);
+  text-transform: uppercase;
+  box-shadow: 0 0 0 8px var(--prv-bg), 0 0 32px rgba(0,0,0,0.7);
+}
+
+/* -------- Panels -------- */
+.prv-panel {
+  position: relative;
+  padding: 48px 48px 60px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.prv-panel--dining    { background: var(--prv-gold-bg); }
+.prv-panel--vip { background: var(--prv-purple-bg); }
+
+.prv-panel--dining::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 65% 50% at 25% 20%, rgba(201,168,76,0.10) 0%, transparent 65%),
+    radial-gradient(ellipse 45% 60% at 85% 85%, rgba(154,122,53,0.07) 0%, transparent 60%);
+  pointer-events: none;
+}
+.prv-panel--vip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 65% 50% at 75% 20%, rgba(123,94,167,0.14) 0%, transparent 65%),
+    radial-gradient(ellipse 45% 60% at 15% 85%, rgba(80,50,140,0.09) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.prv-panel__inner {
+  position: relative;
+  z-index: 2;
+  max-width: 600px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* -------- Progress Tracker (G5) -------- */
+.prv-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--prv-muted);
+}
+.prv-progress__step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.prv-progress__dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  transition: background .3s;
+}
+.prv-progress__step.is-active .prv-progress__dot { background: currentColor; }
+.prv-progress--dining .prv-progress__step.is-active { color: var(--prv-gold); }
+.prv-progress--vip    .prv-progress__step.is-active { color: var(--prv-purple-light); }
+.prv-progress__bar {
+  flex: 0 0 28px;
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+}
+
+/* -------- Identity Badge -------- */
+.prv-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 13px;
+  border-radius: var(--prv-r-full);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.prv-badge--dining {
+  background: rgba(201,168,76,0.12);
+  border: 1px solid rgba(201,168,76,0.3);
+  color: var(--prv-gold);
+}
+.prv-badge--vip {
+  background: rgba(123,94,167,0.15);
+  border: 1px solid rgba(123,94,167,0.35);
+  color: var(--prv-purple-light);
+}
+.prv-badge__dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* -------- Panel Heading -------- */
+.prv-panel__heading {
+  font-family: var(--prv-font-display);
+  font-weight: 800;
+  font-size: 25px;
+  line-height: 1.05;
+  margin: 0 0 12px;
+  letter-spacing: -0.01em;
+}
+.prv-panel--dining    .prv-panel__heading { color: #F2EAD0; }
+.prv-panel--vip .prv-panel__heading { color: #ECE4F8; }
+
+.prv-panel__sub {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--prv-muted);
+  max-width: 440px;
+  margin: 0 0 20px;
+}
+
+/* -------- Pills (hours/age/location) -------- */
+.prv-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.prv-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--prv-r-full);
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid;
+}
+.prv-pill--dining {
+  border-color: rgba(201,168,76,0.25);
+  color: rgba(201,168,76,0.92);
+  background: rgba(201,168,76,0.06);
+}
+.prv-pill--vip {
+  border-color: rgba(123,94,167,0.3);
+  color: rgba(158,127,202,0.95);
+  background: rgba(123,94,167,0.08);
+}
+
+/* -------- Chip Selectors -------- */
+.prv-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.prv-chip {
+  padding: 7px 14px;
+  border-radius: var(--prv-r-full);
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--prv-font-body);
+  border: 1px solid;
+  background: transparent;
+  cursor: pointer;
+  transition: all .2s;
+}
+.prv-chip--dining {
+  color: rgba(240,232,208,0.72);
+  border-color: rgba(201,168,76,0.22);
+  background: rgba(201,168,76,0.04);
+}
+.prv-chip--dining.is-selected {
+  background: rgba(201,168,76,0.18);
+  border-color: rgba(201,168,76,0.5);
+  color: var(--prv-gold);
+  font-weight: 600;
+}
+.prv-chip--vip {
+  color: rgba(224,216,248,0.75);
+  border-color: rgba(123,94,167,0.22);
+  background: rgba(123,94,167,0.05);
+}
+.prv-chip--vip.is-selected {
+  background: rgba(123,94,167,0.22);
+  border-color: rgba(123,94,167,0.55);
+  color: var(--prv-purple-light);
+  font-weight: 600;
+}
+
+/* -------- Form Card -------- */
+.prv-form {
+  border-radius: var(--prv-r-lg);
+  padding: 22px;
+  border: 1px solid;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  backdrop-filter: blur(6px);
+}
+.prv-form--dining {
+  background: var(--prv-gold-surface);
+  border-color: rgba(201,168,76,0.2);
+}
+.prv-form--vip {
+  background: var(--prv-purple-surface);
+  border-color: rgba(123,94,167,0.22);
+}
+.prv-form__title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin: -4px 0 -4px;
+}
+.prv-form--dining .prv-form__title { color: var(--prv-gold-dim); }
+.prv-form--vip    .prv-form__title { color: rgba(158,127,202,0.85); }
+
+/* -------- Form Rows -------- */
+.prv-row {
+  display: grid;
+  gap: 12px;
+}
+.prv-row--2 { grid-template-columns: 1fr 1fr; }
+
+.prv-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.prv-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--prv-muted);
+}
+.prv-star { color: var(--prv-danger); margin-left: 2px; }
+
+/* -------- Inputs (OVERRIDE theme styles aggressively) -------- */
+.prv-input,
+.prv-select,
+.prv-textarea {
+  height: 42px;
+  width: 100% !important;
+  max-width: 100%;
+  border-radius: var(--prv-r-sm) !important;
+  border: 1px solid !important;
+  background: rgba(255,255,255,0.035) !important;
+  padding: 0 12px !important;
+  margin: 0 !important;
+  font-size: 13px !important;
+  font-family: var(--prv-font-body) !important;
+  color: var(--prv-text) !important;
+  box-shadow: none !important;
+  transition: border-color .2s, background .2s, box-shadow .2s;
+}
+.prv-textarea {
+  min-height: 74px;
+  height: auto;
+  padding: 10px 12px !important;
+  resize: vertical;
+  line-height: 1.5;
+}
+.prv-input::placeholder,
+.prv-textarea::placeholder { color: var(--prv-faint); opacity: 1; }
+
+/* Dining */
+.prv-panel--dining .prv-input,
+.prv-panel--dining .prv-select,
+.prv-panel--dining .prv-textarea {
+  border-color: rgba(201,168,76,0.22) !important;
+}
+.prv-panel--dining .prv-input:focus,
+.prv-panel--dining .prv-select:focus,
+.prv-panel--dining .prv-textarea:focus {
+  outline: none !important;
+  border-color: rgba(201,168,76,0.6) !important;
+  background: rgba(201,168,76,0.05) !important;
+  box-shadow: 0 0 0 3px rgba(201,168,76,0.12) !important;
+}
+
+/* VIP */
+.prv-panel--vip .prv-input,
+.prv-panel--vip .prv-select,
+.prv-panel--vip .prv-textarea {
+  border-color: rgba(123,94,167,0.25) !important;
+}
+.prv-panel--vip .prv-input:focus,
+.prv-panel--vip .prv-select:focus,
+.prv-panel--vip .prv-textarea:focus {
+  outline: none !important;
+  border-color: rgba(123,94,167,0.6) !important;
+  background: rgba(123,94,167,0.06) !important;
+  box-shadow: 0 0 0 3px rgba(123,94,167,0.14) !important;
+}
+
+/* Date picker icon */
+.prv-input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.7) sepia(1) saturate(3) hue-rotate(5deg);
+  cursor: pointer;
+}
+
+/* -------- Select dropdown — dark theme for options list -------- */
+/* Custom chevron arrow (replaces ugly native white triangle on dark bg) */
+.prv-select {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 12px !important;
+  padding-right: 36px !important;
+}
+.prv-panel--dining .prv-select {
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23C9A84C' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+}
+.prv-panel--vip .prv-select {
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%239E7FCA' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+}
+/* IE fallback: hide native dropdown arrow */
+.prv-select::-ms-expand { display: none; }
+
+/* Options list (when dropdown is opened) — Firefox supports full styling,
+   Chromium browsers only honor bg/color on the <option> itself */
+.prv-select option {
+  background-color: #14110C !important;
+  color: var(--prv-text) !important;
+  padding: 10px 12px !important;
+  font-size: 13px !important;
+}
+.prv-panel--vip .prv-select option {
+  background-color: #100E1A !important;
+  color: var(--prv-text) !important;
+}
+.prv-select option:checked,
+.prv-select option:hover,
+.prv-select option:focus {
+  background-color: #14110C !important;
+  color: #fff !important;
+}
+.prv-panel--vip .prv-select option:checked,
+.prv-panel--vip .prv-select option:hover,
+.prv-panel--vip .prv-select option:focus {
+  background-color: #100E1A !important;
+}
+.prv-select option:disabled {
+  color: var(--prv-faint) !important;
+}
+
+/* Error state */
+.prv-field.has-error .prv-input,
+.prv-field.has-error .prv-select,
+.prv-field.has-error .prv-textarea {
+  border-color: var(--prv-danger) !important;
+  background: rgba(214,90,90,0.06) !important;
+}
+.prv-error {
+  font-size: 11px;
+  color: var(--prv-danger);
+  margin-top: 2px;
+  display: none;
+}
+.prv-field.has-error .prv-error { display: block; }
+
+/* -------- Guest Stepper -------- */
+.prv-stepper {
+  display: flex;
+  align-items: center;
+  height: 42px;
+  border-radius: var(--prv-r-sm);
+  border: 1px solid;
+  overflow: hidden;
+  background: rgba(255,255,255,0.035);
+}
+.prv-panel--dining .prv-stepper { border-color: rgba(201,168,76,0.25); }
+.prv-panel--vip    .prv-stepper { border-color: rgba(123,94,167,0.28); }
+.prv-stepper__btn {
+  width: 42px; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  font-weight: 300;
+  color: var(--prv-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color .2s, background .2s;
+  font-family: inherit;
+}
+.prv-stepper__btn:hover:not(:disabled) { color: var(--prv-text); background: rgba(255,255,255,0.04); }
+.prv-stepper__btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.prv-stepper__val {
+  flex: 1;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  border-left: 1px solid rgba(255,255,255,0.06);
+  border-right: 1px solid rgba(255,255,255,0.06);
+}
+.prv-panel--dining .prv-stepper__val { color: var(--prv-gold); }
+.prv-panel--vip    .prv-stepper__val { color: var(--prv-purple-light); }
+
+/* -------- Toggle -------- */
+.prv-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  border-radius: var(--prv-r-sm);
+  border: 1px dashed;
+  cursor: pointer;
+  transition: background .2s;
+}
+.prv-panel--dining .prv-toggle-row { border-color: rgba(201,168,76,0.22); }
+.prv-panel--vip    .prv-toggle-row { border-color: rgba(123,94,167,0.25); }
+.prv-toggle-row:hover { background: rgba(255,255,255,0.02); }
+.prv-toggle__icon { font-size: 16px; width: 20px; text-align: center; }
+.prv-toggle__label {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--prv-text);
+}
+.prv-toggle {
+  position: relative;
+  width: 38px; height: 21px;
+  border-radius: var(--prv-r-full);
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  flex-shrink: 0;
+  transition: all .2s;
+}
+.prv-toggle__knob {
+  position: absolute;
+  top: 1px; left: 1px;
+  width: 17px; height: 17px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.5);
+  transition: all .2s;
+}
+.prv-panel--dining .prv-toggle.is-on {
+  background: rgba(201,168,76,0.35);
+  border-color: rgba(201,168,76,0.55);
+}
+.prv-panel--dining .prv-toggle.is-on .prv-toggle__knob {
+  left: 19px;
+  background: var(--prv-gold);
+}
+.prv-panel--vip .prv-toggle.is-on {
+  background: rgba(123,94,167,0.4);
+  border-color: rgba(123,94,167,0.6);
+}
+.prv-panel--vip .prv-toggle.is-on .prv-toggle__knob {
+  left: 19px;
+  background: var(--prv-purple-light);
+}
+
+/* -------- Warning Banner (G2) -------- */
+.prv-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 13px 14px;
+  border-radius: var(--prv-r-sm);
+  background: rgba(224,183,68,0.08);
+  border: 1px solid rgba(224,183,68,0.3);
+  animation: prvSlideIn .3s ease-out;
+}
+@keyframes prvSlideIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.prv-warn__icon {
+  font-size: 16px;
+  color: var(--prv-warn);
+  flex-shrink: 0;
+  line-height: 1;
+  margin-top: 1px;
+}
+.prv-warn__text {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: rgba(240,234,216,0.9);
+}
+.prv-warn__text strong { color: var(--prv-warn); font-weight: 600; }
+.prv-warn__text a {
+  color: var(--prv-warn) !important;
+  font-weight: 600;
+  text-decoration: underline !important;
+  text-underline-offset: 2px;
+}
+
+/* -------- Access Boundary Info Box (G3) -------- */
+.prv-boundary {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 13px 14px;
+  border-radius: var(--prv-r-sm);
+  background: rgba(123,94,167,0.08);
+  border: 1px solid rgba(123,94,167,0.3);
+}
+.prv-boundary__icon {
+  font-size: 16px;
+  color: var(--prv-purple-light);
+  flex-shrink: 0;
+  line-height: 1;
+  margin-top: 1px;
+}
+.prv-boundary__text {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: rgba(240,234,216,0.9);
+}
+.prv-boundary__text strong { color: var(--prv-purple-light); font-weight: 600; }
+
+/* -------- Submit Button -------- */
+.prv-submit {
+  width: 100%;
+  height: 54px;
+  border-radius: var(--prv-r-sm);
+  font-family: var(--prv-font-display);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  transition: transform .1s, box-shadow .2s, background .2s, opacity .2s;
+  margin-top: 4px;
+  color: var(--prv-bg);
+}
+.prv-submit:active { transform: translateY(1px); }
+.prv-submit--dining {
+  background: var(--prv-gold);
+  color: var(--prv-bg);
+}
+.prv-submit--dining:hover {
+  background: var(--prv-gold-light);
+  box-shadow: 0 6px 24px rgba(201,168,76,0.25);
+}
+.prv-submit--vip {
+  background: #6804ff;
+  color: #FFFFFF;
+}
+.prv-submit--vip:hover {
+  background: var(--prv-purple-light);
+  box-shadow: 0 6px 24px rgba(123,94,167,0.35);
+}
+.prv-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* -------- Inline form message -------- */
+.prv-msg {
+  font-size: 12px;
+  padding: 10px 12px;
+  border-radius: var(--prv-r-sm);
+  margin-top: 4px;
+  display: none;
+}
+.prv-msg.is-error {
+  display: block;
+  background: rgba(214,90,90,0.08);
+  border: 1px solid rgba(214,90,90,0.3);
+  color: #ffb5b5;
+}
+.prv-msg.is-loading {
+  display: block;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--prv-muted);
+}
+
+/* -------- Confirmation Modal (G4) -------- */
+.prv-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+.prv-overlay.is-open {
+  display: flex;
+  animation: prvFadeIn .25s ease-out;
+}
+@keyframes prvFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.prv-confirm {
+  width: 100%;
+  max-width: 460px;
+  background: #14110C;
+  border: 1px solid rgba(39,174,96,0.3);
+  border-radius: var(--prv-r-lg);
+  padding: 30px;
+  animation: prvPopIn .35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+  color: var(--prv-text);
+  font-family: var(--prv-font-body);
+}
+@keyframes prvPopIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.prv-confirm--vip { background: #100E1A; }
+.prv-confirm__header {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 22px;
+}
+.prv-confirm__check {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: rgba(39,174,96,0.15);
+  border: 1px solid rgba(39,174,96,0.4);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--prv-confirm);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.prv-confirm__title {
+  font-family: var(--prv-font-display);
+  font-weight: 800;
+  font-size: 1.35rem;
+  margin: 0 0 2px;
+  color: #fff;
+}
+.prv-confirm__subtitle { font-size: 12px; color: var(--prv-muted); }
+.prv-confirm__details {
+  border-top: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  padding: 16px 0;
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.prv-confirm__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12.5px;
+  gap: 12px;
+}
+.prv-confirm__row-label { color: var(--prv-muted); }
+.prv-confirm__row-val {
+  font-weight: 600;
+  color: var(--prv-text);
+  text-align: right;
+}
+.prv-confirm__row-val.mono {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+}
+.prv-confirm__prompt {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 13px 14px;
+  border-radius: var(--prv-r-sm);
+  margin-bottom: 20px;
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.prv-confirm__prompt--dining {
+  background: rgba(123,94,167,0.1);
+  border: 1px solid rgba(123,94,167,0.3);
+}
+.prv-confirm__prompt--vip {
+  background: rgba(201,168,76,0.1);
+  border: 1px solid rgba(201,168,76,0.3);
+}
+.prv-confirm__prompt a {
+  font-weight: 600;
+  text-decoration: underline !important;
+  text-underline-offset: 2px;
+}
+.prv-confirm__prompt--dining a { color: var(--prv-purple-light) !important; }
+.prv-confirm__prompt--vip a    { color: var(--prv-gold) !important; }
+.prv-confirm__actions { display: flex; gap: 10px; }
+.prv-confirm__close-btn {
+  flex: 1;
+  height: 46px;
+  border-radius: var(--prv-r-sm);
+  background: #1E7A45;
+  color: #fff;
+  font-family: var(--prv-font-display);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  transition: background .2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.prv-confirm__close-btn:hover { background: #25925F; }
+.prv-confirm__close-btn svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+.prv-confirm__close-btn svg path {
+  stroke: var(--prv-gold);
+  stroke-width: 2.5;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* -------- Footer Strip -------- */
+.prv-footer {
+  background: #060504;
+  padding: 22px 28px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  justify-content: center;
+  align-items: center;
+  font-size: 13px !important;
+  color: #dddddd !important;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+.prv-footer__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.04em;
+}
+.prv-footer__item strong {
+  color: var(--prv-text);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* -------- Mobile Selector (mobile only) -------- */
+.prv-mselect {
+  display: none;
+  gap: 8px;
+  padding: 0 16px;
+  margin-bottom: 14px;
+}
+.prv-mselect button {
+  flex: 1;
+  height: 46px;
+  border-radius: var(--prv-r-sm);
+  font-family: var(--prv-font-display);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid;
+  background: transparent;
+  cursor: pointer;
+  transition: all .2s;
+}
+.prv-mselect__dining {
+  color: var(--prv-gold);
+  border-color: rgba(201,168,76,0.3);
+  background: rgba(201,168,76,0.08);
+}
+.prv-mselect__dining.is-active {
+  background: rgba(201,168,76,0.2);
+  border-color: var(--prv-gold);
+}
+.prv-mselect__vip {
+  color: var(--prv-purple-light);
+  border-color: rgba(123,94,167,0.3);
+  background: rgba(123,94,167,0.08);
+}
+.prv-mselect__vip.is-active {
+  background: rgba(123,94,167,0.25);
+  border-color: var(--prv-purple);
+}
+
+/* =========================================================================
+   RESPONSIVE
+   ========================================================================= */
+@media (max-width: 1023px) and (min-width: 768px) {
+  .prv-split {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+  .prv-divider, .prv-or { display: none !important; }
+  .prv-panel { padding: 36px 36px 48px; }
+  .prv-mselect { display: flex !important; padding: 0 24px; }
+  .prv-gate__header { padding: 60px var(--site-gutter, 24px) 28px; }
+  .prv-gate__title { font-size: 2.2rem; }
+}
+
+@media (max-width: 767px) {
+  .prv-split {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+  .prv-divider, .prv-or { display: none !important; }
+  .prv-panel { padding: 28px 20px 40px; }
+  .prv-mselect { display: flex !important; }
+  .prv-gate__header { padding: 50px var(--site-gutter, 18px) 24px; }
+  .prv-gate__title { font-size: 1.75rem; }
+  .prv-gate__sub { font-size: 0.95rem; }
+  .prv-panel__heading { font-size: 1.75rem; }
+  .prv-panel__sub { font-size: 0.9rem; }
+  .prv-form { padding: 18px 16px; }
+  .prv-row--2 { grid-template-columns: 1fr; }
+  .prv-confirm { padding: 22px 20px; }
+  .prv-footer {
+    padding: 18px 20px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .prv-gate__rule { width: 80px; }
+}
+/* ============================================================
+   CSS-ONLY MOBILE PANEL SWITCHER (Radio Button Hack)
+   Browser :checked pseudo-class ka use — JS-independent
+   ============================================================ */
+
+/* Hidden radio inputs — invisible but functional */
+.prv-tab-radio {
+  position: absolute !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Make labels look and behave like buttons */
+.prv-mselect label.prv-mselect__dining,
+.prv-mselect label.prv-mselect__vip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 46px;
+  border-radius: var(--prv-r-sm);
+  font-family: var(--prv-font-display);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid;
+  cursor: pointer;
+  transition: all .2s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Active state via :checked sibling selector */
+#prv-tab-dining:checked ~ .prv-mselect label.prv-mselect__dining {
+  background: rgba(201,168,76,0.2) !important;
+  border-color: var(--prv-gold) !important;
+}
+#prv-tab-vip:checked ~ .prv-mselect label.prv-mselect__vip {
+  background: rgba(123,94,167,0.25) !important;
+  border-color: var(--prv-purple) !important;
+}
+
+/* Mobile/Tablet — panel show/hide via :checked */
+@media (max-width: 1023px) {
+  /* Hide both panels by default */
+  #prv-gate #prv-panel-dining,
+  #prv-gate #prv-panel-vip {
+    display: none !important;
+  }
+  /* Show dining when its radio is checked */
+  #prv-tab-dining:checked ~ .prv-split #prv-panel-dining {
+    display: flex !important;
+    flex-direction: column !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  /* Show VIP when its radio is checked */
+  #prv-tab-vip:checked ~ .prv-split #prv-panel-vip {
+    display: flex !important;
+    flex-direction: column !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  /* Force-hide non-checked panel (insurance against any conflicts) */
+  #prv-tab-dining:checked ~ .prv-split #prv-panel-vip,
+  #prv-tab-vip:checked ~ .prv-split #prv-panel-dining {
+    display: none !important;
+  }
+}
+
+/* Desktop — both visible always, ignore radios */
+@media (min-width: 1024px) {
+  #prv-gate #prv-panel-dining,
+  #prv-gate #prv-panel-vip {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+}
+
+/* ============================================================
+   PREVA KITCHEN — catering / group dining panel
+   ============================================================ */
+.kitchen-reservations {
+  --prv-herb: #8fa56a;
+  --prv-herb-bright: #b8c98f;
+  --prv-copper: #c97941;
+}
+
+.prv-panel--events {
+  background:
+    radial-gradient(circle at 88% 8%, rgba(143,165,106,.12), transparent 34%),
+    linear-gradient(145deg, #10130d 0%, #0b0d09 55%, #080907 100%);
+}
+.prv-panel--events::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(rgba(255,255,255,.012) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.012) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: linear-gradient(to bottom, black, transparent 70%);
+}
+.prv-panel--events .prv-panel__inner { position: relative; z-index: 1; }
+.prv-progress--events .prv-progress__step.is-active,
+.prv-form--events .prv-form__title { color: var(--prv-herb-bright); }
+.prv-progress--events .prv-progress__step.is-active .prv-progress__dot { background: var(--prv-herb-bright); box-shadow: 0 0 0 3px rgba(184,201,143,.12); }
+.prv-badge--events {
+  color: var(--prv-herb-bright);
+  border-color: rgba(184,201,143,.32);
+  background: rgba(143,165,106,.1);
+}
+.prv-badge--events .prv-badge__dot { background: var(--prv-herb-bright); }
+.prv-panel--events .prv-panel__heading { color: #f3f0e7; }
+.prv-pill--events {
+  color: #cbd5b2;
+  border-color: rgba(143,165,106,.3);
+  background: rgba(143,165,106,.075);
+}
+.prv-chip--events {
+  color: #cbd5b2;
+  border-color: rgba(143,165,106,.3);
+  background: transparent;
+}
+.prv-chip--events:hover,
+.prv-chip--events.is-selected {
+  color: #10130d;
+  border-color: var(--prv-herb-bright);
+  background: var(--prv-herb-bright);
+}
+.prv-form--events { border-color: rgba(143,165,106,.24); background: rgba(6,8,5,.54); }
+.prv-panel--events .prv-input,
+.prv-panel--events .prv-select,
+.prv-panel--events .prv-textarea { border-color: rgba(143,165,106,.25) !important; }
+.prv-panel--events .prv-input:focus,
+.prv-panel--events .prv-select:focus,
+.prv-panel--events .prv-textarea:focus {
+  outline: none !important;
+  border-color: rgba(184,201,143,.7) !important;
+  background: rgba(143,165,106,.055) !important;
+  box-shadow: 0 0 0 3px rgba(143,165,106,.12) !important;
+}
+.prv-panel--events .prv-select {
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23B8C98F' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+}
+.prv-panel--events .prv-select option { background-color: #10130d !important; }
+.prv-panel--events .prv-stepper { border-color: rgba(143,165,106,.3); }
+.prv-panel--events .prv-stepper__val { color: var(--prv-herb-bright); }
+.prv-submit--events {
+  color: #11150d;
+  background: linear-gradient(110deg, #a8bd7d, #d2dcae);
+  box-shadow: 0 8px 26px rgba(143,165,106,.16);
+}
+.prv-submit--events:hover { background: #d9e5b7; box-shadow: 0 9px 28px rgba(143,165,106,.28); }
+.prv-form-note { margin: -2px 0 2px; color: var(--prv-muted); font-size: 11.5px; line-height: 1.55; }
+.prv-confirm__message { color: var(--prv-muted); font-size: 13px; line-height: 1.65; margin: 0 0 20px; }
+.prv-mselect__events {
+  color: var(--prv-herb-bright) !important;
+  border-color: rgba(143,165,106,.34) !important;
+  background: rgba(143,165,106,.08) !important;
+}
+.prv-mselect__events.is-active { background: rgba(143,165,106,.2) !important; border-color: var(--prv-herb-bright) !important; }
+.prv-footer a { color: inherit; text-decoration: none; }
+
+@media (max-width: 1023px) {
+  .kitchen-reservations #prv-panel-dining,
+  .kitchen-reservations #prv-panel-events { display: none !important; }
+  .kitchen-reservations .show-dining #prv-panel-dining,
+  .kitchen-reservations .show-catering #prv-panel-events {
+    display: flex !important;
+    flex-direction: column !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .kitchen-reservations #prv-panel-dining,
+  .kitchen-reservations #prv-panel-events { display: flex !important; flex-direction: column !important; }
+}
+
+/* Catering form stays completely static: no reveal, pulse, hover motion or
+   animated field state. Functional value/state changes remain immediate. */
+.kitchen-reservations .prv-panel--events,
+.kitchen-reservations .prv-panel--events *,
+.kitchen-reservations .prv-panel--events *::before,
+.kitchen-reservations .prv-panel--events *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+.kitchen-reservations .prv-panel--events.lxr {
+  opacity: 1 !important;
+  transform: none !important;
+  will-change: auto !important;
+}
+
+.kitchen-reservations .prv-panel--events .prv-submit:active,
+.kitchen-reservations .prv-panel--events .prv-chip:hover,
+.kitchen-reservations .prv-panel--events .prv-stepper__btn:hover {
+  transform: none !important;
+}

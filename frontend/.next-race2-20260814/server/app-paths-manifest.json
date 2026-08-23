@@ -1,0 +1,5 @@
+{
+  "/(site)/page": "app/(site)/page.js",
+  "/(site)/preva-kitchen/page": "app/(site)/preva-kitchen/page.js",
+  "/(site)/[slug]/page": "app/(site)/[slug]/page.js"
+}
