@@ -17,7 +17,7 @@ export default async function sitemap() {
     cmsFetch('/galleries'), cmsFetch('/services'), cmsFetch('/career-jobs')
   ]);
   const fixed = [
-    '', '/shop', '/preva-kitchen', '/preva-kitchen-menu', '/blog', '/gallery', '/services', '/contact',
+    '', '/shop', '/preva-kitchen', '/blog', '/gallery', '/services', '/contact',
     '/careers', '/careers/apply'
   ];
   const entries = fixed.map((path) => ({ url: `${base}${path}`, lastModified: new Date() }));

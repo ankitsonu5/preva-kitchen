@@ -64,7 +64,7 @@ export default function KitchenSection({ visible, onReserveDining, onOpenMenu, o
 
   // On-scroll Dish Change using GSAP ScrollTrigger
   useLayoutEffect(() => {
-    if (pathname !== '/' || !sectionRef.current) return;
+    if ((pathname !== '/' && pathname !== '/preva-kitchen') || !sectionRef.current) return;
 
     let mediaMatcher;
     const ctx = gsap.context(() => {
@@ -161,10 +161,8 @@ export default function KitchenSection({ visible, onReserveDining, onOpenMenu, o
     };
   }, [pathname, changeDish]);
 
-  // This pinned, interactive showcase belongs exclusively to the homepage.
-  // The explicit route guard is a second line of defence if a client-side
-  // transition ever keeps the component alive for an extra render.
-  if (pathname !== '/' || visible === false) return null;
+  // Component route guard: allow rendering on home or dedicated kitchen pages
+  if (visible === false) return null;
 
   const currentDish = DISHES[activeDish];
 

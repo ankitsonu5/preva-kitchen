@@ -44,11 +44,10 @@ export default async function ProductPage({ params }) {
 
           <div className="ps-pdp">
             <div className="ps-pdp__shot">
-              {product.image ? (
-                <img src={product.image} alt={product.name} />
-              ) : (
-                <div className="ps-noshot"><span>Preva</span></div>
-              )}
+              <img
+                src={product.slug === 'rasta-pasta' ? '/asset/home-reference/signature-dishes/Rasta-Pasta.webp' : (product.image || '/asset/home-reference/signature-dishes/Rasta-Pasta.webp')}
+                alt={product.name}
+              />
             </div>
 
             <div className="ps-pdp__info">

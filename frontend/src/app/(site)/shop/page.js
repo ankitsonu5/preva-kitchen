@@ -27,69 +27,19 @@ export default async function ShopPage() {
     <ShopProvider>
       <div className="ps">
         
-        {/* ══ 1. EDGE-TO-EDGE HERO VIDEO SECTION (100vw FULL SCREEN WIDTH) ══ */}
-        <section className="ps-hero-edge">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            poster="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1920&q=80"
-            className="ps-hero-edge__video"
-          >
-            <source src="https://assets.mixkit.co/videos/preview/mixkit-chef-preparing-a-dish-in-a-restaurant-41555-large.mp4" type="video/mp4" />
-            <source src="https://cdn.coverr.co/videos/coverr-chef-preparing-a-dish-5221/1080p.mp4" type="video/mp4" />
-          </video>
+        {/* ══ 1. MINIMAL LUXURY DISH HERO BANNER ══ */}
+        <section className="ps-hero-minimal">
+          <img
+            src="/asset/hero/menu-hero-cinematic.jpg"
+            alt="Preva Kitchen Menu"
+            className="ps-hero-minimal__bg"
+          />
+          <div className="ps-hero-minimal__shade" />
 
-          <div className="ps-hero-edge__overlay" />
-
-          <div className="ps-hero-edge__content">
-            {/* Left Side Typography & CTAs */}
-            <div>
-              <span className="ps-kicker" style={{ color: '#C9A84C', fontWeight: 800, letterSpacing: '4px', textTransform: 'uppercase', fontSize: '13px', textShadow: '0 2px 10px rgba(0,0,0,0.9)' }}>
-                PREVA FINE-PLATED KITCHEN
-              </span>
-              <h1 className="ps-hero-title">
-                Where Flavor <br /> Becomes Art
-              </h1>
-              <p className="ps-hero-subhead">
-                A refined fine-plated gourmet dish, chef-crafted menu, same high standard — straight from our kitchen to your table or doorstep.
-              </p>
-
-              <div className="ps-hero-ctas">
-                <a href="#signature-creations" className="ps-btn ps-btn--gold">
-                  View Menu
-                </a>
-                <a href="#prv-reservations" className="ps-btn ps-btn--ghost">
-                  Book Table
-                </a>
-              </div>
-
-              {settings && !settings.orderingEnabled && (
-                <p className="ps-alert" style={{ marginTop: 24, maxWidth: 520 }}>{settings.closedMessage}</p>
-              )}
-            </div>
-
-            {/* Right Side Featured Dish Spotlight Glass Card (NOIR FLAME style) */}
-            <div className="ps-hero-spotlight">
-              <div style={{ position: 'relative' }}>
-                <img
-                  src="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80"
-                  alt="Featured Gourmet Dish"
-                  className="ps-hero-spotlight__img"
-                />
-                <span className="ps-chip" style={{ position: 'absolute', top: 12, left: 12, background: 'rgba(0,0,0,0.7)', borderColor: '#C9A84C' }}>
-                  <SvgIcon name="star" size={14} /> Chef’s Signature
-                </span>
-              </div>
-              <div className="ps-hero-spotlight__info">
-                <div>
-                  <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '20px', color: '#fff', margin: 0 }}>Grilled Lamb Chops</h3>
-                  <p style={{ fontSize: '12.5px', color: '#bbb', margin: '4px 0 0' }}>Seasoned with Preva house spices</p>
-                </div>
-                <span style={{ fontFamily: 'var(--font-serif)', fontSize: '22px', fontWeight: 'bold', color: '#C9A84C' }}>$32.00</span>
-              </div>
-            </div>
+          <div className="ps-hero-minimal__content">
+            <span className="ps-hero-minimal__kicker">PREVA KITCHEN</span>
+            <h1 className="ps-hero-minimal__title">Our Menu</h1>
+            <p className="ps-hero-minimal__sub">Crafted with passion, served with pride.</p>
           </div>
         </section>
 

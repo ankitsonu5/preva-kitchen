@@ -39,7 +39,6 @@ export default function Shell({ children }) {
         <Header />
         <main className="site-main">{children}</main>
         <Footer />
-        <ActiveOrderFloatingBar />
         <OrderOnlineModal open={isOrderOpen} onClose={() => setIsOrderOpen(false)} />
       </div>
     </LenisProvider>

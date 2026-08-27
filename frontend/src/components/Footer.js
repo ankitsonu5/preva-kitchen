@@ -60,7 +60,7 @@ export default function Footer() {
 
   const [menuItems, setMenuItems] = useState([
     { title: 'Reserve a Table', url: '/#prv-reservations' },
-    { title: 'View Menu', url: '/preva-kitchen-menu' },
+    { title: 'View Menu', url: '/shop' },
     { title: 'Order Online', url: '/shop' },
     { title: 'Contact Us', url: '/contact' }
   ]);

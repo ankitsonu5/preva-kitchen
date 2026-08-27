@@ -136,15 +136,18 @@
 .ps-btn--block { width: 100%; }
 
 .ps-btn--gold {
-  background: linear-gradient(135deg, #FFF0C2 0%, #F0D080 25%, #C9A84C 70%, #99782F 100%);
-  color: #000000 !important;
+  background: linear-gradient(135deg, #F5DF97 0%, #D8B258 45%, #C9A34E 100%);
+  color: #171006 !important;
+  font-family: var(--font-body, 'Inter'), Arial, sans-serif;
   font-weight: 800;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.7), inset 0 -2px 4px rgba(0, 0, 0, 0.25), 0 8px 24px rgba(201, 168, 76, 0.4);
-  backdrop-filter: blur(8px);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  box-shadow: 0 8px 22px rgba(200, 135, 27, 0.25);
   position: relative;
   overflow: hidden;
+  transition: transform .25s ease, box-shadow .25s ease, background .25s ease;
 }
 .ps-btn--gold::after {
   content: '';
@@ -161,10 +164,10 @@
 .ps-card:hover .ps-btn--gold,
 .ps-card__shot:hover .ps-btn--gold,
 a:hover .ps-btn--gold {
-  background: linear-gradient(135deg, #FFFFFF 0%, #F5DC96 30%, #E4C883 70%, #B38E38 100%);
+  background: linear-gradient(135deg, #ffe0a0 0%, #dda94f 100%);
   color: #000000 !important;
   transform: translateY(-2px);
-  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.9), inset 0 -2px 4px rgba(0, 0, 0, 0.2), 0 12px 28px rgba(201, 168, 76, 0.55);
+  box-shadow: 0 12px 28px rgba(200, 135, 27, 0.38);
 }
 .ps-btn--gold:disabled {
   background: #2A2A2A; color: var(--ps-faint) !important; cursor: not-allowed; box-shadow: none; transform: none; border-color: transparent;
@@ -612,25 +615,88 @@ a:hover .ps-btn--gold {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   NOIR FLAME LUXURY EDGE-TO-EDGE HERO & GLOSSY SECTIONS
+   MINIMAL LUXURY DISH HERO BANNER (Clean, focused menu hero)
    ══════════════════════════════════════════════════════════════════════════ */
-
-/* Edge-to-edge hero video container spanning 100vw from left end to right end */
-.ps-hero-edge {
-  width: 100vw;
+.ps-hero-minimal {
   position: relative;
+  width: 100vw;
   left: 50%;
   right: 50%;
   margin-left: -50vw;
   margin-right: -50vw;
-  min-height: clamp(520px, 80vh, 760px);
+  height: clamp(460px, 56vh, 580px);
   display: flex;
   align-items: center;
+  justify-content: center;
+  text-align: center;
   overflow: hidden;
   margin-bottom: 48px;
-  border-bottom: 1px solid rgba(201, 168, 76, 0.3);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.95);
+  border-bottom: 1px solid rgba(201, 168, 76, 0.25);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.9);
   background: #08070A;
+}
+
+.ps-hero-minimal__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 48%;
+  filter: brightness(0.78) contrast(1.12);
+}
+
+.ps-hero-minimal__shade {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(8, 7, 10, 0.45) 0%, rgba(8, 7, 10, 0.85) 100%),
+              linear-gradient(180deg, rgba(8, 7, 10, 0.6) 0%, transparent 40%, rgba(8, 7, 10, 0.95) 100%);
+  pointer-events: none;
+}
+
+.ps-hero-minimal__content {
+  position: relative;
+  z-index: 2;
+  width: min(800px, 92vw);
+  margin: 0 auto;
+  padding: 0 var(--site-gutter, 24px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.ps-hero-minimal__kicker {
+  display: inline-block;
+  color: #C9A84C;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+}
+
+.ps-hero-minimal__title {
+  font-family: var(--font-serif, 'Playfair Display'), Georgia, serif;
+  font-size: clamp(42px, 6vw, 76px);
+  font-weight: 600;
+  line-height: 1.05;
+  color: #FFFFFF;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  text-shadow: 0 4px 30px rgba(0, 0, 0, 0.95);
+}
+
+.ps-hero-minimal__sub {
+  font-size: clamp(15px, 1.25vw, 18px);
+  color: rgba(255, 255, 255, 0.88);
+  max-width: 580px;
+  line-height: 1.55;
+  text-align: center;
+  margin: 0 auto;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
 }
 
 .ps-hero-edge__video {

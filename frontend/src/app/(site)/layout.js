@@ -11,6 +11,7 @@ import './styles/preva-kitchen-refined.css';
 import './styles/blog-detail.css';
 import './styles/blog-listing.css';
 import './styles/luxe.css'; /* premium glossy skin — must load last */
+import './styles/reference-home.css';
 import Shell from '@/components/Shell';
 import { cmsFetch } from '@/lib/cms';
 
@@ -74,6 +75,9 @@ export async function generateMetadata() {
         process.env.NEXT_PUBLIC_SITE_URL ||
         'http://localhost:3000'
     ),
+    alternates: {
+      canonical: '/'
+    },
     openGraph: settings?.defaultOgImage ? { images: [{ url: settings.defaultOgImage }] } : undefined
   };
 }

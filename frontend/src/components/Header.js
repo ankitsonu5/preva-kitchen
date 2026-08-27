@@ -5,14 +5,11 @@ import { usePathname, useRouter } from 'next/navigation';
 import SvgIcon from './SvgIcon';
 
 const ORIGINAL_HEADER_MENU = [
-  { title: 'Home', url: '/', openInNewTab: false, visible: true },
-  { title: 'Reservations', url: '/#prv-reservations', openInNewTab: false, visible: true },
-  { title: 'Menu', url: '/preva-kitchen-menu', openInNewTab: false, visible: true },
-  { title: 'Order', url: '/shop', openInNewTab: false, visible: true },
-  { title: 'Gallery', url: '/#gallery', openInNewTab: false, visible: true },
-  { title: 'Blog', url: '/blog', openInNewTab: false, visible: true },
-  { title: 'Careers', url: '/careers', openInNewTab: false, visible: true },
-  { title: 'Contact Us', url: '/contact', openInNewTab: false, visible: true }
+  { title: 'Menu',         url: '/shop',                 openInNewTab: false, visible: true },
+  { title: 'Reservations', url: '/#prv-reservations',    openInNewTab: false, visible: true },
+  { title: 'Blog',         url: '/blog',                 openInNewTab: false, visible: true },
+  { title: 'Careers',      url: '/careers',              openInNewTab: false, visible: true },
+  { title: 'Contact Us',   url: '/contact',              openInNewTab: false, visible: true },
 ];
 
 const ORIGINAL_HEADER_SETTINGS = {
@@ -26,41 +23,14 @@ const ORIGINAL_HEADER_SETTINGS = {
 };
 
 function includeOrderNavigation(items) {
-  const isLegacyItem = (item) => /night\s*life|night\s*club|\bclub\b|\bvip\b|bottle|guest list|tickets?/i.test(`${item.title || item.label || ''} ${item.url || ''}`);
-  items = items.filter((item) => !isLegacyItem(item)).map((item) => ({
-    ...item,
-    children: Array.isArray(item.children) ? item.children.filter((child) => !isLegacyItem(child)) : item.children
-  }));
-  const isGalleryItem = (item) => /gallery/i.test(item.title || item.label || '');
-  const isCateringItem = (item) => /catering/i.test(item.title || item.label || '');
-  const hasGalleryItem = items.some(isGalleryItem);
-
-  // Always expose the homepage gallery in primary navigation, including when
-  // an older CMS menu still returns a Catering item.
-  items = items
-    .filter((item) => !(hasGalleryItem && isCateringItem(item)))
-    .map((item) => {
-      if (isGalleryItem(item) || (!hasGalleryItem && isCateringItem(item))) {
-        return { ...item, title: 'Gallery', label: 'Gallery', url: '/#gallery', openInNewTab: false };
-      }
-      return item;
-    });
-
-  if (!items.some(isGalleryItem)) {
-    const galleryItem = { title: 'Gallery', label: 'Gallery', url: '/#gallery', openInNewTab: false, visible: true };
-    const blogIndex = items.findIndex((item) => /blog/i.test(item.title || item.label || ''));
-    items.splice(blogIndex >= 0 ? blogIndex : items.length, 0, galleryItem);
-  }
-  const hasOrderItem = items.some((item) =>
-    /(^|\s)order(\s|$)/i.test(item.title || item.label || '') || item.url === '/shop'
-  );
-  if (hasOrderItem) return items;
-
-  const orderItem = ORIGINAL_HEADER_MENU.find((item) => item.title === 'Order');
-  const blogIndex = items.findIndex((item) => /blog/i.test(item.title || item.label || ''));
-  const nextItems = [...items];
-  nextItems.splice(blogIndex >= 0 ? blogIndex : nextItems.length, 0, orderItem);
-  return nextItems;
+  // Always enforce the user's exact preferred header navigation items
+  return [
+    { title: 'Menu',         url: '/shop',                 openInNewTab: false, visible: true },
+    { title: 'Reservations', url: '/#prv-reservations',    openInNewTab: false, visible: true },
+    { title: 'Blog',         url: '/blog',                 openInNewTab: false, visible: true },
+    { title: 'Careers',      url: '/careers',              openInNewTab: false, visible: true },
+    { title: 'Contact Us',   url: '/contact',              openInNewTab: false, visible: true },
+  ];
 }
 
 export default function Header() {
@@ -245,6 +215,7 @@ export default function Header() {
               </a>
             </li>
             <li className="nav-order-cta">
+              {/* ── OLD CODE: Opens the Order Online modal popup ──────────────────────
               <a
                 href={settings.headerCtaUrl || '#preva-order'}
                 className="preva-order-trigger"
@@ -252,6 +223,12 @@ export default function Header() {
                 aria-controls="prevaOrderModal"
                 onClick={triggerOrderModal}
               >
+                {settings.headerCtaText || 'ORDER ONLINE'}
+              </a>
+              ─────────────────────────────────────────────────────────────────────── */}
+
+              {/* NEW CODE: Directly redirects to the Shop / Order page */}
+              <a href="/shop" className="preva-order-trigger">
                 {settings.headerCtaText || 'ORDER ONLINE'}
               </a>
             </li>
