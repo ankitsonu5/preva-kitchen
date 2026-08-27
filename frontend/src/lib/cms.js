@@ -11,6 +11,9 @@ import 'server-only';
  * Returns null on any non-2xx so callers keep their existing
  * `if (!data) return fallback` shape.
  */
+if (process.env.NODE_ENV === 'production' && !process.env.BACKEND_URL) {
+  throw new Error('BACKEND_URL is required for production CMS requests.');
+}
 const BACKEND = (process.env.BACKEND_URL || 'http://localhost:4000').replace(/\/$/, '');
 
 export async function cmsFetch(path, { method = 'GET', body = null, query = {} } = {}) {

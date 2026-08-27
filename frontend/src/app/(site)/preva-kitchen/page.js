@@ -353,7 +353,7 @@ export default function PrevaKitchen() {
               {/* Heading */}
               <h2
                 style={{
-                  fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif",
+                  fontFamily: 'var(--font-roboto), Arial, sans-serif',
                   fontSize: 'clamp(2.3rem, 3.8vw, 3.5rem)',
                   lineHeight: 1.12,
                   color: '#fff',
@@ -493,7 +493,7 @@ export default function PrevaKitchen() {
                     <span style={{ display: 'block', color: '#c5a059', fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em' }}>
                       SIGNATURE CREATION
                     </span>
-                    <span style={{ fontSize: '1.05rem', color: '#fff', fontWeight: 700, fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif" }}>
+                    <span style={{ fontSize: '1.05rem', color: '#fff', fontWeight: 700, fontFamily: 'var(--font-roboto), Arial, sans-serif' }}>
                       Lavish Lamb Tower
                     </span>
                   </div>
@@ -544,7 +544,7 @@ export default function PrevaKitchen() {
               </span>
               <h2
                 style={{
-                  fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif",
+                  fontFamily: 'var(--font-roboto), Arial, sans-serif',
                   fontSize: 'clamp(2.2rem, 4vw, 3.6rem)',
                   lineHeight: 1.1,
                   color: '#fff',
@@ -672,7 +672,7 @@ export default function PrevaKitchen() {
                 >
                   <h3
                     style={{
-                      fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif",
+                      fontFamily: 'var(--font-roboto), Arial, sans-serif',
                       fontSize: '1.35rem',
                       fontWeight: 700,
                       color: '#fff',
@@ -688,7 +688,7 @@ export default function PrevaKitchen() {
                       color: '#c5a059',
                       fontWeight: 800,
                       fontSize: '1.2rem',
-                      fontFamily: 'Inter, Arial, sans-serif'
+                      fontFamily: 'var(--font-roboto), Arial, sans-serif'
                     }}
                   >
                     {dish.price}
@@ -817,7 +817,7 @@ export default function PrevaKitchen() {
 
               <h2
                 style={{
-                  fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif",
+                  fontFamily: 'var(--font-roboto), Arial, sans-serif',
                   fontSize: 'clamp(2.2rem, 3.8vw, 3.4rem)',
                   lineHeight: 1.15,
                   color: '#fff',
@@ -973,7 +973,7 @@ export default function PrevaKitchen() {
             </span>
             <h2
               style={{
-                fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif",
+                fontFamily: 'var(--font-roboto), Arial, sans-serif',
                 fontSize: 'clamp(2.2rem, 3.8vw, 3.4rem)',
                 color: '#fff',
                 margin: '12px 0 0',
@@ -1030,7 +1030,7 @@ export default function PrevaKitchen() {
                 <span style={{ display: 'inline-block', background: 'rgba(213, 164, 79, 0.2)', border: '1px solid #c5a059', color: '#c5a059', fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.12em', padding: '3px 8px', borderRadius: '4px', textTransform: 'uppercase', marginBottom: '6px' }}>
                   CHEF SIGNATURE
                 </span>
-                <h3 style={{ fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif", fontSize: '1.45rem', color: '#fff', margin: '0 0 4px', textTransform: 'uppercase' }}>
+                <h3 style={{ fontFamily: 'var(--font-roboto), Arial, sans-serif', fontSize: '1.45rem', color: '#fff', margin: '0 0 4px', textTransform: 'uppercase' }}>
                   Lavish Lamb Tower
                 </h3>
                 <p style={{ margin: 0, fontSize: '0.82rem', color: '#b5b0a8', lineHeight: 1.4 }}>
@@ -1080,7 +1080,7 @@ export default function PrevaKitchen() {
                   <span style={{ display: 'inline-block', background: 'rgba(10,7,9,0.85)', border: '1px solid rgba(213,164,79,0.3)', color: '#c5a059', fontSize: '0.58rem', fontWeight: 800, letterSpacing: '0.08em', padding: '2px 6px', borderRadius: '3px', textTransform: 'uppercase', marginBottom: '3px' }}>
                     SEAFOOD
                   </span>
-                  <h4 style={{ fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif", fontSize: '1.05rem', color: '#fff', margin: 0 }}>
+                  <h4 style={{ fontFamily: 'var(--font-roboto), Arial, sans-serif', fontSize: '1.05rem', color: '#fff', margin: 0 }}>
                     Wild Lobster Bites
                   </h4>
                 </div>
@@ -1120,7 +1120,7 @@ export default function PrevaKitchen() {
                   <span style={{ display: 'inline-block', background: 'rgba(10,7,9,0.85)', border: '1px solid rgba(213,164,79,0.3)', color: '#c5a059', fontSize: '0.58rem', fontWeight: 800, letterSpacing: '0.08em', padding: '2px 6px', borderRadius: '3px', textTransform: 'uppercase', marginBottom: '3px' }}>
                     PASTA
                   </span>
-                  <h4 style={{ fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif", fontSize: '1.05rem', color: '#fff', margin: 0 }}>
+                  <h4 style={{ fontFamily: 'var(--font-roboto), Arial, sans-serif', fontSize: '1.05rem', color: '#fff', margin: 0 }}>
                     Creamy Rasta Pasta
                   </h4>
                 </div>
@@ -1159,7 +1159,7 @@ export default function PrevaKitchen() {
                   <span style={{ display: 'inline-block', background: 'rgba(10,7,9,0.85)', border: '1px solid rgba(213,164,79,0.3)', color: '#c5a059', fontSize: '0.58rem', fontWeight: 800, letterSpacing: '0.08em', padding: '2px 6px', borderRadius: '3px', textTransform: 'uppercase', marginBottom: '3px' }}>
                     PRIME CUT
                   </span>
-                  <h4 style={{ fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif", fontSize: '1.05rem', color: '#fff', margin: 0 }}>
+                  <h4 style={{ fontFamily: 'var(--font-roboto), Arial, sans-serif', fontSize: '1.05rem', color: '#fff', margin: 0 }}>
                     Seared Steak Bites
                   </h4>
                 </div>
@@ -1198,7 +1198,7 @@ export default function PrevaKitchen() {
                   <span style={{ display: 'inline-block', background: 'rgba(10,7,9,0.85)', border: '1px solid rgba(213,164,79,0.3)', color: '#c5a059', fontSize: '0.58rem', fontWeight: 800, letterSpacing: '0.08em', padding: '2px 6px', borderRadius: '3px', textTransform: 'uppercase', marginBottom: '3px' }}>
                     DESSERT
                   </span>
-                  <h4 style={{ fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif", fontSize: '1.05rem', color: '#fff', margin: 0 }}>
+                  <h4 style={{ fontFamily: 'var(--font-roboto), Arial, sans-serif', fontSize: '1.05rem', color: '#fff', margin: 0 }}>
                     Berry Cheesecake
                   </h4>
                 </div>
@@ -1278,7 +1278,7 @@ export default function PrevaKitchen() {
                 <span style={{ color: '#c5a059', fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
                   DINING RESERVATION
                 </span>
-                <h2 style={{ fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif", fontSize: '1.8rem', color: '#fff', margin: '6px 0 12px', textTransform: 'uppercase' }}>
+                <h2 style={{ fontFamily: 'var(--font-roboto), Arial, sans-serif', fontSize: '1.8rem', color: '#fff', margin: '6px 0 12px', textTransform: 'uppercase' }}>
                   Reserve Your Table
                 </h2>
                 <div style={{ width: '50px', height: '2px', background: '#c5a059', marginBottom: '16px' }} />
@@ -1373,7 +1373,7 @@ export default function PrevaKitchen() {
                 <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(213, 164, 79, 0.15)', border: '1px solid #c5a059', display: 'grid', placeItems: 'center', margin: '0 auto 16px', color: '#c5a059' }}>
                   <Check size={32} />
                 </div>
-                <h3 style={{ fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif", fontSize: '1.6rem', color: '#fff', margin: '0 0 8px' }}>
+                <h3 style={{ fontFamily: 'var(--font-roboto), Arial, sans-serif', fontSize: '1.6rem', color: '#fff', margin: '0 0 8px' }}>
                   Reservation Requested!
                 </h3>
                 <p style={{ color: '#aaa', fontSize: '0.9rem', lineHeight: 1.6, margin: '0 0 20px' }}>

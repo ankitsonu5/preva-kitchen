@@ -91,7 +91,7 @@ export default function PageTransitionLoader() {
           width: 100vw;
           height: 100vh;
           background: #0b0908;
-          font-family: 'Inter', sans-serif;
+          font-family: var(--font-roboto), Arial, sans-serif;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -227,7 +227,7 @@ export default function PageTransitionLoader() {
 
         /* ---- wordmark + copy ---- */
         .preva-page-loader-overlay .wordmark {
-          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-family: var(--font-roboto), Arial, sans-serif;
           font-size: 26px;
           font-weight: 700;
           letter-spacing: 0.24em;

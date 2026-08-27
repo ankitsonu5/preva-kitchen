@@ -1,5 +1,5 @@
 :root{--g:#C9A84C;--g2:#F0D080;--g3:#6B4F1A;--glow:rgba(201,168,76,0.15);--dark:#06040A;--d2:#0C0912;--d3:#120F1A;--card:rgba(255,255,255,0.03);--bdr:rgba(201,168,76,0.2);--bdr2:rgba(255,255,255,0.06);--tx:#F5EFE2;--mt:rgba(245,239,226,0.4);--bb:var(--font-display);--cr:var(--font-serif);--ss:var(--font-body);--r:4px}
-#prv{font-family:var(--ss);color:var(--tx);background:var(--dark);overflow:hidden}
+#prv{font-family: var(--font-roboto), Arial, sans-serif;color:var(--tx);background:var(--dark);overflow:hidden}
 
 /* ── ANIMATED BG ── */
 .prv-bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
@@ -15,19 +15,19 @@
 .prv-left{position:relative;display:flex;flex-direction:column;justify-content:center;padding:80px 7% 80px 6%;border-right:1px solid var(--bdr2)}
 .prv-left::before{content:'';position:absolute;top:0;bottom:0;right:0;width:1px;background:linear-gradient(to bottom,transparent,var(--g),transparent)}
 
-.prv-big-text{font-family:var(--bb);font-size:clamp(80px,12vw,110px);line-height:0.85;letter-spacing:2px;color:transparent;-webkit-text-stroke:1px rgba(201,168,76,0.3);position:absolute;bottom:1px;right:7px;pointer-events:none;user-select:none;white-space:nowrap}
+.prv-big-text{font-family: var(--font-roboto), Arial, sans-serif;font-size:clamp(80px,12vw,110px);line-height:0.85;letter-spacing:2px;color:transparent;-webkit-text-stroke:1px rgba(201,168,76,0.3);position:absolute;bottom:1px;right:7px;pointer-events:none;user-select:none;white-space:nowrap}
 
 .prv-tag{display:inline-flex;align-items:center;gap:8px;font-size:9px;letter-spacing:5px;text-transform:uppercase;color:var(--g);margin-bottom:28px}
 .prv-tag::before,.prv-tag::after{content:'✦';font-size:7px}
 
 /* H1 — matches homepage heading style exactly */
-.prv-h1{font-family:var(--bb);font-size:clamp(32px,5vw,48px);font-weight:700;line-height:1.1;margin-bottom:8px;text-transform:uppercase;letter-spacing:2px;color:var(--g)}
+.prv-h1{font-family: var(--font-roboto), Arial, sans-serif;font-size:clamp(32px,5vw,48px);font-weight:700;line-height:1.1;margin-bottom:8px;text-transform:uppercase;letter-spacing:2px;color:var(--g)}
 .prv-h1 strong{font-weight:700;display:block;color:var(--g)}
 .prv-h1 em{font-style:normal}
 
 .prv-line{width:60px;height:1px;background:linear-gradient(90deg,var(--g),transparent);margin:24px 0}
 
-.prv-desc{font-family:var(--ss);font-size:15px;font-weight:400;color:var(--mt);line-height:2;max-width:340px;margin-bottom:40px}
+.prv-desc{font-family: var(--font-roboto), Arial, sans-serif;font-size:15px;font-weight:400;color:var(--mt);line-height:2;max-width:340px;margin-bottom:40px}
 
 /* Info pills */
 #prv .prv-pills{display:flex;flex-direction:column;gap:12px}
@@ -45,9 +45,9 @@
 .prv-right::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:400px;height:400px;background:radial-gradient(circle,rgba(201,168,76,0.06),transparent 70%);pointer-events:none;border-radius:50%}
 
 /* Form heading — matches homepage heading style */
-.prv-form-title{font-family:var(--bb);font-size:clamp(22px,3vw,30px);font-weight:700;line-height:1.1;margin-bottom:6px;text-transform:uppercase;letter-spacing:2px;color:var(--g)}
+.prv-form-title{font-family: var(--font-roboto), Arial, sans-serif;font-size:clamp(22px,3vw,30px);font-weight:700;line-height:1.1;margin-bottom:6px;text-transform:uppercase;letter-spacing:2px;color:var(--g)}
 .prv-form-title em{font-style:normal;color:var(--g)}
-.prv-form-sub{font-family:var(--ss);font-size:15px;font-weight:400;color:var(--mt);margin-bottom:32px;letter-spacing:.3px}
+.prv-form-sub{font-family: var(--font-roboto), Arial, sans-serif;font-size:15px;font-weight:400;color:var(--mt);margin-bottom:32px;letter-spacing:.3px}
 
 /* Form fields */
 .prv-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -57,7 +57,7 @@
 #prv .prv-field label{display:block;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--g);margin-bottom:6px;opacity:.8}
 #prv .prv-field input,#prv .prv-field select,#prv .prv-field textarea{
   width:100%;background:var(--card);border:1px solid var(--bdr2);
-  color:var(--tx);font-family:var(--ss);font-size:13px;font-weight:400;
+  color:var(--tx);font-family: var(--font-roboto), Arial, sans-serif;font-size:13px;font-weight:400;
   padding:13px 14px;outline:none;border-radius:var(--r);
   transition:border-color .25s,box-shadow .25s,background .25s;
   appearance:none;-webkit-appearance:none
@@ -85,7 +85,7 @@
   width:100%;height:54px;border:none;outline:none;cursor:pointer;
   background:linear-gradient(90deg,var(--g3),var(--g),var(--g2),var(--g),var(--g3));
   background-size:300%;background-position:0%;
-  color:var(--dark);font-family:var(--bb);font-size:13px;font-weight:700;letter-spacing:4px;text-transform:uppercase;
+  color:var(--dark);font-family: var(--font-roboto), Arial, sans-serif;font-size:13px;font-weight:700;letter-spacing:4px;text-transform:uppercase;
   border-radius:var(--r);transition:background-position .6s,opacity .3s;
   position:relative;overflow:hidden
 }
@@ -109,7 +109,7 @@
 .prv-marquee-wrap{position:relative;z-index:1;background:var(--g);padding:14px 0;overflow:hidden}
 .prv-marquee{display:flex;gap:0;white-space:nowrap;animation:marquee 18s linear infinite}
 @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-.prv-marquee span{font-family:var(--bb);font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--dark);padding:0 28px}
+.prv-marquee span{font-family: var(--font-roboto), Arial, sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--dark);padding:0 28px}
 .prv-marquee-wrap:hover .prv-marquee{animation-play-state:paused}
 
 /* ── MAP + HOURS SECTION ── */
@@ -134,7 +134,7 @@
 }
 .prv-info-block::before{
   content:attr(data-num);
-  font-family:var(--bb);
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size:110px;
   color:rgba(201,168,76,0.04);
   position:absolute;
@@ -145,7 +145,7 @@
 }
 .prv-info-block:hover{background:rgba(201,168,76,0.04)}
 .prv-info-block-eye{
-  font-family:var(--ss);
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size:8px;
   letter-spacing:4px;
   text-transform:uppercase;
@@ -157,7 +157,7 @@
 }
 .prv-info-block-eye::before{content:'';width:20px;height:1px;background:var(--g)}
 .prv-info-block h3{
-  font-family:var(--bb);
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size:clamp(14px,2vw,22px);
   font-weight:700;
   color:var(--g);
@@ -167,14 +167,14 @@
   line-height:1.2
 }
 .prv-info-block p{
-  font-family:var(--ss);
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size:13px;
   font-weight:400;
   color:var(--mt);
   line-height:2
 }
 .prv-info-block a{
-  font-family:var(--ss);
+  font-family: var(--font-roboto), Arial, sans-serif;
   color:var(--g);
   text-decoration:none;
   font-size:11px;
@@ -906,9 +906,9 @@
 
 /* ── VIP CARDS ── */
 .prv-vip{position:relative;z-index:1;padding:200px 6%;background:var(--dark)}
-.prv-vip-eye{font-family:var(--ss);text-align:center;font-size:12px;letter-spacing:6px;text-transform:uppercase;color:var(--g);margin-bottom:12px}
+.prv-vip-eye{font-family: var(--font-roboto), Arial, sans-serif;text-align:center;font-size:12px;letter-spacing:6px;text-transform:uppercase;color:var(--g);margin-bottom:12px}
 /* VIP main heading = homepage section heading style */
-.prv-vip-heading{font-family:var(--bb);font-size:clamp(28px,5vw,52px);font-weight:700;color:var(--g);text-transform:uppercase;letter-spacing:2px;text-align:center;margin-bottom:52px;line-height:1.1}
+.prv-vip-heading{font-family: var(--font-roboto), Arial, sans-serif;font-size:clamp(28px,5vw,52px);font-weight:700;color:var(--g);text-transform:uppercase;letter-spacing:2px;text-align:center;margin-bottom:52px;line-height:1.1}
 .prv-vip-heading em{font-style:normal;color:var(--g)}
 
 .prv-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;max-width:1100px;margin:0 auto}
@@ -920,12 +920,12 @@
 .prv-card:hover{border-color:rgba(201,168,76,0.35)}
 .prv-card:hover::after{opacity:1}
 .prv-card:hover .prv-card-glow{opacity:1}
-.prv-card-num{font-family:var(--bb);font-size:64px;color:rgba(201,168,76,0.08);line-height:1;margin-bottom:18px}
+.prv-card-num{font-family: var(--font-roboto), Arial, sans-serif;font-size:64px;color:rgba(201,168,76,0.08);line-height:1;margin-bottom:18px}
 /* Card title = "LUNCH & EARLY DINING" style */
-.prv-card-title{font-family:var(--bb);font-size:clamp(14px,1.8vw,18px);font-weight:700;color:var(--g);text-transform:uppercase;letter-spacing:2px;margin-bottom:12px;position:relative;z-index:1;line-height:1.2}
+.prv-card-title{font-family: var(--font-roboto), Arial, sans-serif;font-size:clamp(14px,1.8vw,18px);font-weight:700;color:var(--g);text-transform:uppercase;letter-spacing:2px;margin-bottom:12px;position:relative;z-index:1;line-height:1.2}
 /* Card desc = body text style */
-.prv-card-desc{font-family:var(--ss);font-size:13px;font-weight:400;color:var(--mt);line-height:1.9;margin-bottom:22px;position:relative;z-index:1}
-.prv-card-cta{font-family:var(--ss);display:inline-flex;align-items:center;gap:8px;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--g);text-decoration:none;position:relative;z-index:1;border-bottom:1px solid transparent;padding-bottom:2px;transition:.25s}
+.prv-card-desc{font-family: var(--font-roboto), Arial, sans-serif;font-size:13px;font-weight:400;color:var(--mt);line-height:1.9;margin-bottom:22px;position:relative;z-index:1}
+.prv-card-cta{font-family: var(--font-roboto), Arial, sans-serif;display:inline-flex;align-items:center;gap:8px;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--g);text-decoration:none;position:relative;z-index:1;border-bottom:1px solid transparent;padding-bottom:2px;transition:.25s}
 .prv-card-cta:hover{border-color:var(--g)}
 
 /* ── FLIP CONTACT CARDS ── */
@@ -999,7 +999,7 @@
   background:rgba(201,168,76,0.04);
 }
 .prv-flip-label{
-  font-family:var(--ss);
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size:8px;
   letter-spacing:4px;
   text-transform:uppercase;
@@ -1007,7 +1007,7 @@
   margin-bottom:12px;
 }
 .prv-flip-detail{
-  font-family:var(--ss);
+  font-family: var(--font-roboto), Arial, sans-serif;
   color:var(--tx);
   font-size:15px;
   line-height:2;

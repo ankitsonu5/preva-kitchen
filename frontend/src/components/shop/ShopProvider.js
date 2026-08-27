@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import SvgIcon from '../SvgIcon';
 
 const STORAGE_KEY = 'preva.cart.v1';
@@ -102,7 +103,9 @@ export function ShopProvider({ children }) {
 
 function CartButton() {
   const cart = useCart();
-  const show = cart.hydrated && cart.count > 0 && !cart.isOpen;
+  const pathname = usePathname();
+  const isCheckout = pathname === '/checkout' || pathname?.startsWith('/checkout');
+  const show = !isCheckout && cart.hydrated && cart.count > 0 && !cart.isOpen;
 
   if (!show) return null;
 

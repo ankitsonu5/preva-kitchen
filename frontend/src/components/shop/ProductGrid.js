@@ -267,7 +267,7 @@ export default function ProductGrid({ products, categories }) {
                     </span>
                     <h3
                       style={{
-                        fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif",
+                        fontFamily: 'var(--font-roboto), Arial, sans-serif',
                         fontSize: 'clamp(1.7rem, 2.6vw, 2.3rem)',
                         color: '#ffffff',
                         fontWeight: 600,

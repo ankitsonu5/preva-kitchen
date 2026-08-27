@@ -370,7 +370,7 @@ function SectionEditor({ sec, onChange }) {
           Paste raw HTML, CSS, JavaScript, Google Maps, YouTube iframes or any third-party widget code below.
         </p>
         <textarea
-          style={{ ...inp, width: '100%', minHeight: 200, fontFamily: '"Fira Code", "JetBrains Mono", monospace', fontSize: 12.5, resize: 'vertical', lineHeight: 1.6 }}
+          style={{ ...inp, width: '100%', minHeight: 200, fontFamily: 'var(--font-roboto), Arial, sans-serif', fontSize: 12.5, resize: 'vertical', lineHeight: 1.6 }}
           value={d.html || ''}
           onChange={e => onChange({ ...sec, data: { ...d, html: e.target.value } })}
           placeholder="<!-- Paste HTML / embed code here -->"
@@ -862,7 +862,7 @@ function SectionEditor({ sec, onChange }) {
       <div style={editorWrap}>
         <div style={grid2}>
           <label style={lbl}>Shortcode</label>
-          <input style={{ ...inp, fontFamily: 'monospace' }} value={d.code || ''} onChange={e => update('code', e.target.value)} placeholder="[contact-form]" />
+          <input style={{ ...inp, fontFamily: 'var(--font-roboto), Arial, sans-serif' }} value={d.code || ''} onChange={e => update('code', e.target.value)} placeholder="[contact-form]" />
         </div>
         <p style={{ fontSize: 11, color: 'rgba(201,168,76,0.7)', margin: '10px 0 0' }}>⚡ Shortcodes must be registered in the frontend renderer.</p>
       </div>
@@ -990,7 +990,7 @@ function EditContentForm() {
   const [seoCollapsed, setSeoCollapsed] = useState(true);
   const [seoTab, setSeoTab] = useState('general');
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(Boolean(id));
-  const [siteOrigin, setSiteOrigin] = useState('http://localhost:3000');
+  const [siteOrigin, setSiteOrigin] = useState('https://prevakitchen.com');
   
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(Boolean(id));
@@ -1208,7 +1208,7 @@ function EditContentForm() {
           if (!siteUrl && typeof window !== 'undefined') {
             siteUrl = window.location.origin;
           }
-          if (!siteUrl) siteUrl = 'http://localhost:3000';
+          if (!siteUrl) siteUrl = 'https://prevakitchen.com';
 
           window.open(`${siteUrl}/preview?token=${encodeURIComponent(token)}`, '_blank', 'noopener,noreferrer');
           setMessage('Preview opened in new tab!');
@@ -1525,7 +1525,7 @@ function EditContentForm() {
                       {/* Live Google Search Preview (SERP Card) */}
                       <div>
                         <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--gold)', marginBottom: '8px', display: 'block' }}>🔍 Live Google Search Result Preview</label>
-                        <div style={{ background: '#1c1b18', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '16px 20px', fontFamily: 'arial, sans-serif' }}>
+                        <div style={{ background: '#1c1b18', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '16px 20px', fontFamily: 'var(--font-roboto), Arial, sans-serif' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                             <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#c5a059', display: 'inline-block' }} />
                             <span style={{ fontSize: '0.82rem', color: '#dadce0' }}>{siteOrigin.replace(/^https?:\/\//, '')} › {type === 'POST' ? 'blog › ' : ''}{form.slug || 'page-slug'}</span>

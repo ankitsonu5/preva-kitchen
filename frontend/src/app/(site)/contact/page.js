@@ -124,7 +124,7 @@ export default function ContactPage() {
               {/* Title */}
               <h1
                 style={{
-                  fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif",
+                  fontFamily: 'var(--font-roboto), Arial, sans-serif',
                   fontSize: 'clamp(2.6rem, 4.6vw, 4.2rem)',
                   lineHeight: 1.1,
                   color: '#fff',
@@ -275,7 +275,7 @@ export default function ContactPage() {
                     <span style={{ display: 'block', color: '#c5a059', fontSize: '0.66rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.14em' }}>
                       MADE FOR EVERY OCCASION
                     </span>
-                    <span style={{ fontSize: '1.05rem', color: '#fff', fontWeight: 700, fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif" }}>
+                    <span style={{ fontSize: '1.05rem', color: '#fff', fontWeight: 700, fontFamily: 'var(--font-roboto), Arial, sans-serif' }}>
                       Dine In · Pickup · Catering
                     </span>
                   </div>
@@ -340,14 +340,14 @@ export default function ContactPage() {
                     >
                       <IconComponent size={22} />
                     </div>
-                    <span style={{ fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif", fontSize: '2rem', color: 'rgba(213, 164, 79, 0.25)', fontWeight: 600 }}>
+                    <span style={{ fontFamily: 'var(--font-roboto), Arial, sans-serif', fontSize: '2rem', color: 'rgba(213, 164, 79, 0.25)', fontWeight: 600 }}>
                       {option.number}
                     </span>
                   </div>
 
                   <h3
                     style={{
-                      fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif",
+                      fontFamily: 'var(--font-roboto), Arial, sans-serif',
                       fontSize: '1.35rem',
                       color: '#fff',
                       margin: '0 0 12px',
@@ -407,7 +407,7 @@ export default function ContactPage() {
 
               <h2
                 style={{
-                  fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif",
+                  fontFamily: 'var(--font-roboto), Arial, sans-serif',
                   fontSize: 'clamp(2.2rem, 3.8vw, 3.4rem)',
                   color: '#fff',
                   lineHeight: 1.1,
@@ -492,7 +492,7 @@ export default function ContactPage() {
                 <span style={{ color: '#c5a059', fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
                   SEND A MESSAGE
                 </span>
-                <h3 style={{ fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif", fontSize: '1.85rem', color: '#fff', margin: '0 0 6px', textTransform: 'uppercase' }}>
+                <h3 style={{ fontFamily: 'var(--font-roboto), Arial, sans-serif', fontSize: '1.85rem', color: '#fff', margin: '0 0 6px', textTransform: 'uppercase' }}>
                   How can we help?
                 </h3>
                 <p style={{ margin: 0, color: '#999', fontSize: '0.9rem' }}>
@@ -505,7 +505,7 @@ export default function ContactPage() {
                   <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(213, 164, 79, 0.15)', border: '1px solid #c5a059', color: '#c5a059', display: 'grid', placeItems: 'center', margin: '0 auto 20px' }}>
                     <Check size={32} />
                   </div>
-                  <h4 style={{ fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif", fontSize: '1.6rem', color: '#fff', margin: '0 0 10px' }}>
+                  <h4 style={{ fontFamily: 'var(--font-roboto), Arial, sans-serif', fontSize: '1.6rem', color: '#fff', margin: '0 0 10px' }}>
                     Message Received
                   </h4>
                   <p style={{ color: '#aaa', fontSize: '0.94rem', marginBottom: '24px' }}>
@@ -559,7 +559,7 @@ export default function ContactPage() {
                           borderRadius: '8px',
                           color: '#fff',
                           fontSize: '0.9rem',
-                          fontFamily: "var(--font-body, 'Inter'), sans-serif",
+                          fontFamily: 'var(--font-roboto), Arial, sans-serif',
                           outline: 'none',
                           boxSizing: 'border-box'
                         }}
@@ -582,7 +582,7 @@ export default function ContactPage() {
                           borderRadius: '8px',
                           color: '#fff',
                           fontSize: '0.9rem',
-                          fontFamily: "var(--font-body, 'Inter'), sans-serif",
+                          fontFamily: 'var(--font-roboto), Arial, sans-serif',
                           outline: 'none',
                           boxSizing: 'border-box'
                         }}
@@ -611,7 +611,7 @@ export default function ContactPage() {
                           borderRadius: '8px',
                           color: '#fff',
                           fontSize: '0.9rem',
-                          fontFamily: "var(--font-body, 'Inter'), sans-serif",
+                          fontFamily: 'var(--font-roboto), Arial, sans-serif',
                           outline: 'none',
                           boxSizing: 'border-box'
                         }}
@@ -635,7 +635,7 @@ export default function ContactPage() {
                           borderRadius: '8px',
                           color: '#fff',
                           fontSize: '0.9rem',
-                          fontFamily: "var(--font-body, 'Inter'), sans-serif",
+                          fontFamily: 'var(--font-roboto), Arial, sans-serif',
                           outline: 'none',
                           boxSizing: 'border-box'
                         }}
@@ -661,7 +661,7 @@ export default function ContactPage() {
                         borderRadius: '8px',
                         color: '#fff',
                         fontSize: '0.9rem',
-                        fontFamily: "var(--font-body, 'Inter'), sans-serif",
+                        fontFamily: 'var(--font-roboto), Arial, sans-serif',
                         outline: 'none',
                         boxSizing: 'border-box'
                       }}
@@ -696,7 +696,7 @@ export default function ContactPage() {
                         borderRadius: '8px',
                         color: '#fff',
                         fontSize: '0.9rem',
-                        fontFamily: "var(--font-body, 'Inter'), sans-serif",
+                        fontFamily: 'var(--font-roboto), Arial, sans-serif',
                         outline: 'none',
                         resize: 'vertical',
                         minHeight: '110px',

@@ -97,7 +97,7 @@ export default function ActivityLogsViewer() {
                     </td>
                     <td><strong style={{ color: '#fff' }}>{log.entityName}</strong></td>
                     <td>
-                      <span style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}>{log.ipAddress || '—'}</span>
+                      <span style={{ fontFamily: 'var(--font-roboto), Arial, sans-serif', fontSize: '0.85rem' }}>{log.ipAddress || '—'}</span>
                     </td>
                   </tr>
                 ))}

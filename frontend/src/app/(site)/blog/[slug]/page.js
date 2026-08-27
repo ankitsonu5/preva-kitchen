@@ -28,7 +28,7 @@ export default async function BlogPost({ params }) {
   });
 
   const categoryName = post.categories?.[0]?.category?.name || post.categories?.[0]?.name || 'Journal';
-  const siteOrigin = (process.env.NEXT_PUBLIC_CANONICAL_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/$/, '');
+  const siteOrigin = (process.env.NEXT_PUBLIC_CANONICAL_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://prevakitchen.com').replace(/\/$/, '');
   const articleUrl = `${siteOrigin}/blog/${encodeURIComponent(post.slug)}`;
   const articleDescription = post.seoDescription || post.excerpt || String(post.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200);
   const articleSchema = {

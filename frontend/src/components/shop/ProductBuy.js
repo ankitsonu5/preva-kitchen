@@ -106,7 +106,7 @@ export default function ProductBuy({ product }) {
             cart.add({
               itemId: product.id,
               name: product.name,
-              image: product.image,
+              image: product.slug === 'rasta-pasta' ? '/asset/home-reference/signature-dishes/Rasta-Pasta.webp' : (product.image || '/asset/home-reference/signature-dishes/Rasta-Pasta.webp'),
               unitCents,
               qty,
               optionIds,

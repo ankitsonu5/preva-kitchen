@@ -187,7 +187,7 @@ export default function GalleryPage() {
 
           <h1
             style={{
-              fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif",
+              fontFamily: 'var(--font-roboto), Arial, sans-serif',
               fontSize: 'clamp(2.8rem, 5.5vw, 4.6rem)',
               lineHeight: 1.05,
               color: '#fff',
@@ -335,7 +335,7 @@ export default function GalleryPage() {
                 <div style={{ position: 'absolute', bottom: '20px', left: '20px', right: '20px' }}>
                   <h3
                     style={{
-                      fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif",
+                      fontFamily: 'var(--font-roboto), Arial, sans-serif',
                       fontSize: '1.35rem',
                       color: '#fff',
                       margin: '0 0 6px',
@@ -369,7 +369,7 @@ export default function GalleryPage() {
             </span>
             <h2
               style={{
-                fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif",
+                fontFamily: 'var(--font-roboto), Arial, sans-serif',
                 fontSize: 'clamp(2rem, 3.6vw, 3rem)',
                 color: '#fff',
                 margin: '12px 0 20px',
@@ -550,7 +550,7 @@ export default function GalleryPage() {
               <span style={{ color: '#c5a059', fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
                 {currentItem.tag}
               </span>
-              <h2 style={{ fontFamily: "var(--font-serif, 'Playfair Display'), Georgia, serif", fontSize: '1.6rem', color: '#fff', margin: '0 0 8px', textTransform: 'uppercase' }}>
+              <h2 style={{ fontFamily: 'var(--font-roboto), Arial, sans-serif', fontSize: '1.6rem', color: '#fff', margin: '0 0 8px', textTransform: 'uppercase' }}>
                 {currentItem.title}
               </h2>
               <p style={{ margin: 0, color: '#aaa', fontSize: '0.92rem', lineHeight: 1.6 }}>

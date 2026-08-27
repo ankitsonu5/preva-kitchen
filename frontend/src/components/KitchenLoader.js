@@ -34,7 +34,7 @@ export default function KitchenLoader({ text = "Setting the table…" }) {
           justify-content: center;
           padding: 60px 20px;
           width: 100%;
-          font-family: 'Inter', sans-serif;
+          font-family: var(--font-roboto), Arial, sans-serif;
         }
 
         .preva-cloche-inline-loader .loader {
@@ -153,7 +153,7 @@ export default function KitchenLoader({ text = "Setting the table…" }) {
         }
 
         .preva-cloche-inline-loader .wordmark {
-          font-family: 'Cormorant Garamond', Georgia, serif;
+          font-family: var(--font-roboto), Arial, sans-serif;
           font-size: 22px;
           font-weight: 700;
           letter-spacing: 0.24em;

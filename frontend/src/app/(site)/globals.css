@@ -36,7 +36,7 @@ body {
   margin:0;
   background: var(--color-bg);
   color: var(--color-text);
-  font-family:Arial,sans-serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
 }
 
 .header {
@@ -264,7 +264,7 @@ footer#colophon {
     padding: 24px;
 }
 .kitchen-card-title {
-    font-family: inherit;
+    font-family: var(--font-roboto), Arial, sans-serif;
     color: #fff;
     font-size: 1.3rem;
     letter-spacing: 1px;
@@ -708,16 +708,16 @@ html.lenis, html.lenis body {
   transform: translateZ(20px) scale(1.02);
 }
 /* Branded SweetAlert feedback shared by public forms, enquiries and orders. */
-.swal-premium-popup{border:1px solid rgba(201,168,76,.42)!important;border-radius:20px!important;box-shadow:0 28px 90px rgba(0,0,0,.72)!important;padding:1.6rem!important}.swal-premium-title{font-family:var(--font-display,Georgia),serif!important;font-size:1.8rem!important}.swal-premium-copy{color:#aaa69c!important;line-height:1.65!important}.swal-premium-confirm{border:0;border-radius:999px;background:linear-gradient(110deg,#b7933f,#e1c87e);color:#151109;padding:12px 28px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;cursor:pointer}.swal-premium-toast{border-radius:14px!important;padding:.8rem 1rem!important}.swal2-icon.swal2-success{border-color:#c9a84c!important}.swal2-success-line-tip,.swal2-success-line-long{background-color:#c9a84c!important}
+.swal-premium-popup{border:1px solid rgba(201,168,76,.42)!important;border-radius:20px!important;box-shadow:0 28px 90px rgba(0,0,0,.72)!important;padding:1.6rem!important}.swal-premium-title{font-family: var(--font-roboto), Arial, sans-serif;font-size:1.8rem!important}.swal-premium-copy{color:#aaa69c!important;line-height:1.65!important}.swal-premium-confirm{border:0;border-radius:999px;background:linear-gradient(110deg,#b7933f,#e1c87e);color:#151109;padding:12px 28px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;cursor:pointer}.swal-premium-toast{border-radius:14px!important;padding:.8rem 1rem!important}.swal2-icon.swal2-success{border-color:#c9a84c!important}.swal2-success-line-tip,.swal2-success-line-long{background-color:#c9a84c!important}
 /* Preva Reservation SweetAlert — matching site typography */
 .swal-preva-popup {
-  font-family: Inter, Arial, sans-serif !important;
+  font-family: var(--font-roboto), Arial, sans-serif;
   border: 1px solid rgba(213, 164, 79, 0.35) !important;
   border-radius: 18px !important;
   box-shadow: 0 28px 80px rgba(0,0,0,0.75) !important;
 }
 .swal-preva-title {
-  font-family: 'Playfair Display', Georgia, serif !important;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: 1.65rem !important;
   font-weight: 600 !important;
   letter-spacing: -0.02em !important;
@@ -725,10 +725,10 @@ html.lenis, html.lenis body {
   color: #f6f2ec !important;
 }
 .swal-preva-body {
-  font-family: Inter, Arial, sans-serif !important;
+  font-family: var(--font-roboto), Arial, sans-serif;
 }
 .swal-preva-btn {
-  font-family: Inter, Arial, sans-serif !important;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: 0.78rem !important;
   font-weight: 800 !important;
   letter-spacing: 0.1em !important;

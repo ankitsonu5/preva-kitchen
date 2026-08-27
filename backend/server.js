@@ -1,15 +1,18 @@
 import dotenv from 'dotenv';
 
-// Local secrets live outside Git. Deployment environments can continue to
-// inject real environment variables normally; .env remains a safe fallback.
-dotenv.config({ path: '.env.local' });
+// Production must never inherit laptop-only test keys from .env.local.
+// The deployment environment sets NODE_ENV before Node starts; local/dev keeps
+// .env.local as the highest-priority override.
 dotenv.config();
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: '.env.local', override: true });
+}
 import express from 'express';
 import cors from 'cors';
 import { dispatch } from './src/index.js';
 import { currentUser } from './src/lib/auth.js';
 import { handleStripeWebhook } from './src/webhook.js';
-import { stripeConfigured, storefrontUrl, webhookSecret } from './src/lib/stripe.js';
+import { stripeConfigured, stripeMode, storefrontUrl, webhookSecret } from './src/lib/stripe.js';
 import { connectDatabase } from './src/lib/db.js';
 
 /**
@@ -26,14 +29,29 @@ const app = express();
 const PORT = Number(process.env.PORT || 4000);
 const isProduction = process.env.NODE_ENV === 'production';
 
-if (isProduction && (!process.env.JWT_SECRET || process.env.JWT_SECRET.trim().length < 32)) {
-  throw new Error('JWT_SECRET must contain at least 32 characters in production.');
-}
+if (isProduction) {
+  const jwtSecret = String(process.env.JWT_SECRET || '').trim();
+  if (jwtSecret.length < 32 || /replace[-_ ]?me|change[-_ ]?me|example|default/i.test(jwtSecret)) {
+    throw new Error('JWT_SECRET must be a unique non-placeholder value of at least 32 characters in production.');
+  }
 
-if (isProduction && stripeConfigured()) {
+  const mongoUri = String(process.env.MONGODB_URI || process.env.DATABASE_URL || '').trim();
+  if (!mongoUri) throw new Error('MONGODB_URI is required in production.');
+  if (/mongodb(?:\+srv)?:\/\/(?:localhost|127\.0\.0\.1|\[?::1\]?)(?::|\/|$)/i.test(mongoUri)) {
+    throw new Error('MONGODB_URI must not point to localhost in production.');
+  }
+
   storefrontUrl();
+
+  if (process.env.ALLOW_UNPAID_TEST_ORDERS === 'true') {
+    throw new Error('ALLOW_UNPAID_TEST_ORDERS must be false in production.');
+  }
+
+  if (!stripeConfigured() || stripeMode() !== 'live') {
+    throw new Error('A live STRIPE_SECRET_KEY is required in production.');
+  }
   if (!webhookSecret().startsWith('whsec_')) {
-    throw new Error('STRIPE_WEBHOOK_SECRET is required for production checkout.');
+    throw new Error('The live STRIPE_WEBHOOK_SECRET is required in production.');
   }
 }
 
@@ -56,10 +74,23 @@ app.use((req, res, next) => {
    credentials — the browser rejects it — which is why this is a list, not
    '*'. Add extra origins (a staging site, a preview URL) comma-separated in
    FRONTEND_ORIGIN. */
-const allowedOrigins = (process.env.FRONTEND_ORIGIN || 'http://localhost:3000')
+const productionOrigins = ['https://prevakitchen.com', 'https://www.prevakitchen.com'];
+const configuredOrigins = (
+  process.env.FRONTEND_ORIGIN || (isProduction ? productionOrigins.join(',') : 'http://localhost:3000')
+)
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
+
+// Keep the canonical storefronts in the tracked production allowlist as well
+// as FRONTEND_ORIGIN. Environment files are intentionally gitignored, so a
+// deployment that misses that variable must not break checkout on our domains.
+const allowedOrigins = [
+  ...new Set([
+    ...configuredOrigins,
+    ...productionOrigins
+  ])
+];
 
 app.use(
   cors({
@@ -119,7 +150,13 @@ function clientIp(req) {
 }
 
 app.get('/api/health', (req, res) => {
-  res.json({ ok: true, service: 'preva-backend', time: new Date().toISOString() });
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({
+    ok: true,
+    service: 'preva-backend',
+    environment: isProduction ? 'production' : 'development',
+    time: new Date().toISOString()
+  });
 });
 
 /* ── everything else goes through the shared router ───────────────────── */

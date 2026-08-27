@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Swal from 'sweetalert2';
 import GoogleReviewsSection from '@/components/sections/GoogleReviewsSection';
+import GallerySection from '@/components/sections/GallerySection';
 import {
   ArrowRight,
   BadgeCheck,
@@ -20,13 +21,36 @@ import {
   UtensilsCrossed
 } from 'lucide-react';
 
-const CANONICAL_ORIGIN = (process.env.NEXT_PUBLIC_CANONICAL_URL || 'http://localhost:3000').replace(/\/$/, '');
+const CANONICAL_ORIGIN = (process.env.NEXT_PUBLIC_CANONICAL_URL || 'https://prevakitchen.com').replace(/\/$/, '');
 const HERO_SLIDE_DELAY = 2000;
+
+const restaurantGalleryImages = [
+  {
+    src: 'https://prevaclub.com/wp-content/uploads/2026/06/hero-preva-kitchen-.jpeg',
+    caption: 'Preva Kitchen Atmosphere'
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
+    caption: 'Signature Steak Bites'
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1551248429-40975aa4de74?auto=format&fit=crop&w=800&q=80',
+    caption: 'Wild Lobster Bites'
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
+    caption: 'Warm Kitchen Dining Room'
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80',
+    caption: 'Chef-Crafted Plates'
+  }
+];
 
 const heroSlides = [
   { image: '/asset/home-reference/preva-restaurant-hero.png?v=restaurant-slider', name: 'Preva Lamb Chops' },
-  { image: '/asset/home-reference/preva-rasta-pasta-hero.png?v=restaurant-slider', name: 'Preva Rasta Pasta' },
-  { image: '/asset/home-reference/preva-burger-hero.png?v=restaurant-slider', name: 'Preva Burger' }
+  { image: '/asset/home-reference/preva-rasta-pasta-hero.png?v=dish-size-match-v2', name: 'Preva Rasta Pasta' },
+  { image: '/asset/home-reference/preva-burger-hero.png?v=dish-size-match-v2', name: 'Preva Burger' }
 ];
 
 const highlights = [
@@ -106,7 +130,8 @@ const signatureDishes = [
 
 export default function Home() {
   const [activeHeroSlide, setActiveHeroSlide] = useState(0);
-  const [booking, setBooking] = useState({ name: '', phone: '', date: '', time: '', guests: '2' });
+  const [booking, setBooking] = useState({ name: '', phone: '', purpose: '', date: '', time: '', guests: '2' });
+  const [bookingSubmitting, setBookingSubmitting] = useState(false);
 
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
@@ -143,23 +168,63 @@ export default function Home() {
       Swal.fire({ ...swalBase, icon: 'warning', title: 'Phone required', text: 'Please enter your phone number.' });
       return;
     }
+    if (!booking.purpose.trim()) {
+      Swal.fire({ ...swalBase, icon: 'warning', title: 'Booking purpose required', text: 'Please tell us the purpose of your reservation.' });
+      return;
+    }
     if (!booking.date || !booking.time) {
       Swal.fire({ ...swalBase, icon: 'warning', title: 'Date & Time required', text: 'Please select a date and time.' });
       return;
     }
+
+    setBookingSubmitting(true);
+    try {
+      const response = await fetch('/api/reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: booking.name.trim(),
+          phone: booking.phone.trim(),
+          occasion: booking.purpose.trim(),
+          date: booking.date,
+          time: booking.time,
+          guests: Number(booking.guests)
+        })
+      });
+
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result?.error || 'Unable to send your reservation request.');
+      }
+    } catch (error) {
+      await Swal.fire({
+        ...swalBase,
+        icon: 'error',
+        title: 'Could not send request',
+        text: error?.message || 'Please try again or call us directly.'
+      });
+      return;
+    } finally {
+      setBookingSubmitting(false);
+    }
+
+    const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+    })[character]);
     const dateFormatted = new Date(booking.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
     await Swal.fire({
       ...swalBase,
       icon: 'success',
       title: `Thank you, ${booking.name}! 🎉`,
       html: `
-        <div style="text-align:left; line-height:1.7; font-size:0.95rem; color:#e8ddd6; font-family:Inter,Arial,sans-serif;">
+        <div style="text-align:left; line-height:1.7; font-size:0.95rem; color:#e8ddd6; font-family: var(--font-roboto), Arial, sans-serif;">
           <p style="margin:0 0 12px;">Your reservation request has been received!</p>
           <table style="width:100%; border-collapse:collapse;">
             <tr><td style="color:#d5a44f; font-weight:700; padding:5px 0; width:80px;">📅 Date</td><td>${dateFormatted}</td></tr>
-            <tr><td style="color:#d5a44f; font-weight:700; padding:5px 0;">🕐 Time</td><td>${booking.time}</td></tr>
-            <tr><td style="color:#d5a44f; font-weight:700; padding:5px 0;">👥 Guests</td><td>${booking.guests} ${Number(booking.guests) === 1 ? 'Person' : 'People'}</td></tr>
-            <tr><td style="color:#d5a44f; font-weight:700; padding:5px 0;">📞 Phone</td><td>${booking.phone}</td></tr>
+            <tr><td style="color:#d5a44f; font-weight:700; padding:5px 0;">🕐 Time</td><td>${escapeHtml(booking.time)}</td></tr>
+            <tr><td style="color:#d5a44f; font-weight:700; padding:5px 0;">👥 Guests</td><td>${escapeHtml(booking.guests)} ${Number(booking.guests) === 1 ? 'Person' : 'People'}</td></tr>
+            <tr><td style="color:#d5a44f; font-weight:700; padding:5px 0;">✨ Purpose</td><td>${escapeHtml(booking.purpose)}</td></tr>
+            <tr><td style="color:#d5a44f; font-weight:700; padding:5px 0;">📞 Phone</td><td>${escapeHtml(booking.phone)}</td></tr>
           </table>
           <p style="margin:14px 0 0; font-size:0.84rem; color:#b0a8a2;">We'll call you to confirm. See you soon!</p>
         </div>
@@ -167,7 +232,7 @@ export default function Home() {
       confirmButtonText: 'Done ✓',
       width: '460px',
     });
-    setBooking({ name: '', phone: '', date: '', time: '', guests: '2' });
+    setBooking({ name: '', phone: '', purpose: '', date: '', time: '', guests: '2' });
   };
 
 
@@ -315,29 +380,47 @@ export default function Home() {
               </div>
 
               <form className="pk-ref-booking-form-split" onSubmit={submitBooking}>
-                <div className="pk-ref-booking-group">
-                  <span className="pk-ref-booking-label"><User size={12} /> Your Name</span>
-                  <input
-                    className="pk-ref-booking-input"
-                    type="text"
-                    placeholder="e.g. John Smith"
-                    value={booking.name}
-                    onChange={updateBooking('name')}
-                    aria-label="Your name"
-                    autoComplete="name"
-                  />
+                <div className="pk-ref-booking-contact-row">
+                  <div className="pk-ref-booking-group">
+                    <span className="pk-ref-booking-label"><User size={12} /> Your Name</span>
+                    <input
+                      className="pk-ref-booking-input"
+                      type="text"
+                      placeholder="e.g. John Smith"
+                      value={booking.name}
+                      onChange={updateBooking('name')}
+                      aria-label="Your name"
+                      autoComplete="name"
+                      required
+                    />
+                  </div>
+
+                  <div className="pk-ref-booking-group">
+                    <span className="pk-ref-booking-label"><Phone size={12} /> Phone Number</span>
+                    <input
+                      className="pk-ref-booking-input"
+                      type="tel"
+                      placeholder="e.g. (313) 000-0000"
+                      value={booking.phone}
+                      onChange={updateBooking('phone')}
+                      aria-label="Phone number"
+                      autoComplete="tel"
+                      required
+                    />
+                  </div>
                 </div>
 
                 <div className="pk-ref-booking-group">
-                  <span className="pk-ref-booking-label"><Phone size={12} /> Phone Number</span>
+                  <span className="pk-ref-booking-label"><Sparkles size={12} /> Booking Purpose</span>
                   <input
                     className="pk-ref-booking-input"
-                    type="tel"
-                    placeholder="e.g. (313) 000-0000"
-                    value={booking.phone}
-                    onChange={updateBooking('phone')}
-                    aria-label="Phone number"
-                    autoComplete="tel"
+                    type="text"
+                    placeholder="e.g. Birthday, anniversary or family dinner"
+                    value={booking.purpose}
+                    onChange={updateBooking('purpose')}
+                    aria-label="Booking purpose"
+                    maxLength={80}
+                    required
                   />
                 </div>
 
@@ -369,8 +452,8 @@ export default function Home() {
                   </div>
                 </div>
 
-                <button type="submit" className="pk-ref-button pk-ref-button--gold pk-ref-booking-submit" style={{ width: '100%', marginTop: '4px' }}>
-                  Find A Table <ArrowRight size={16} />
+                <button type="submit" className="pk-ref-button pk-ref-button--gold pk-ref-booking-submit" style={{ width: '100%', marginTop: '4px' }} disabled={bookingSubmitting}>
+                  {bookingSubmitting ? 'Sending Request...' : 'Find A Table'} <ArrowRight size={16} />
                 </button>
               </form>
             </div>
@@ -379,8 +462,8 @@ export default function Home() {
             <div className="pk-ref-booking-split-right">
               <div className="pk-ref-booking-media">
                 <img
-                  src="/asset/reservation-dining.jpg"
-                  alt="Preva Luxury Dining Atmosphere"
+                  src="/asset/reservation-dining.jpg?v=diverse-neighborhood-dining-v2"
+                  alt="Black and White guests enjoying dinner together at Preva Kitchen"
                   className="pk-ref-booking-img"
                 />
                 <div className="pk-ref-booking-media-overlay" />
@@ -393,6 +476,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <GallerySection images={restaurantGalleryImages} visible />
     </div>
   );
 }

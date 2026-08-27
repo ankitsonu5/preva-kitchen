@@ -1,5 +1,4 @@
 import { MongoClient, ObjectId } from 'mongodb';
-import bcrypt from 'bcryptjs';
 
 /**
  * One Mongo connection for the whole platform — site, admin and API all run in
@@ -7,7 +6,7 @@ import bcrypt from 'bcryptjs';
  *
  * Included: Built-in in-memory fallback store so if local MongoDB is not running
  * (ECONNREFUSED), the app automatically uses in-memory DB populated with Preva Kitchen menu
- * items & default admin user (admin@prevaclub.com / Preva#Redford2026) without crashing.
+ * items without crashing. It deliberately contains no default admin account.
  */
 
 const DEFAULT_URI = 'mongodb://127.0.0.1:27017/preva';
@@ -558,18 +557,7 @@ const INITIAL_FALLBACK_DATA = {
     }
   ],
 
-  users: [
-    {
-      _id: new ObjectId('6699a0000000000000000099'),
-      email: 'admin@prevaclub.com',
-      name: 'Preva Admin',
-      role: 'SUPER_ADMIN',
-      status: 'ACTIVE',
-      passwordHash: bcrypt.hashSync('Preva#Redford2026', 10),
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-  ],
+  users: [],
   order: [],
   reservation: [],
   setting: [

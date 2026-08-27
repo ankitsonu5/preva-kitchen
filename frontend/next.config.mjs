@@ -2,7 +2,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const BACKEND = (process.env.BACKEND_URL || 'http://localhost:4000').replace(/\/$/, '');
+const backendUrl = process.env.BACKEND_URL;
+if (process.env.NODE_ENV === 'production' && !backendUrl) {
+  throw new Error('BACKEND_URL is required for a production build.');
+}
+const BACKEND = (backendUrl || 'http://localhost:4000').replace(/\/$/, '');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -42,6 +46,12 @@ const nextConfig = {
 
   async redirects() {
     return [
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www.prevakitchen.com' }],
+        destination: 'https://prevakitchen.com/:path*',
+        permanent: true
+      },
       { source: '/contact-us', destination: '/contact', permanent: true },
       { source: '/order-online', destination: '/shop', permanent: true },
       { source: '/online-order-platform', destination: '/shop', permanent: true },

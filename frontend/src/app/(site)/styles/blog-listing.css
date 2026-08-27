@@ -85,7 +85,7 @@
   border-radius: 999px;
   background: rgba(7, 7, 9, 0.84);
   color: #e3bd68;
-  font-family: var(--font-display);
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: 0.61rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -106,7 +106,7 @@
   display: block;
   margin-bottom: 11px;
   color: rgba(213, 173, 85, 0.82);
-  font-family: var(--font-display);
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: 0.64rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -120,7 +120,7 @@
   margin: 0 0 14px !important;
   overflow: hidden;
   color: #f5f1e9;
-  font-family: var(--font-serif) !important;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: clamp(1.25rem, 1.55vw, 1.48rem) !important;
   font-weight: 600;
   letter-spacing: 0 !important;
@@ -167,7 +167,7 @@
   border: 1px solid rgba(213, 173, 85, 0.55);
   border-radius: 999px;
   color: #e3bd68;
-  font-family: var(--font-display);
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: 0.67rem;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -180,7 +180,7 @@
 .blog-content-layout .post-card-link .arrow::before {
   content: "\2192";
   display: block;
-  font-family: var(--font-body);
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: 0.95rem;
   transition: transform 0.22s ease;
 }
@@ -220,7 +220,7 @@
   border: 1px solid rgba(213, 173, 85, 0.28);
   background: rgba(255, 255, 255, 0.025);
   color: rgba(255, 255, 255, 0.72);
-  font-family: var(--font-display);
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.09em;

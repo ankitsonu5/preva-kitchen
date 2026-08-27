@@ -6,7 +6,7 @@ import SvgIcon from '../SvgIcon';
 const GOOGLE_SEARCH_URL = 'https://www.google.com/maps/search/?api=1&query=Preva%20Kitchen%20Redford&query_place_id=ChIJF5z-j1-1JIgR3tZAujO2mZI';
 const NON_KITCHEN_COPY = /night\s*life|night\s*club|\bclub\b|\bvip\b|bottle service|\bdj\b/i;
 
-const INITIAL_FALLBACK_DATA = {
+const DEVELOPMENT_FALLBACK_DATA = {
   configured: true,
   available: true,
   name: 'Preva Kitchen',
@@ -65,6 +65,21 @@ const INITIAL_FALLBACK_DATA = {
   ]
 };
 
+const EMPTY_GOOGLE_DATA = {
+  configured: false,
+  available: false,
+  name: 'Preva Kitchen',
+  address: '13090 Inkster Rd, Redford Township, MI 48239',
+  rating: 0,
+  reviewCount: 0,
+  googleMapsUrl: GOOGLE_SEARCH_URL,
+  reviewsUrl: GOOGLE_SEARCH_URL,
+  writeReviewUrl: GOOGLE_SEARCH_URL,
+  reviews: []
+};
+
+const INITIAL_DATA = process.env.NODE_ENV === 'production' ? EMPTY_GOOGLE_DATA : DEVELOPMENT_FALLBACK_DATA;
+
 function Stars({ rating, compact = false }) {
   const value = Math.max(0, Math.min(5, Math.round(Number(rating) || 0)));
   return (
@@ -78,8 +93,8 @@ function Stars({ rating, compact = false }) {
 
 export default function GoogleReviewsSection({ visible }) {
   const trackRef = useRef(null);
-  const [data, setData] = useState(INITIAL_FALLBACK_DATA);
-  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState(INITIAL_DATA);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -92,7 +107,7 @@ export default function GoogleReviewsSection({ visible }) {
           setData({
             ...payload,
             name: NON_KITCHEN_COPY.test(payload.name || '') ? 'Preva Kitchen' : payload.name,
-            reviews: kitchenReviews.length ? kitchenReviews : INITIAL_FALLBACK_DATA.reviews
+            reviews: kitchenReviews.length
           });
         }
       })
@@ -114,10 +129,10 @@ export default function GoogleReviewsSection({ visible }) {
 
   if (visible === false) return null;
 
-  const currentData = data || INITIAL_FALLBACK_DATA;
-  const reviews = Array.isArray(currentData?.reviews) && currentData.reviews.length > 0 
-    ? currentData.reviews 
-    : INITIAL_FALLBACK_DATA.reviews;
+  const currentData = data || INITIAL_DATA;
+  const reviews = Array.isArray(currentData?.reviews) ? currentData.reviews : [];
+
+  if (reviews.length === 0) return null;
 
   const placeUrl = currentData?.googleMapsUrl || GOOGLE_SEARCH_URL;
   const reviewsUrl = currentData?.reviewsUrl || placeUrl;

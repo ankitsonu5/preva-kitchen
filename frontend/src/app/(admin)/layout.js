@@ -1,4 +1,6 @@
 import '@/styles/admin.css';
+import '@/styles/typography.css';
+import { roboto } from '@/lib/fonts';
 
 /**
  * The admin is a second root layout.
@@ -15,16 +17,8 @@ export const metadata = {
 
 export default function AdminRootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-        />
-      </head>
-      <body suppressHydrationWarning>{children}</body>
+    <html lang="en" className={roboto.variable} suppressHydrationWarning>
+      <body id="preva-app" className={roboto.className} suppressHydrationWarning>{children}</body>
     </html>
   );
 }

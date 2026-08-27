@@ -25,7 +25,7 @@ const labelMap = {
 };
 
 export default function AdminHeader({ user, pathname, onMobileOpen, onLogout }) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://prevakitchen.com';
   const [profileOpen, setProfileOpen] = useState(false);
   const searchRef = useRef(null);
 

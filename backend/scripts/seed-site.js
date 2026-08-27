@@ -37,7 +37,7 @@ console.log('\n[1/5] Settings...');
 await upsertMany('setting', [
   { key: 'siteTitle',               value: 'Preva Nightclub & Restaurant' },
   { key: 'siteTagline',             value: "Detroit's Most Exclusive Dining-to-Nightlife Destination" },
-  { key: 'siteUrl',                 value: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3001' },
+  { key: 'siteUrl',                 value: process.env.NEXT_PUBLIC_SITE_URL || 'https://prevakitchen.com' },
   { key: 'contactEmail',            value: 'info@prevaclub.com' },
   { key: 'contactPhone',            value: '' },
   { key: 'contactAddress',          value: 'Detroit, Michigan' },

@@ -58,7 +58,7 @@ export default function Blog() {
           <span className="section-eyebrow" style={{ color: 'var(--accent-gold, #c5a059)', fontSize: '0.8rem', letterSpacing: '3px', fontWeight: 700, marginBottom: '12px' }}>
             STORIES & INSIGHTS
           </span>
-          <h1 className="blog-title-large" style={{ color: '#fff', fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 700, fontFamily: "var(--font-serif), 'Playfair Display', serif", margin: 0 }}>
+          <h1 className="blog-title-large" style={{ color: '#fff', fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 700, fontFamily: 'var(--font-roboto), Arial, sans-serif', margin: 0 }}>
             Preva <span style={{ color: 'var(--accent-gold, #c5a059)' }}>Journal</span>
           </h1>
         </div>

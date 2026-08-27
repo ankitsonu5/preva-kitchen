@@ -226,17 +226,65 @@ export default function CheckoutForm({ settings, cancelledOrderNumber = '' }) {
     }
   };
 
-  if (cart.hydrated && cart.lines.length === 0) {
+  if (!cart.hydrated) {
     return (
-      <div style={{ textAlign: 'center', padding: '60px 20px', color: '#aaa' }}>
-        <div style={{ marginBottom: 14, display: 'flex', justifyContent: 'center', color: '#C9A84C' }}><SvgIcon name="cart" size={44} /></div>
-        <h2 style={{ color: '#fff', fontSize: 20, marginBottom: 8 }}>Your cart is empty</h2>
-        <p style={{ fontSize: 13, marginBottom: 24 }}>Good food is waiting on the menu.</p>
+      <div style={{ textAlign: 'center', padding: '80px 20px', color: '#aaa' }}>
+        <p style={{ fontSize: 14, color: '#888' }}>Loading your cart...</p>
+      </div>
+    );
+  }
+
+  if (cart.lines.length === 0) {
+    return (
+      <div
+        style={{
+          textAlign: 'center',
+          padding: '60px 24px',
+          maxWidth: 480,
+          margin: '0 auto',
+          background: '#1A1A1A',
+          borderRadius: 20,
+          border: '1px solid rgba(255,255,255,0.08)',
+          boxShadow: '0 15px 35px rgba(0,0,0,0.5)'
+        }}
+      >
+        <div
+          style={{
+            width: 80,
+            height: 80,
+            borderRadius: '50%',
+            background: 'rgba(201,168,76,0.12)',
+            display: 'grid',
+            placeItems: 'center',
+            margin: '0 auto 20px',
+            color: '#C9A84C'
+          }}
+        >
+          <SvgIcon name="cart" size={38} />
+        </div>
+        <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Your cart is empty</h2>
+        <p style={{ fontSize: 14, color: '#8a8a8a', marginBottom: 28, lineHeight: 1.6 }}>
+          Good food is waiting! Explore delicious dishes from Preva Kitchen.
+        </p>
         <Link
           href="/shop"
-          style={{ display: 'inline-block', padding: '12px 32px', background: GOLD, color: '#000', fontWeight: 800, borderRadius: 10, textDecoration: 'none', fontSize: 13 }}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            padding: '14px 36px',
+            background: GOLD,
+            color: '#000',
+            fontWeight: 800,
+            borderRadius: 12,
+            textDecoration: 'none',
+            fontSize: 13.5,
+            letterSpacing: '0.5px',
+            boxShadow: '0 8px 24px rgba(201,168,76,0.3)'
+          }}
         >
-          BROWSE MENU
+          BROWSE MENU →
         </Link>
       </div>
     );
@@ -274,21 +322,51 @@ export default function CheckoutForm({ settings, cancelledOrderNumber = '' }) {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 12,
-              padding: '13px 0',
+              gap: 14,
+              padding: '14px 0',
               borderBottom: index === cart.lines.length - 1 ? 'none' : '1px dashed rgba(255,255,255,0.08)'
             }}
           >
-            <span aria-hidden="true" style={{ width: 14, height: 14, border: '1.5px solid #C9A84C', borderRadius: 3, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#C9A84C' }} />
-            </span>
+            {/* Dish Thumbnail Image (compact, not too big) */}
+            {line.image ? (
+              <img
+                src={line.image}
+                alt={line.name}
+                style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: 10,
+                  objectFit: 'cover',
+                  flexShrink: 0,
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  background: '#111'
+                }}
+              />
+            ) : (
+              <span
+                aria-hidden="true"
+                style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: 10,
+                  background: 'rgba(201,168,76,0.08)',
+                  border: '1px solid rgba(201,168,76,0.2)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  flexShrink: 0,
+                  color: '#C9A84C'
+                }}
+              >
+                <SvgIcon name="utensils" size={20} />
+              </span>
+            )}
 
             <div style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: 'block', fontSize: 13.5, color: '#eee', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span style={{ display: 'block', fontSize: 14, color: '#fff', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {line.name}
               </span>
               {line.optionLabel ? (
-                <span style={{ display: 'block', fontSize: 11.5, color: '#8a8a8a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span style={{ display: 'block', fontSize: 11.5, color: '#8a8a8a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 2 }}>
                   {line.optionLabel}
                 </span>
               ) : null}
@@ -300,7 +378,7 @@ export default function CheckoutForm({ settings, cancelledOrderNumber = '' }) {
               onPlus={() => cart.setQty(line.key, line.qty + 1)}
             />
 
-            <span style={{ minWidth: 62, textAlign: 'right', fontSize: 13, fontWeight: 700, color: '#ddd' }}>
+            <span style={{ minWidth: 64, textAlign: 'right', fontSize: 13.5, fontWeight: 700, color: '#fff' }}>
               {money(line.unitCents * line.qty)}
             </span>
           </div>

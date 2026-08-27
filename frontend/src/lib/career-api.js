@@ -1,5 +1,8 @@
 import { careerJobs as fallbackCareerJobs, getCareerJob as getFallbackCareerJob } from '@/data/careerJobs';
 
+if (process.env.NODE_ENV === 'production' && !process.env.BACKEND_URL) {
+  throw new Error('BACKEND_URL is required for production career API requests.');
+}
 const backend = (process.env.BACKEND_URL || 'http://localhost:4000').replace(/\/$/, '');
 
 export async function getPublishedCareerJobs() {
@@ -9,8 +12,8 @@ export async function getPublishedCareerJobs() {
     const jobs = await response.json();
     return Array.isArray(jobs) ? jobs : [];
   } catch (error) {
-    console.error('[careers] using local fallback:', error.message);
-    return fallbackCareerJobs;
+    console.error('[careers] API request failed:', error.message);
+    return process.env.NODE_ENV === 'production' ? [] : fallbackCareerJobs;
   }
 }
 
@@ -22,7 +25,7 @@ export async function getPublishedCareerJob(slug) {
     if (!response.ok) throw new Error(`Career job API returned ${response.status}`);
     return response.json();
   } catch (error) {
-    console.error('[careers] using local job fallback:', error.message);
-    return getFallbackCareerJob(slug) || null;
+    console.error('[careers] API request failed:', error.message);
+    return process.env.NODE_ENV === 'production' ? null : (getFallbackCareerJob(slug) || null);
   }
 }

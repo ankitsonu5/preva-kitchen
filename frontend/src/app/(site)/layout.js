@@ -12,8 +12,10 @@ import './styles/blog-detail.css';
 import './styles/blog-listing.css';
 import './styles/luxe.css'; /* premium glossy skin — must load last */
 import './styles/reference-home.css';
+import '@/styles/typography.css';
 import Shell from '@/components/Shell';
 import { cmsFetch } from '@/lib/cms';
+import { roboto } from '@/lib/fonts';
 
 /*
  * Chrome translation/accessibility extensions can wrap or move text nodes
@@ -73,7 +75,7 @@ export async function generateMetadata() {
       process.env.NEXT_PUBLIC_CANONICAL_URL ||
         settings?.siteUrl ||
         process.env.NEXT_PUBLIC_SITE_URL ||
-        'http://localhost:3000'
+        'https://prevakitchen.com'
     ),
     alternates: {
       canonical: '/'
@@ -116,30 +118,15 @@ export default function RootLayout({ children }) {
   };
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={roboto.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: domReconciliationGuard }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        {/*
-          The same five families the WordPress theme used, moved out of the
-          CSS @import that used to sit two thousand lines into style.css.
-          A <link> in the head starts downloading immediately instead of
-          waiting for the stylesheet to parse, and unlike next/font it does not
-          make `next build` depend on being able to reach Google — which
-          matters on a locked-down deploy host. See tokens.css if you later
-          want to switch to next/font and self-host these.
-        */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=DM+Mono:wght@400;500&display=swap"
-        />
       </head>
-      <body suppressHydrationWarning>
+      <body id="preva-app" className={roboto.className} suppressHydrationWarning>
         <Shell>{children}</Shell>
       </body>
     </html>

@@ -47,7 +47,7 @@ export default function PosShopDashboard({ products = [], categories = [] }) {
   const totalCents = Math.max(0, cart.subtotalCents + deliveryChargeCents - promoDiscountCents);
 
   return (
-    <div className="pos-dashboard-container" style={{ background: '#121212', color: '#F1EDE4', padding: '24px', minHeight: '100vh', fontFamily: 'var(--font-body, system-ui)' }}>
+    <div className="pos-dashboard-container" style={{ background: '#121212', color: '#F1EDE4', padding: '24px', minHeight: '100vh', fontFamily: 'var(--font-roboto), Arial, sans-serif' }}>
       <div className="pos-app-window" style={{ display: 'grid', gridTemplateColumns: '90px 1fr 380px', gap: '20px', maxWidth: '1600px', margin: '0 auto', background: '#181818', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 30px 80px rgba(0,0,0,0.8)', overflow: 'hidden' }}>
         
         {/* ── LEFT SIDEBAR NAVIGATION ── */}
@@ -234,7 +234,7 @@ export default function PosShopDashboard({ products = [], categories = [] }) {
                       <img src={row.avatar} alt="" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
                       {row.customer}
                     </td>
-                    <td style={{ padding: '12px 10px', color: '#aaa', fontFamily: 'monospace' }}>{row.orderNum}</td>
+                    <td style={{ padding: '12px 10px', color: '#aaa', fontFamily: 'var(--font-roboto), Arial, sans-serif' }}>{row.orderNum}</td>
                     <td style={{ padding: '12px 10px', color: '#aaa' }}>{row.address}</td>
                     <td style={{ padding: '12px 10px', fontWeight: 'bold', color: '#fff' }}>{row.amount}</td>
                     <td style={{ padding: '12px 10px', textAlign: 'right' }}>
@@ -267,7 +267,7 @@ export default function PosShopDashboard({ products = [], categories = [] }) {
               <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <SvgIcon name="cart" size={16} /> Cart
               </h3>
-              <span style={{ fontSize: '12px', color: '#888', fontFamily: 'monospace' }}>Order ID: #1099</span>
+              <span style={{ fontSize: '12px', color: '#888', fontFamily: 'var(--font-roboto), Arial, sans-serif' }}>Order ID: #1099</span>
             </div>
 
             {/* Mode Selector (Delivery / Dine In / Takeaway) */}

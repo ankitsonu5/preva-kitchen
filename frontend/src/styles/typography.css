@@ -1,0 +1,168 @@
+/* Global Roboto typography system. Loaded after all page-specific skins. */
+
+:root {
+  --font-display: var(--font-roboto), Arial, sans-serif;
+  --font-heading: var(--font-roboto), Arial, sans-serif;
+  --font-serif: var(--font-roboto), Arial, sans-serif;
+  --font-body: var(--font-roboto), Arial, sans-serif;
+  --font-quote: var(--font-roboto), Arial, sans-serif;
+  --font-mono: var(--font-roboto), Arial, sans-serif;
+  --blog-serif: var(--font-roboto), Arial, sans-serif;
+  --blog-mono: var(--font-roboto), Arial, sans-serif;
+  --prv-font-display: var(--font-roboto), Arial, sans-serif;
+  --prv-font-body: var(--font-roboto), Arial, sans-serif;
+}
+
+#preva-app,
+#preva-app *,
+#preva-app *::before,
+#preva-app *::after {
+  font-family: var(--font-roboto), Arial, sans-serif !important;
+}
+
+#preva-app *::before,
+#preva-app *::after {
+  font-weight: inherit !important;
+}
+
+#preva-app {
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: 0.008em;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#preva-app * {
+  font-weight: 400 !important;
+}
+
+#preva-app p,
+#preva-app li,
+#preva-app dd,
+#preva-app blockquote,
+#preva-app figcaption,
+#preva-app small {
+  line-height: 1.65;
+}
+
+#preva-app h1,
+#preva-app h2,
+#preva-app h3,
+#preva-app h4,
+#preva-app h5,
+#preva-app h6,
+#preva-app [role='heading'] {
+  font-weight: 700 !important;
+  font-style: normal;
+  line-height: 1.18;
+  letter-spacing: -0.018em !important;
+}
+
+#preva-app :is(h1, h2, h3, h4, h5, h6, [role='heading']) * {
+  font-weight: 700 !important;
+  letter-spacing: inherit !important;
+}
+
+#preva-app h3,
+#preva-app h4,
+#preva-app h5,
+#preva-app h6 {
+  line-height: 1.28;
+  letter-spacing: -0.01em !important;
+}
+
+#preva-app strong,
+#preva-app b {
+  font-weight: 700 !important;
+}
+
+#preva-app label,
+#preva-app legend,
+#preva-app dt,
+#preva-app th,
+#preva-app .field-label,
+#preva-app .form-label,
+#preva-app [class$='-label'],
+#preva-app [class$='-label'] *,
+#preva-app [class*='__label'],
+#preva-app [class*='__label'] *,
+#preva-app [class*='eyebrow'],
+#preva-app [class*='kicker'],
+#preva-app [class*='overline'] {
+  font-weight: 500 !important;
+  line-height: 1.4;
+  letter-spacing: 0.035em;
+}
+
+#preva-app button,
+#preva-app button *,
+#preva-app [type='button'],
+#preva-app [type='submit'],
+#preva-app [type='reset'],
+#preva-app [role='button'],
+#preva-app [role='button'] *,
+#preva-app .btn,
+#preva-app .btn *,
+#preva-app .button,
+#preva-app .button *,
+#preva-app [class*='-btn'],
+#preva-app [class*='-btn'] *,
+#preva-app [class*='-button'],
+#preva-app [class*='-button'] *,
+#preva-app [class*='-cta'],
+#preva-app [class*='-cta'] * {
+  font-weight: 700 !important;
+  letter-spacing: 0.04em;
+}
+
+#preva-app [class*='card-title'],
+#preva-app [class*='card-title'] *,
+#preva-app [class*='card__title'],
+#preva-app [class*='card__title'] *,
+#preva-app [class*='product-title'],
+#preva-app [class*='product-title'] *,
+#preva-app [class*='dish-title'],
+#preva-app [class*='dish-title'] *,
+#preva-app [class*='panel-title'],
+#preva-app [class*='panel-title'] *,
+#preva-app [class*='modal-title'],
+#preva-app [class*='modal-title'] * {
+  font-weight: 700 !important;
+  line-height: 1.28;
+}
+
+#preva-app nav,
+#preva-app nav *,
+#preva-app .main-navigation,
+#preva-app .main-navigation *,
+#preva-app .primary-menu,
+#preva-app .primary-menu *,
+#preva-app .sidebar-nav,
+#preva-app .sidebar-nav * {
+  font-weight: 500 !important;
+  letter-spacing: 0.035em;
+}
+
+#preva-app nav [class*='cta'],
+#preva-app nav [class*='cta'] *,
+#preva-app .main-navigation [class*='cta'],
+#preva-app .main-navigation [class*='cta'] * {
+  font-weight: 700 !important;
+}
+
+#preva-app input,
+#preva-app textarea,
+#preva-app select,
+#preva-app option {
+  font-weight: 400 !important;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+}
+
+#preva-app input::placeholder,
+#preva-app textarea::placeholder {
+  font-family: var(--font-roboto), Arial, sans-serif;
+  font-weight: 400;
+}

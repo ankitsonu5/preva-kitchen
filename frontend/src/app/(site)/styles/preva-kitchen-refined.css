@@ -524,7 +524,7 @@
   color: #a0a0a5;
   cursor: pointer;
   transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  font-family: inherit;
+  font-family: var(--font-roboto), Arial, sans-serif;
 }
 
 .preva-kitchen-page .lx-scrubber-dot {
@@ -683,7 +683,7 @@
   font-size: 0.98rem;
   font-weight: 900;
   color: #fae39b;
-  font-family: monospace;
+  font-family: var(--font-roboto), Arial, sans-serif;
 }
 
 .preva-kitchen-page .lx-atmo-title {
@@ -756,7 +756,7 @@
 }
 
 .preva-kitchen-page .lx-horizon-num {
-  font-family: monospace;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: 1rem;
   font-weight: 900;
   color: #c9a34e;
@@ -1138,7 +1138,7 @@
   position: relative;
   overflow: hidden;
   padding: 130px 0 100px;
-  font-family: inherit;
+  font-family: var(--font-roboto), Arial, sans-serif;
 }
 
 .pk-dish-bg-ambient {

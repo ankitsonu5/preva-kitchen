@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function sitemap() {
-  const base = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://prevakitchen.com';
   const [pages, posts, products, categories, galleries, services, careerJobs] = await Promise.all([
     cmsFetch('/pages'), cmsFetch('/posts', { query: { limit: 100 } }), cmsFetch('/shop/products'), cmsFetch('/categories'),
     cmsFetch('/galleries'), cmsFetch('/services'), cmsFetch('/career-jobs')

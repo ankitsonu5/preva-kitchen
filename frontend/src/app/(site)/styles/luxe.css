@@ -116,7 +116,7 @@ body {
    Display type — champagne gradient headings
 --------------------------------------------------------------------------- */
 .hero-headline {
-  font-family: 'Playfair Display', Didot, serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   color: #FFFFFF !important;
   -webkit-text-fill-color: #FFFFFF !important;
   text-shadow: 0 4px 24px rgba(0, 0, 0, 0.95), 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 35px rgba(201, 168, 76, 0.25) !important;
@@ -126,7 +126,7 @@ body {
 .cflow-title,
 .about-text-content h2,
 .nightlife-content-column h3 {
-  font-family: 'Playfair Display', Didot, serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   background: var(--lx-gold-grad);
   -webkit-background-clip: text;
   background-clip: text;
@@ -149,7 +149,7 @@ body {
 .about-eyebrow,
 .nightlife-eyebrow,
 .cflow-subtitle {
-  font-family: 'Syncopate', 'Inter', sans-serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   letter-spacing: .42em;
   font-size: .72rem;
   color: rgba(227, 192, 119, .85);
@@ -252,7 +252,6 @@ button[type="submit"].btn,
 .btn-hero-secondary:hover,
 .hero-btn-menus:hover,
 .btn-outline-gold:hover,
-.nav-call-cta:hover,
 .luxe-btn-glass:hover {
   transform: translateY(-2px);
   border-color: #F7E7B4 !important;
@@ -306,6 +305,8 @@ button[type="submit"].btn,
 /* Exclude CTA pill buttons from the hover underline */
 .nav-call-cta a::after,
 .nav-call-cta a:hover::after,
+.nav-cart-cta a::after,
+.nav-cart-cta a:hover::after,
 .nav-order-cta a::after,
 .nav-order-cta a:hover::after {
   display: none !important;
@@ -454,6 +455,7 @@ button[type="submit"].btn,
   }
 
   .main-navigation .nav-call-cta,
+  .main-navigation .nav-cart-cta,
   .main-navigation .nav-order-cta {
     margin-top: 8px !important;
   }
@@ -636,7 +638,7 @@ button[type="submit"].btn,
   backdrop-filter: blur(16px);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 8px 24px rgba(0, 0, 0, .8);
   color: #f1cf76 !important;
-  font-family: 'Syncopate', sans-serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: .62rem;
   font-weight: 700;
   letter-spacing: .38em;
@@ -686,7 +688,7 @@ button[type="submit"].btn,
   min-height: 56px;
   border-radius: 999px !important;
   border: 1px solid rgba(238, 204, 119, .78) !important;
-  font-family: var(--font-body, Arial), sans-serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: .76rem;
   font-weight: 900;
   letter-spacing: .2em;
@@ -1083,7 +1085,7 @@ button[type="submit"].btn,
   border-radius: 4px !important;
   background: linear-gradient(135deg, #F5DF97 0%, #D8B258 45%, #C9A34E 100%) !important;
   color: #171006 !important;
-  font-family: var(--font-body, 'Inter'), Arial, sans-serif !important;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-weight: 800 !important;
   letter-spacing: .08em !important;
   text-transform: uppercase !important;
@@ -1237,7 +1239,7 @@ button[type="submit"].btn,
 }
 
 .lx-promo-brand {
-  font-family: 'Syncopate', sans-serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: .78rem;
   letter-spacing: .55em;
   color: var(--lx-champagne);
@@ -1279,7 +1281,7 @@ button[type="submit"].btn,
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
   color: var(--slide-accent, #E3C077);
-  font-family: 'Syncopate', sans-serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: .62rem;
   letter-spacing: .34em;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25);
@@ -1295,7 +1297,7 @@ button[type="submit"].btn,
 
 .lx-promo-title {
   margin: 22px 0 14px;
-  font-family: 'Playfair Display', Didot, serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: clamp(2.3rem, 5.2vw, 4.2rem);
   line-height: 1.04;
   background: var(--lx-gold-grad);
@@ -1314,7 +1316,7 @@ button[type="submit"].btn,
 }
 
 .lx-promo-price {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: 1.7rem;
   font-weight: 700;
   color: var(--lx-champagne);
@@ -1354,7 +1356,7 @@ button[type="submit"].btn,
 .lx-promo-link {
   color: rgba(227, 192, 119, .85);
   font-style: italic;
-  font-family: 'Cormorant Garamond', serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: 1.05rem;
   text-decoration: none;
   border-bottom: 1px solid rgba(227, 192, 119, .35);
@@ -1631,7 +1633,7 @@ button[type="submit"].btn,
   background:
     radial-gradient(circle at 50% 35%, rgba(201, 163, 78, .15), transparent 42%),
     linear-gradient(145deg, #17130e, #08080a 70%);
-  font-family: 'Syncopate', sans-serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: .68rem;
   letter-spacing: .16em;
   text-align: center;
@@ -1739,7 +1741,7 @@ button[type="submit"].btn,
   text-transform: uppercase;
   color: var(--lx-pearl, #f4efe6);
   margin: 0 0 .5rem;
-  font-family: 'Cormorant Garamond', 'Syncopate', serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
 }
 
 .orbit-title-link {
@@ -1969,7 +1971,7 @@ button[type="submit"].btn,
   gap: 7px;
   cursor: pointer;
   font-size: 11px;
-  font-family: inherit;
+  font-family: var(--font-roboto), Arial, sans-serif;
   letter-spacing: .1em;
   font-weight: 500;
   text-transform: uppercase;
@@ -2217,7 +2219,7 @@ button[type="submit"].btn,
   flex-direction: column;
   gap: 14px;
   text-align: right;
-  font-family: 'Syncopate', sans-serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: .58rem;
   letter-spacing: .3em;
   color: rgba(244, 239, 230, .55);
@@ -2237,7 +2239,7 @@ button[type="submit"].btn,
   bottom: 40px;
   z-index: 2;
   writing-mode: vertical-rl;
-  font-family: 'Syncopate', sans-serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: .56rem;
   letter-spacing: .4em;
   color: rgba(227, 192, 119, .6);
@@ -2289,7 +2291,7 @@ button[type="submit"].btn,
 
 .lx-stat-num {
   display: block;
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: clamp(1.85rem, 3vw, 2.6rem);
   font-weight: 700;
   background: var(--lx-gold-grad);
@@ -2308,7 +2310,7 @@ button[type="submit"].btn,
 .lx-stat-label {
   display: block;
   margin-top: 7px;
-  font-family: 'Syncopate', sans-serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: .62rem;
   letter-spacing: .25em;
   color: var(--lx-champagne);
@@ -2380,7 +2382,7 @@ button[type="submit"].btn,
 
 .lx-feature h3 {
   margin: 0 0 10px;
-  font-family: 'Syncopate', sans-serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: .74rem;
   letter-spacing: .24em;
   color: var(--lx-champagne);
@@ -2489,7 +2491,7 @@ button[type="submit"].btn,
 
 .lx-sig-card h3 {
   margin: 0 0 8px;
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: 1.18rem;
   color: var(--lx-champagne);
 }
@@ -2545,7 +2547,7 @@ button[type="submit"].btn,
 
 .lx-reserve-copy h2 {
   margin: 12px 0 0;
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: clamp(1.4rem, 2.6vw, 2rem);
   color: var(--lx-ivory);
   line-height: 1.35;
@@ -2594,7 +2596,7 @@ button[type="submit"].btn,
 .lx-order-btn {
   padding: 9px 22px !important;
   border-radius: 4px !important;
-  font-family: var(--font-body, 'Inter'), Arial, sans-serif !important;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: .78rem !important;
   font-weight: 800 !important;
   letter-spacing: .08em !important;
@@ -2695,7 +2697,7 @@ button[type="submit"].btn,
 .lx-order-btn {
   padding: 9px 22px !important;
   border-radius: 4px !important;
-  font-family: var(--font-body, 'Inter'), Arial, sans-serif !important;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: .78rem !important;
   font-weight: 800 !important;
   letter-spacing: .08em !important;
@@ -2759,7 +2761,7 @@ button[type="submit"].btn,
 }
 
 .lx-feature h3 {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: 1.12rem;
   color: var(--lx-champagne);
   margin: 0 0 10px;
@@ -2872,7 +2874,7 @@ button[type="submit"].btn,
     min-height: 42px;
     padding: 0 !important;
     color: rgba(242, 237, 239, .9) !important;
-    font-family: var(--font-body, 'Inter'), Arial, sans-serif !important;
+    font-family: var(--font-roboto), Arial, sans-serif;
     font-size: clamp(.92rem, 1.1vw, 1.05rem) !important;
     font-weight: 700 !important;
     letter-spacing: 1.2px !important;
@@ -2883,20 +2885,22 @@ button[type="submit"].btn,
     margin-left: auto !important;
   }
 
-  .site-header .main-navigation .nav-call-cta a {
+  .site-header .main-navigation .nav-call-cta a,
+  .site-header .main-navigation .nav-cart-cta a {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 12px !important;
-    min-width: 175px;
+    gap: 0 !important;
+    width: 44px !important;
+    min-width: 44px !important;
     height: 44px !important;
-    padding: 0 28px !important;
+    padding: 0 !important;
     border-radius: 4px !important;
     border: 1px solid rgba(213, 164, 79, 0.5) !important;
     background: rgba(0, 0, 0, 0.65) !important;
     backdrop-filter: blur(12px) !important;
     -webkit-backdrop-filter: blur(12px) !important;
-    font-family: var(--font-body, 'Inter'), Arial, sans-serif !important;
+    font-family: var(--font-roboto), Arial, sans-serif;
     font-size: 0.82rem !important;
     font-weight: 800 !important;
     letter-spacing: 0.08em !important;
@@ -2906,16 +2910,18 @@ button[type="submit"].btn,
     transition: all 0.25s ease !important;
   }
 
-  .site-header .main-navigation .nav-call-cta a .nav-phone-icon {
+  .site-header .main-navigation .nav-call-cta a .nav-phone-icon,
+  .site-header .main-navigation .nav-cart-cta a .nav-cart-icon {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    margin-right: 8px !important;
+    margin-right: 0 !important;
     color: #c5a059 !important;
     flex-shrink: 0 !important;
   }
 
-  .site-header .main-navigation .nav-call-cta a:hover {
+  .site-header .main-navigation .nav-call-cta a:hover,
+  .site-header .main-navigation .nav-cart-cta a:hover {
     border-color: #F5DF97 !important;
     background: rgba(201, 168, 76, 0.15) !important;
     box-shadow: 0 0 18px rgba(201, 168, 76, 0.3) !important;
@@ -2923,10 +2929,19 @@ button[type="submit"].btn,
     color: #ffffff !important;
   }
 
+  .site-header .main-navigation .nav-call-cta a:focus,
+  .site-header .main-navigation .nav-call-cta a:focus-visible {
+    outline: none !important;
+    outline-offset: 0 !important;
+    border-color: #F5DF97 !important;
+    box-shadow: none !important;
+  }
+
   .site-header .main-navigation .nav-order-cta a.preva-order-trigger {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
+    width: auto !important;
     min-width: 140px !important;
     height: 44px !important;
     padding: 0 24px !important;
@@ -2934,7 +2949,7 @@ button[type="submit"].btn,
     border: 1px solid transparent !important;
     background: linear-gradient(135deg, #F5DF97 0%, #D8B258 45%, #C9A34E 100%) !important;
     color: #171006 !important;
-    font-family: var(--font-body, 'Inter'), Arial, sans-serif !important;
+    font-family: var(--font-roboto), Arial, sans-serif;
     font-size: 0.8rem !important;
     font-weight: 800 !important;
     letter-spacing: 0.08em !important;
@@ -3052,9 +3067,10 @@ button[type="submit"].btn,
     letter-spacing: .8px !important;
   }
 
-  .site-header .main-navigation .nav-call-cta a {
-    min-width: 158px;
-    padding-inline: 12px !important;
+  .site-header .main-navigation .nav-call-cta a,
+  .site-header .main-navigation .nav-cart-cta a {
+    min-width: 44px !important;
+    padding-inline: 0 !important;
     font-size: .72rem !important;
   }
 
@@ -3066,7 +3082,7 @@ button[type="submit"].btn,
   }
 
   .site-header .nav-phone-icon {
-    margin-right: 6px;
+    margin-right: 0;
   }
 }
 
@@ -3358,7 +3374,7 @@ div.preva-menu-modal,
   border-bottom: 2px solid #1a1a1a !important;
   padding-bottom: 8px !important;
   margin-bottom: 20px !important;
-  font-family: var(--font-display, inherit) !important;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-weight: 900 !important;
   background: none !important;
   -webkit-text-fill-color: #0e0e0e !important;
@@ -3410,7 +3426,7 @@ div.preva-menu-modal,
 
 .preva-menu-modal .preva-menu-item-price,
 #prevaMenuOverlay .preva-menu-item-price {
-  font-family: var(--font-display, inherit) !important;
+  font-family: var(--font-roboto), Arial, sans-serif;
   color: #0e0e0e !important;
   font-weight: 800 !important;
   font-size: 1.05rem !important;
@@ -3433,7 +3449,7 @@ div.preva-menu-modal,
   letter-spacing: 5px !important;
   font-size: 1.45rem !important;
   margin: 24px 0 18px !important;
-  font-family: var(--font-display, inherit) !important;
+  font-family: var(--font-roboto), Arial, sans-serif;
   border-radius: 4px !important;
   -webkit-text-fill-color: #ede6d8 !important;
 }
@@ -3880,7 +3896,7 @@ div.preva-menu-modal,
   translate: -50% 0;
   color: transparent;
   -webkit-text-stroke: 1px rgba(247, 231, 180, .055);
-  font-family: var(--font-heading, 'Syncopate', sans-serif);
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: clamp(7rem, 21vw, 19rem);
   font-weight: 700;
   line-height: .8;
@@ -4012,7 +4028,7 @@ div.preva-menu-modal,
 }
 
 .pk-about-seal span {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: 1.14rem;
   font-weight: 800;
   letter-spacing: .12em;
@@ -4051,7 +4067,7 @@ div.preva-menu-modal,
   max-width: 570px;
   margin: 0;
   color: #f8f3e8;
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: clamp(3.2rem, 5.5vw, 5.65rem);
   font-weight: 500;
   line-height: .96;
@@ -4061,7 +4077,7 @@ div.preva-menu-modal,
 .pk-about-lead {
   margin: 24px 0 20px;
   color: #d7b65e;
-  font-family: 'Cormorant Garamond', serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: clamp(1.45rem, 2.1vw, 1.9rem);
   font-style: italic;
   line-height: 1.2;
@@ -4097,7 +4113,7 @@ div.preva-menu-modal,
 
 .pk-about-promises strong {
   color: #c6a354;
-  font-family: 'DM Mono', monospace;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: .65rem;
   line-height: 1.45;
 }
@@ -4219,7 +4235,7 @@ div.preva-menu-modal,
 }
 
 .pk-order-marquee-item--action .pk-order-marquee-label {
-  font-family: 'Syncopate', sans-serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: clamp(1.2rem, 2.35vw, 2rem);
   font-weight: 700;
   line-height: 1;
@@ -4227,7 +4243,7 @@ div.preva-menu-modal,
 }
 
 .pk-order-marquee-item--brand .pk-order-marquee-label {
-  font-family: 'Cormorant Garamond', serif;
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: clamp(1.05rem, 1.8vw, 1.5rem);
   font-weight: 700;
   font-style: italic;

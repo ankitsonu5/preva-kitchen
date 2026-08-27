@@ -105,7 +105,7 @@
 .po-title {
   margin: 0;
   color: #ffffff;
-  font-family: var(--font-display, inherit);
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: clamp(20px, 2.8vw, 27px);
   font-weight: 900;
   line-height: 1.15;
@@ -223,7 +223,7 @@
   align-items: center;
   justify-content: center;
   line-height: 1.05;
-  font-family: var(--font-display, sans-serif);
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-weight: 900;
   font-size: 13px;
 }
@@ -246,7 +246,7 @@
 
 .po-grubhub-text {
   color: #FF2E00;
-  font-family: var(--font-display, sans-serif);
+  font-family: var(--font-roboto), Arial, sans-serif;
   font-size: 11.5px;
   font-weight: 950;
   letter-spacing: -0.5px;

@@ -16,7 +16,9 @@ import dotenv from 'dotenv';
  */
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-for (const file of ['.env.local', '.env']) {
+const files = process.env.NODE_ENV === 'production' ? ['.env'] : ['.env.local', '.env'];
+
+for (const file of files) {
   const full = path.join(root, file);
   if (existsSync(full)) dotenv.config({ path: full });
 }

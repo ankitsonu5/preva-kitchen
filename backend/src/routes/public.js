@@ -139,9 +139,9 @@ function parseTrustindexGoogleReviews(html) {
   return {
     configured: true,
     available: true,
-    source: 'prevaclub.com Trustindex Google widget',
+    source: 'prevakitchen.com Trustindex Google widget',
     placeId: 'ChIJF5z-j1-1JIgR3tZAujO2mZI',
-    name: 'Preva NightClub',
+    name: 'Preva Kitchen',
     address: '13090 Inkster Rd, Redford Township, MI 48239',
     rating,
     reviewCount,
@@ -153,11 +153,11 @@ function parseTrustindexGoogleReviews(html) {
 }
 
 async function fetchLiveTrustindexReviews() {
-  const sourceUrl = String(process.env.GOOGLE_REVIEWS_SOURCE_URL || 'https://prevaclub.com/').trim();
+  const sourceUrl = String(process.env.GOOGLE_REVIEWS_SOURCE_URL || 'https://prevakitchen.com/').trim();
   const response = await fetch(sourceUrl, {
     headers: {
       Accept: 'text/html,application/xhtml+xml',
-      'User-Agent': 'Mozilla/5.0 (compatible; PrevaReviewsSync/1.0; +https://prevaclub.com/)'
+      'User-Agent': 'Mozilla/5.0 (compatible; PrevaReviewsSync/1.0; +https://prevakitchen.com/)'
     },
     signal: AbortSignal.timeout(12000)
   });
@@ -197,7 +197,7 @@ function normalizeGooglePlace(place) {
 async function fetchGoogleReviews() {
   const apiKey = String(process.env.GOOGLE_PLACES_API_KEY || '').trim();
   const placeId = String(process.env.GOOGLE_PLACE_ID || '').trim();
-  const textQuery = String(process.env.GOOGLE_PLACE_QUERY || 'Preva NightClub, 13090 Inkster Rd, Redford Township, MI 48239').trim();
+  const textQuery = String(process.env.GOOGLE_PLACE_QUERY || 'Preva Kitchen, 13090 Inkster Rd, Redford Township, MI 48239').trim();
 
   if (!apiKey) {
     return fetchLiveTrustindexReviews();
@@ -366,7 +366,18 @@ get('/google-reviews', async () => {
     return result({ ...googleReviewsCache.value, stale: true }, { headers: { 'Cache-Control': 'public, max-age=60' } });
   }
 
-  const fallback = {
+  const fallback = process.env.NODE_ENV === 'production' ? {
+    configured: Boolean(String(process.env.GOOGLE_PLACES_API_KEY || '').trim()),
+    available: false,
+    name: 'Preva Kitchen',
+    address: '13090 Inkster Rd, Redford Township, MI 48239',
+    rating: 0,
+    reviewCount: 0,
+    googleMapsUrl: GOOGLE_LISTING_URL,
+    reviewsUrl: GOOGLE_LISTING_URL,
+    writeReviewUrl: GOOGLE_LISTING_URL,
+    reviews: []
+  } : {
     configured: true,
     available: true,
     name: 'Preva NightClub & Kitchen',
@@ -376,7 +387,8 @@ get('/google-reviews', async () => {
     googleMapsUrl: GOOGLE_LISTING_URL,
     reviewsUrl: GOOGLE_LISTING_URL,
     writeReviewUrl: GOOGLE_LISTING_URL,
-    reviews: FALLBACK_GOOGLE_REVIEWS
+    reviews: FALLBACK_GOOGLE_REVIEWS,
+    developmentFallback: true
   };
 
   return result(fallback, { headers: { 'Cache-Control': 'public, max-age=300' } });

@@ -215,7 +215,7 @@ export default function SettingsManager() {
               <label>Default Meta Description</label><textarea className="input" name="defaultSeoDescription" rows="3" value={form.defaultSeoDescription} onChange={handleChange} placeholder="Default fallback search snippet..." />
               <label>Default Social Share Image (OG Image)</label><input className="input" name="defaultOgImage" value={form.defaultOgImage} onChange={handleChange} placeholder="https://..." />
               <label>Google Search Console Verification (Meta Tag Code)</label><input className="input" name="googleSiteVerification" value={form.googleSiteVerification || ''} onChange={handleChange} placeholder="e.g. google-site-verification token..." />
-              <label>Robots.txt Custom Override (Advanced)</label><textarea className="input" name="robotsTxtOverride" rows="4" value={form.robotsTxtOverride || ''} onChange={handleChange} placeholder="User-agent: *&#10;Allow: /&#10;Disallow: /admin/" style={{ fontFamily: 'monospace', fontSize: '0.85rem' }} />
+              <label>Robots.txt Custom Override (Advanced)</label><textarea className="input" name="robotsTxtOverride" rows="4" value={form.robotsTxtOverride || ''} onChange={handleChange} placeholder="User-agent: *&#10;Allow: /&#10;Disallow: /admin/" style={{ fontFamily: 'var(--font-roboto), Arial, sans-serif', fontSize: '0.85rem' }} />
             </div>
 
             {/* Contact Information */}
@@ -250,7 +250,7 @@ export default function SettingsManager() {
                 onChange={handleChange} 
                 disabled={!isSuperAdmin}
                 placeholder="<!-- Scripts injected into head -->"
-                style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}
+                style={{ fontFamily: 'var(--font-roboto), Arial, sans-serif', fontSize: '0.85rem' }}
               />
 
               <label>Footer Scripts</label>
@@ -262,7 +262,7 @@ export default function SettingsManager() {
                 onChange={handleChange} 
                 disabled={!isSuperAdmin}
                 placeholder="<!-- Scripts injected before closing body -->"
-                style={{ fontFamily: 'monospace', fontSize: '0.85rem' }}
+                style={{ fontFamily: 'var(--font-roboto), Arial, sans-serif', fontSize: '0.85rem' }}
               />
             </div>
           </div>

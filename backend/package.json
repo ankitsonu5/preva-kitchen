@@ -9,6 +9,8 @@
     "seed": "node scripts/seed.js",
     "sync:wordpress": "node scripts/seed-landing-pages.js && node scripts/sync-live-wordpress.js",
     "first-admin": "node scripts/first-admin.js",
+    "ensure-admin": "node scripts/ensure-admin.js",
+    "audit:production": "node scripts/audit-production.js",
     "routes": "node -e \"import('./src/index.js').then(m=>console.log(m.listRoutes().join('\\n')))\"",
     "verify:payments:local": "node scripts/verify-payment-local.js"
   },

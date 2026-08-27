@@ -3,29 +3,33 @@
  *
  *   npm run first-admin
  *
- * Two guards, because a known password in a repository is only acceptable
- * while it stays on a laptop:
+ * Three guards keep account creation explicit and safe:
  *
  *   1. It refuses to run if any account already exists, so it can never
  *      overwrite a real one or quietly re-enable an account you disabled.
- *   2. It refuses to run when NODE_ENV=production. On the live server you
+ *   2. It requires ADMIN_EMAIL and ADMIN_PASSWORD; there are no repository
+ *      defaults that could become known credentials.
+ *   3. It refuses to run when NODE_ENV=production. On the live server you
  *      create accounts with `npm run create-admin` and a password you chose.
  *
- * The account is flagged `passwordIsDefault`, which `npm run admins` shows as a
- * warning until you change it.
  */
 import './env.js';
 import { MongoClient } from 'mongodb';
 import bcrypt from 'bcryptjs';
 
-const EMAIL = process.env.ADMIN_EMAIL || 'admin@prevaclub.com';
-const PASSWORD = process.env.ADMIN_PASSWORD || 'Preva#Redford2026';
+const EMAIL = String(process.env.ADMIN_EMAIL || '').trim();
+const PASSWORD = String(process.env.ADMIN_PASSWORD || '');
 const NAME = process.env.ADMIN_NAME || 'Preva Admin';
+
+if (!EMAIL || PASSWORD.length < 12) {
+  console.error('\nADMIN_EMAIL and an ADMIN_PASSWORD of at least 12 characters are required.\n');
+  process.exit(1);
+}
 
 if (process.env.NODE_ENV === 'production') {
   console.error('\nThis script is for local setup only.');
   console.error('On a live server use:');
-  console.error("  ADMIN_EMAIL=you@prevaclub.com ADMIN_PASSWORD='...' npm run create-admin\n");
+  console.error("  ADMIN_EMAIL=you@prevakitchen.com ADMIN_PASSWORD='...' npm run create-admin\n");
   process.exit(1);
 }
 
@@ -60,7 +64,7 @@ await users.insertOne({
   role: 'SUPER_ADMIN',
   status: 'ACTIVE',
   passwordHash: await bcrypt.hash(PASSWORD, 12),
-  passwordIsDefault: true,
+  passwordIsDefault: false,
   createdAt: now,
   updatedAt: now
 });
@@ -71,11 +75,8 @@ console.log('  Admin account created');
 console.log(line);
 console.log(`  URL       http://localhost:${process.env.PORT || 3000}/admin`);
 console.log(`  Email     ${EMAIL}`);
-console.log(`  Password  ${PASSWORD}`);
 console.log(line);
-console.log('  This password is written in the repository, so change it');
-console.log('  before this site is reachable from the internet:');
-console.log(`    node scripts/admins.js --reset ${EMAIL}`);
+console.log('  Password was read from ADMIN_PASSWORD and was not printed.');
 console.log(`${line}\n`);
 
 await client.close();

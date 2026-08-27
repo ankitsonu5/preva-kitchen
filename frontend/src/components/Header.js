@@ -182,7 +182,7 @@ export default function Header() {
             />
             <span
               className="brand-text-logo"
-              style={{ display: 'none', fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 900, color: '#c5a059', letterSpacing: '4px', textTransform: 'uppercase' }}
+              style={{ display: 'none', fontFamily: 'var(--font-roboto), Arial, sans-serif', fontSize: '1.5rem', fontWeight: 900, color: '#c5a059', letterSpacing: '4px', textTransform: 'uppercase' }}
             >
               PREVA KITCHEN
             </span>
@@ -209,12 +209,17 @@ export default function Header() {
               </li>
             ))}
             <li className="nav-call-cta">
-              <a href={`tel:${(settings.phone || '').replace(/\D/g, '')}`} onClick={handleLinkClick}>
-                <span className="nav-phone-icon" aria-hidden="true"><SvgIcon name="phone" size={16} /></span>
-                <span>{(settings.phone || '').includes('+1') ? settings.phone : `+1 ${(settings.phone || '').replace(/[()]/g, '').trim()}`}</span>
+              <a
+                href={`tel:${(settings.phone || '').replace(/\D/g, '')}`}
+                className="nav-call-link"
+                aria-label={`Call Preva Kitchen at ${settings.phone || '(313) 286-3586'}`}
+                title={`Call ${settings.phone || '(313) 286-3586'}`}
+                onClick={handleLinkClick}
+              >
+                <span className="nav-phone-icon" aria-hidden="true"><SvgIcon name="phone" size={20} /></span>
               </a>
             </li>
-            <li className="nav-order-cta">
+            <li className="nav-cart-cta">
               {/* ── OLD CODE: Opens the Order Online modal popup ──────────────────────
               <a
                 href={settings.headerCtaUrl || '#preva-order'}
@@ -227,8 +232,13 @@ export default function Header() {
               </a>
               ─────────────────────────────────────────────────────────────────────── */}
 
-              {/* NEW CODE: Directly redirects to the Shop / Order page */}
-              <a href="/shop" className="preva-order-trigger">
+              {/* Compact cart action opens the checkout/cart page directly. */}
+              <a href="/checkout" className="nav-cart-link" aria-label="View cart" title="View cart" onClick={handleLinkClick}>
+                <span className="nav-cart-icon" aria-hidden="true"><SvgIcon name="cart" size={20} /></span>
+              </a>
+            </li>
+            <li className="nav-order-cta">
+              <a href="/shop" className="preva-order-trigger" onClick={handleLinkClick}>
                 {settings.headerCtaText || 'ORDER ONLINE'}
               </a>
             </li>

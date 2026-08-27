@@ -230,7 +230,7 @@ export default function FoodMenuManager() {
                     </td>
                     <td><span className="badge">{row.category}</span></td>
                     <td>
-                      <code style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--accent)', fontSize: '13px' }}>{row.price}</code>
+                      <code style={{ fontFamily: 'var(--font-roboto), Arial, sans-serif', fontWeight: 600, color: 'var(--accent)', fontSize: '13px' }}>{row.price}</code>
                     </td>
                     <td>
                       {row.tags && row.tags.length > 0 ? (

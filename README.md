@@ -28,12 +28,10 @@ cd backend && npm install && cp .env.example .env && npm run dev
 cd frontend && npm install && cp .env.example .env.local && npm run dev
 ```
 
-Open http://localhost:3000. With no Stripe keys and no Mongo, the backend uses
-an in-memory demo store and orders are marked paid without a card (dev only).
-
-Admin: http://localhost:3000/admin — default dev login
-`admin@prevaclub.com` / `Preva#Redford2026` (in-memory store only; create real
-admins with `npm run first-admin` in backend once Mongo is connected).
+Open http://localhost:3000. The in-memory database fallback is development-only
+and deliberately contains no default admin account. Create named accounts with
+`npm run ensure-admin`; credentials are read from environment variables and
+stored only as bcrypt hashes.
 
 ## CORS
 
@@ -45,10 +43,11 @@ direct API consumers (mobile apps, other services).
 ## Stripe
 
 - Checkout redirect flow; cards never touch these servers.
-- Point the Stripe webhook at the **backend** directly:
-  `https://YOUR-BACKEND/api/shop/webhook` (not the frontend proxy — signature
-  verification needs the raw bytes).
+- Point the live Stripe webhook at the **backend** route:
+  `https://prevakitchen.com/api/stripe/webhook`. nginx must route this path
+  directly to Express because signature verification needs the raw bytes.
 - Local testing: `stripe listen --forward-to localhost:4000/api/shop/webhook`.
+- Run `npm run audit:production` in `backend/` before every production deploy.
 
 ## Order exports
 

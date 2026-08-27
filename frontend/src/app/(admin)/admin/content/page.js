@@ -235,7 +235,7 @@ function ContentList() {
         if (!siteUrl && typeof window !== 'undefined') {
           siteUrl = window.location.origin;
         }
-        if (!siteUrl) siteUrl = 'http://localhost:3000';
+        if (!siteUrl) siteUrl = 'https://prevakitchen.com';
         window.open(`${siteUrl}/preview?token=${encodeURIComponent(token)}`, '_blank', 'noopener,noreferrer');
       } else {
         alert('Could not generate preview token.');
@@ -409,7 +409,7 @@ function ContentList() {
                       <td>
                         <b style={{ color: '#fff', fontSize: '0.98rem' }}>{x.title}</b>
                         <br />
-                        <small style={{ color: '#9a8f7e', fontFamily: 'monospace' }}>/{x.slug}</small>
+                        <small style={{ color: '#9a8f7e', fontFamily: 'var(--font-roboto), Arial, sans-serif' }}>/{x.slug}</small>
                         <div className="row-actions" style={{ display: 'flex', gap: '10px', marginTop: '6px', fontSize: '0.78rem' }}>
                           <a href={`/admin/content/edit?id=${x.id}&type=${type}`} style={{ color: '#c6a15b', textDecoration: 'none', fontWeight: 600 }}>Edit</a>
                           <span style={{ color: '#444' }}>|</span>
@@ -515,9 +515,9 @@ function ContentList() {
                               </span>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', color: '#9a8f7e' }}>
-                              <span style={{ background: 'rgba(255,255,255,0.06)', padding: '3px 8px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'monospace' }}>Ctrl + Enter</span> to save
+                              <span style={{ background: 'rgba(255,255,255,0.06)', padding: '3px 8px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'var(--font-roboto), Arial, sans-serif' }}>Ctrl + Enter</span> to save
                               <span style={{ opacity: 0.4 }}>•</span>
-                              <span style={{ background: 'rgba(255,255,255,0.06)', padding: '3px 8px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'monospace' }}>Esc</span> to cancel
+                              <span style={{ background: 'rgba(255,255,255,0.06)', padding: '3px 8px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.08)', fontFamily: 'var(--font-roboto), Arial, sans-serif' }}>Esc</span> to cancel
                             </div>
                           </div>
 
@@ -553,7 +553,7 @@ function ContentList() {
                                   value={quickForm.slug} 
                                   onChange={(e) => setQuickForm({ ...quickForm, slug: e.target.value })} 
                                   placeholder="url-slug"
-                                  style={{ width: '100%', margin: 0, paddingLeft: '24px', background: 'rgba(0,0,0,0.3)', fontFamily: 'monospace', fontSize: '0.85rem' }}
+                                  style={{ width: '100%', margin: 0, paddingLeft: '24px', background: 'rgba(0,0,0,0.3)', fontFamily: 'var(--font-roboto), Arial, sans-serif', fontSize: '0.85rem' }}
                                 />
                                 <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#9a8f7e', fontSize: '0.85rem', pointerEvents: 'none' }}>/</span>
                               </div>
