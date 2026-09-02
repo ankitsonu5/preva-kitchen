@@ -1,13 +1,15 @@
 import CareerApplicationForm from '@/components/careers/CareerApplicationForm';
 import { getPublishedCareerJobs } from '@/lib/career-api';
+import { pageMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = {
-  title: 'Apply to Preva',
+export const metadata = pageMetadata({
+  title: 'Apply to Preva Kitchen',
   description: 'Apply to join the Preva Kitchen team in Redford, Michigan.',
-  alternates: { canonical: '/careers/apply' }
-};
+  path: '/careers/apply',
+  keywords: ['apply Preva Kitchen', 'restaurant jobs Redford MI']
+});
 
 export default async function ApplyPage({ searchParams }) {
   const query = await searchParams;

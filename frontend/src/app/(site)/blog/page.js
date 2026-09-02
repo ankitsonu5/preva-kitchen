@@ -9,8 +9,28 @@ const API = '/api';
 const POSTS_PER_PAGE = 9;
 const NON_KITCHEN_COPY = /night\s*life|night\s*club|\bclub\b|\bvip\b|bottle service|\bdj\b|afrobeats|sports bar|happy hour|pre-game|afterpart|party at|dress code/i;
 
+/* Fallback featured images for posts without one — cycles through existing Preva food photos */
+const BLOG_FALLBACK_IMAGES = [
+  '/asset/hero/preva-steak-hero.jpg',
+  '/asset/hero/preva-burger-hero.jpg',
+  '/asset/hero/preva-pasta-hero.jpg',
+  '/asset/hero/preva-feast-hero.jpg',
+  '/asset/hero/menu-hero-cinematic.jpg',
+  '/asset/hero/rasta-pasta.webp',
+];
+
+function getBlogFallbackImage(title, index) {
+  /* Simple hash from title so each post always gets the same image */
+  let hash = 0;
+  const str = title || '';
+  for (let i = 0; i < str.length; i++) hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+  return BLOG_FALLBACK_IMAGES[Math.abs(hash + index) % BLOG_FALLBACK_IMAGES.length];
+}
+
+import { FALLBACK_POSTS } from '@/data/fallbackPosts';
+
 export default function Blog() {
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState(FALLBACK_POSTS);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -20,10 +40,13 @@ export default function Blog() {
         const res = await fetch(`${API}/posts?limit=100`);
         if (res.ok) {
           const data = await res.json();
-          setPosts((Array.isArray(data) ? data : []).filter((post) => !NON_KITCHEN_COPY.test(`${post.title || ''} ${post.excerpt || ''} ${(post.categories || []).map((item) => item.category?.name || item.name || '').join(' ')}`)));
+          const clean = (Array.isArray(data) ? data : []).filter((post) => !NON_KITCHEN_COPY.test(`${post.title || ''} ${post.excerpt || ''} ${(post.categories || []).map((item) => item.category?.name || item.name || '').join(' ')}`));
+          if (clean.length > 0) {
+            setPosts(clean);
+          }
         }
       } catch (err) {
-        console.error(err);
+        console.error('Blog fetch failed, using fallback posts:', err);
       } finally {
         setLoading(false);
       }

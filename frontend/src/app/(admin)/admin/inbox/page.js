@@ -66,18 +66,19 @@ function InboxViewer() {
 
   const updateStatus = async (item, newStatus) => {
     try {
+      const method = kind === 'orders' ? 'PATCH' : 'PUT';
       const res = await api(`/admin/${kind}/${item.id}/status`, {
-        method: 'PUT',
+        method,
         body: JSON.stringify({ status: newStatus })
       });
       if (res.ok) {
         // Update local state
         setRows(rows.map(r => r.id === item.id 
-          ? { ...r, status: newStatus, orderStatus: newStatus } 
+          ? { ...r, status: newStatus } 
           : r
         ));
         setSelectedItem(prev => prev && prev.id === item.id 
-          ? { ...prev, status: newStatus, orderStatus: newStatus } 
+          ? { ...prev, status: newStatus } 
           : prev
         );
       }
@@ -245,12 +246,12 @@ function InboxViewer() {
                     {kind === 'orders' && (
                       <>
                         <td><b style={{ color: '#fff' }}>{row.orderNumber}</b></td>
-                        <td><b style={{ color: '#fff' }}>{row.customerName}</b><br /><small style={{ color: '#90a4ae' }}>{row.customerPhone}</small></td>
-                        <td><span style={{ textTransform: 'uppercase' }}>{row.orderType}</span></td>
-                        <td><strong style={{ color: '#c5a059' }}>${row.total}</strong></td>
+                        <td><b style={{ color: '#fff' }}>{row.customer?.name}</b><br /><small style={{ color: '#90a4ae' }}>{row.customer?.phone}</small></td>
+                        <td><span style={{ textTransform: 'uppercase' }}>{row.fulfilment || '—'}</span></td>
+                        <td><strong style={{ color: '#c5a059' }}>${((row.totalCents || 0) / 100).toFixed(2)}</strong></td>
                         <td>
-                          <span className={`badge ${row.orderStatus === 'new' ? 'badge-draft' : 'badge-published'}`}>
-                            {row.orderStatus}
+                          <span className={`badge ${row.status === 'PENDING' ? 'badge-draft' : 'badge-published'}`}>
+                            {row.status}
                           </span>
                         </td>
                       </>
@@ -314,8 +315,8 @@ function InboxViewer() {
                   <button type="button" className="btn btn-danger" onClick={() => updateStatus(selectedItem, 'cancelled')}>Cancel Booking</button>
                 </>
               )}
-              {kind === 'orders' && selectedItem.orderStatus === 'new' && (
-                <button type="button" className="btn" onClick={() => updateStatus(selectedItem, 'completed')}>Mark Completed</button>
+              {kind === 'orders' && ['PAID', 'RECEIVED'].includes(selectedItem.status) && (
+                <button type="button" className="btn" onClick={() => updateStatus(selectedItem, 'PREPARING')}>Start Preparing</button>
               )}
               <button type="button" className="btn" style={{ background: 'rgba(255,255,255,0.06)', color: '#fff' }} onClick={() => setSelectedItem(null)}>Close</button>
             </div>

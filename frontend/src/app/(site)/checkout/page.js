@@ -15,8 +15,7 @@ export default async function CheckoutPage({ searchParams }) {
     pickupEnabled: true,
     deliveryEnabled: true,
     pickupMinutes: 25,
-    deliveryMinutes: 45,
-    tipPresets: [15, 18, 20]
+    deliveryMinutes: 45
   };
 
   return (

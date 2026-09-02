@@ -212,13 +212,13 @@ export default function FoodMenuManager() {
                       <b style={{ color: 'var(--ink)', fontSize: '14px' }}>{row.name}</b>
                       <div style={{ marginTop: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <a
-                          href={`/preva-kitchen-menu/${dishSlug}`}
+                          href={`/menu/${dishSlug}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{ fontSize: '12px', color: 'var(--accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                           title="Open public dish details page"
                         >
-                          <span>/preva-kitchen-menu/{dishSlug}</span>
+                          <span>/menu/{dishSlug}</span>
                           <ExternalLink size={12} />
                         </a>
                       </div>
@@ -254,7 +254,7 @@ export default function FoodMenuManager() {
                     <td>
                       <div className="table-actions">
                         <a
-                          href={`/preva-kitchen-menu/${dishSlug}`}
+                          href={`/menu/${dishSlug}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="btn btn-secondary"
@@ -287,7 +287,7 @@ export default function FoodMenuManager() {
               <div>
                 <h3>{form.id ? 'Edit Menu Dish' : 'Add New Menu Dish'}</h3>
                 <p style={{ fontSize: '12px', color: 'var(--ink-muted)' }}>
-                  A public details page will be automatically active at: <code style={{ color: 'var(--accent)' }}>/preva-kitchen-menu/{previewSlug}</code>
+                  A public details page will be automatically active at: <code style={{ color: 'var(--accent)' }}>/menu/{previewSlug}</code>
                 </p>
               </div>
               <button className="icon-button" type="button" onClick={() => setOpen(false)}>×</button>

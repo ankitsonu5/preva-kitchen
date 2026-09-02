@@ -55,19 +55,19 @@ export default function Shell({ children }) {
     setCollapsed(localStorage.getItem('preva_sidebar_collapsed') === 'true');
     let active = true;
 
-    // Safety timeout to prevent getting stuck on loader
+    // Fast safety redirect to login if not authenticated
     const safetyTimer = setTimeout(() => {
       if (active && !user && typeof window !== 'undefined') {
-        window.location.href = '/admin/login';
+        window.location.replace('/admin/login');
       }
-    }, 1200);
+    }, 400);
 
     getUser()
       .then((activeUser) => {
         if (!active) return;
         clearTimeout(safetyTimer);
         if (!activeUser) {
-          if (typeof window !== 'undefined') window.location.href = '/admin/login';
+          if (typeof window !== 'undefined') window.location.replace('/admin/login');
         } else {
           setUser(activeUser);
           if (activeUser.mustChangePassword && pathname !== '/admin/profile') {
@@ -80,7 +80,7 @@ export default function Shell({ children }) {
       .catch(() => {
         clearTimeout(safetyTimer);
         if (active && typeof window !== 'undefined') {
-          window.location.href = '/admin/login';
+          window.location.replace('/admin/login');
         }
       });
 

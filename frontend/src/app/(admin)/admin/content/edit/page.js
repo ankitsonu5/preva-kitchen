@@ -163,7 +163,6 @@ const TYPE_COLORS = {
   hero: '#ec4899', about: '#8b5cf6', kitchen: '#f97316', food_menu_grid: '#84cc16',
   nightlife: '#a855f7', reservations: '#06b6d4', testimonials: '#f43f5e',
   newsletter: '#eab308', contact: '#14b8a6', posts_grid: '#64748b',
-  // New blocks
   text: '#3b82f6', banner: '#f43f5e', button: '#eab308', cta: '#f97316',
   image: '#06b6d4', video: '#a855f7', gallery: '#ec4899', gallery_text: '#8b5cf6',
   columns: '#0ea5e9', divider: '#6b7280', accordion: '#10b981', tabs: '#6366f1',
@@ -177,7 +176,6 @@ function SectionEditor({ sec, onChange }) {
   const d = sec.data || {};
   const update = (key, val) => onChange({ ...sec, data: { ...d, [key]: val } });
 
-  /* Inner helpers */
   const TabBar = ({ tabs }) => (
     <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: 16, overflowX: 'auto' }}>
       {tabs.map(t => <button key={t} type="button" onClick={() => setTab(t)} style={mkTab(tab === t)}>{t}</button>)}
@@ -987,7 +985,7 @@ function EditContentForm() {
   const [tagCollapsed, setTagCollapsed] = useState(false);
   const [showSectionPicker, setShowSectionPicker] = useState(false);
   const [expandedSections, setExpandedSections] = useState({});
-  const [seoCollapsed, setSeoCollapsed] = useState(true);
+  const [seoCollapsed, setSeoCollapsed] = useState(false);
   const [seoTab, setSeoTab] = useState('general');
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(Boolean(id));
   const [siteOrigin, setSiteOrigin] = useState('https://prevakitchen.com');
@@ -1011,7 +1009,6 @@ function EditContentForm() {
       if (tagsRes.ok) setTags(await tagsRes.json());
       if (pagesRes.ok) {
         const pagesData = await pagesRes.json();
-        // Exclude current page from parent list to prevent self-referencing loops
         setPages(pagesData.filter(p => p.id !== id));
       }
       if (mediaRes.ok) setMedia(await mediaRes.json());
@@ -1095,8 +1092,17 @@ function EditContentForm() {
 
   const openMediaSelector = (targetField) => { setMediaTarget(targetField); setMediaModalOpen(true); };
   const selectMediaItem = (url, alt = '') => {
-    if (mediaTarget === 'content') richEditorRef.current?.insertImage(url, alt);
-    else setForm(prev => ({ ...prev, [mediaTarget]: url }));
+    if (mediaTarget === 'content') {
+      richEditorRef.current?.insertImage(url, alt);
+    } else if (mediaTarget === 'featuredImage') {
+      setForm(prev => ({
+        ...prev,
+        featuredImage: url,
+        ogImage: url // Automatically set Social (OG) Image to match Featured Image
+      }));
+    } else {
+      setForm(prev => ({ ...prev, [mediaTarget]: url }));
+    }
     setMediaModalOpen(false);
   };
 
@@ -1117,7 +1123,6 @@ function EditContentForm() {
         const uploaded = await res.json();
         const uploadedUrl = Array.isArray(uploaded) ? uploaded[0]?.url : uploaded?.url;
         if (uploadedUrl) {
-          // Update media list and select the uploaded item
           setMedia(prev => [Array.isArray(uploaded) ? uploaded[0] : uploaded, ...prev]);
           selectMediaItem(uploadedUrl);
         }
@@ -1398,258 +1403,476 @@ function EditContentForm() {
                 </div>
               </div>
             )}
+          </div>
 
-            {/* ── Yoast/RankMath Style SEO & Search Optimization Panel ── */}
-            <div className="panel" style={{ padding: 0, border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', overflow: 'hidden' }}>
-              {/* Collapsible Panel Header */}
+          {/* Sidebar Settings Column */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            
+            {/* ── Rank Math SEO Suite Sidebar Box ── */}
+            <div className="panel" style={{ 
+              padding: 0, 
+              overflow: 'hidden', 
+              border: '1px solid rgba(197, 160, 89, 0.35)', 
+              borderRadius: '10px',
+              background: 'linear-gradient(180deg, rgba(26,24,20,0.85) 0%, rgba(18,17,15,0.95) 100%)',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.45)' 
+            }}>
+              {/* Header with Live Score Pill & Collapse Toggle */}
               <div 
                 onClick={() => setSeoCollapsed(v => !v)}
                 style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
-                  justify: 'space-between', 
-                  padding: '16px 20px', 
+                  justifyContent: 'space-between', 
+                  padding: '13px 15px', 
                   cursor: 'pointer', 
-                  background: 'rgba(255,255,255,0.02)', 
+                  background: 'linear-gradient(135deg, rgba(197,160,89,0.18) 0%, rgba(30,26,18,0.6) 100%)', 
                   borderBottom: seoCollapsed ? 'none' : '1px solid rgba(255,255,255,0.08)',
-                  gap: '16px'
+                  gap: '8px'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
-                  <div style={{ width: 38, height: 38, borderRadius: '8px', background: 'rgba(197,160,89,0.12)', border: '1px solid rgba(197,160,89,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0, color: 'var(--gold)' }}>
-                    🔍
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                  <div style={{ width: 26, height: 26, borderRadius: '6px', background: 'rgba(197,160,89,0.2)', border: '1px solid rgba(197,160,89,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem' }}>
+                    🚀
                   </div>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <h3 style={{ margin: 0, color: '#fff', fontSize: '1rem', fontWeight: 600, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      SEO &amp; Search Engine Optimization
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '13px', color: '#fff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      Rank Math SEO
+                      <span style={{ fontSize: '0.62rem', background: 'linear-gradient(135deg, #dfc07e, #c6a15b)', color: '#0e0c0a', padding: '1px 5px', borderRadius: '3px', fontWeight: 800 }}>PRO</span>
                     </h3>
-                    <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#90a4ae', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      Optimize search snippets, keywords, social cards and indexing
-                    </p>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-                  <span style={{ 
-                    fontSize: '0.75rem', 
-                    fontWeight: '600', 
-                    padding: '4px 12px', 
-                    borderRadius: '20px', 
-                    background: (form.seoTitle || form.title) && form.seoDescription ? 'rgba(76,175,80,0.15)' : 'rgba(255,193,7,0.15)', 
-                    color: (form.seoTitle || form.title) && form.seoDescription ? '#81c784' : '#ffd54f',
-                    border: `1px solid ${(form.seoTitle || form.title) && form.seoDescription ? 'rgba(76,175,80,0.3)' : 'rgba(255,193,7,0.3)'}`,
-                    whiteSpace: 'nowrap'
-                  }}>
-                    {(form.seoTitle || form.title) && form.seoDescription ? '✓ Good SEO' : '⚠️ Needs Optimization'}
-                  </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                  {/* Real-time Rank Math Score Pill */}
+                  {(() => {
+                    const kw = (form.focusKeyword || '').trim().toLowerCase();
+                    const title = (form.seoTitle || form.title || '').trim();
+                    const desc = (form.seoDescription || form.excerpt || '').trim();
+                    const slug = (form.slug || '').trim().toLowerCase();
+                    const rawContent = String(form.content || '');
+                    const cleanContent = rawContent.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+                    const wordCount = cleanContent ? cleanContent.split(/\s+/).length : 0;
 
-                  <div style={{ 
-                    width: 32, 
-                    height: 32, 
-                    borderRadius: '6px', 
-                    background: 'rgba(255,255,255,0.05)', 
-                    border: '1px solid rgba(255,255,255,0.12)', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justify: 'center', 
-                    color: seoCollapsed ? '#888' : 'var(--gold)',
-                    transition: 'all 150ms ease'
-                  }}>
-                    {seoCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
-                  </div>
+                    let score = 0;
+                    if (kw) {
+                      score += 10;
+                      if (title.toLowerCase().includes(kw)) score += 15;
+                      if (title.toLowerCase().startsWith(kw)) score += 5;
+                      if (desc.toLowerCase().includes(kw)) score += 15;
+                      if (slug.includes(kw.replace(/\s+/g, '-'))) score += 10;
+                      if (cleanContent.slice(0, 500).toLowerCase().includes(kw)) score += 10;
+                      if ((rawContent.match(/<h[23][^>]*>(.*?)<\/h[23]>/gi) || []).some(h => h.toLowerCase().includes(kw))) score += 10;
+                      if ((rawContent.match(/<img[^>]+alt=["']([^"']*)["'][^>]*>/gi) || []).some(img => img.toLowerCase().includes(kw))) score += 5;
+                    }
+                    if (title.length >= 35 && title.length <= 60) score += 5;
+                    if (desc.length >= 100 && desc.length <= 160) score += 5;
+                    if (wordCount >= 300) score += 5;
+                    if (wordCount >= 600) score += 5;
+
+                    const scoreColor = score >= 80 ? '#4caf50' : score >= 50 ? '#ffa726' : '#ef5350';
+                    const scoreBg = score >= 80 ? 'rgba(76,175,80,0.18)' : score >= 50 ? 'rgba(255,167,38,0.18)' : 'rgba(239,83,80,0.18)';
+
+                    return (
+                      <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '3px 8px',
+                        borderRadius: '12px',
+                        background: scoreBg,
+                        border: `1px solid ${scoreColor}55`,
+                        color: scoreColor,
+                        fontSize: '0.72rem',
+                        fontWeight: 800
+                      }}>
+                        <span>{score >= 80 ? '🟢' : score >= 50 ? '🟡' : '🔴'}</span>
+                        <span>{score}/100</span>
+                      </div>
+                    );
+                  })()}
+                  <span style={{ color: 'var(--ink-dim)', fontSize: 13, transition: 'transform 200ms', display: 'inline-block', transform: seoCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>▾</span>
                 </div>
               </div>
 
               {!seoCollapsed && (
-                <div style={{ padding: '20px' }}>
-                  {/* Sub-tabs: General | Social | Advanced */}
-                  <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '14px', marginBottom: '20px', flexWrap: 'wrap' }}>
-                    <button 
-                      type="button" 
-                      onClick={() => setSeoTab('general')} 
-                      style={{ 
-                        padding: '8px 18px', 
-                        borderRadius: '8px', 
-                        border: '1px solid', 
-                        borderColor: seoTab === 'general' ? 'var(--gold)' : 'rgba(255,255,255,0.12)', 
-                        background: seoTab === 'general' ? 'rgba(197,160,89,0.15)' : 'rgba(255,255,255,0.03)', 
-                        color: seoTab === 'general' ? 'var(--gold)' : '#ccc', 
-                        fontWeight: '600', 
-                        fontSize: '0.82rem', 
-                        cursor: 'pointer',
-                        transition: 'all 150ms ease'
-                      }}
-                    >
-                      General &amp; Snippet
-                    </button>
-                    <button 
-                      type="button" 
-                      onClick={() => setSeoTab('social')} 
-                      style={{ 
-                        padding: '8px 18px', 
-                        borderRadius: '8px', 
-                        border: '1px solid', 
-                        borderColor: seoTab === 'social' ? 'var(--gold)' : 'rgba(255,255,255,0.12)', 
-                        background: seoTab === 'social' ? 'rgba(197,160,89,0.15)' : 'rgba(255,255,255,0.03)', 
-                        color: seoTab === 'social' ? 'var(--gold)' : '#ccc', 
-                        fontWeight: '600', 
-                        fontSize: '0.82rem', 
-                        cursor: 'pointer',
-                        transition: 'all 150ms ease'
-                      }}
-                    >
-                      Social Share (OG)
-                    </button>
-                    <button 
-                      type="button" 
-                      onClick={() => setSeoTab('advanced')} 
-                      style={{ 
-                        padding: '8px 18px', 
-                        borderRadius: '8px', 
-                        border: '1px solid', 
-                        borderColor: seoTab === 'advanced' ? 'var(--gold)' : 'rgba(255,255,255,0.12)', 
-                        background: seoTab === 'advanced' ? 'rgba(197,160,89,0.15)' : 'rgba(255,255,255,0.03)', 
-                        color: seoTab === 'advanced' ? 'var(--gold)' : '#ccc', 
-                        fontWeight: '600', 
-                        fontSize: '0.82rem', 
-                        cursor: 'pointer',
-                        transition: 'all 150ms ease'
-                      }}
-                    >
-                      Advanced &amp; Robots
-                    </button>
+                <div style={{ padding: '14px 15px', display: 'flex', flexDirection: 'column', gap: '13px' }}>
+                  {/* 1-Click Smart Auto-Fill Rank Math Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const siteName = 'Preva Kitchen';
+                      const rawTitle = (form.title || 'Page').trim();
+                      
+                      // 1. Intelligent SEO Title (aim for ~50-58 chars)
+                      let bestTitle = rawTitle;
+                      if (!rawTitle.toLowerCase().includes('preva')) {
+                        if (rawTitle.length + 3 + siteName.length <= 58) {
+                          bestTitle = `${rawTitle} | ${siteName}`;
+                        } else {
+                          bestTitle = rawTitle.slice(0, 56).trim();
+                        }
+                      } else if (rawTitle.length > 58) {
+                        bestTitle = rawTitle.slice(0, 56).trim();
+                      }
+
+                      // 2. Intelligent Meta Description (aim for 120-155 chars)
+                      const rawContent = String(form.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+                      let baseDesc = (form.excerpt || rawContent || '').trim();
+                      if (baseDesc.length > 150) {
+                        baseDesc = baseDesc.slice(0, 147).trim() + '...';
+                      } else if (baseDesc.length < 100) {
+                        const addon = ` Enjoy fresh chef-made cuisine, dine-in & takeout at Preva Kitchen in Redford MI.`;
+                        baseDesc = (baseDesc + addon).slice(0, 150).trim();
+                      }
+
+                      // 3. Intelligent Focus Keyword
+                      let bestKw = rawTitle.split(/[:\-|–]/)[0].trim();
+                      if (bestKw.length > 30) bestKw = bestKw.slice(0, 30).trim();
+
+                      const effectiveFeaturedImg = form.featuredImage || '';
+
+                      setForm(prev => ({
+                        ...prev,
+                        seoTitle: bestTitle,
+                        seoDescription: baseDesc,
+                        focusKeyword: bestKw,
+                        ogTitle: bestTitle,
+                        ogDescription: baseDesc,
+                        ogImage: effectiveFeaturedImg || prev.ogImage || prev.featuredImage || ''
+                      }));
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      background: 'linear-gradient(135deg, rgba(197,160,89,0.25) 0%, rgba(197,160,89,0.08) 100%)',
+                      border: '1px solid rgba(197,160,89,0.5)',
+                      color: 'var(--gold)',
+                      fontWeight: 700,
+                      fontSize: '0.78rem',
+                      cursor: 'pointer',
+                      width: '100%',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                      transition: 'all 150ms ease'
+                    }}
+                  >
+                    ✨ Auto-Fill SEO (Optimal 100% Score)
+                  </button>
+
+                  {/* SEO Sub-Tabs (General / Social / Advanced) */}
+                  <div style={{ display: 'flex', gap: '4px', background: 'rgba(0,0,0,0.4)', padding: '3px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    {[
+                      { id: 'general', label: '🔍 General' },
+                      { id: 'social', label: '📱 Social' },
+                      { id: 'advanced', label: '⚙️ Advanced' }
+                    ].map(tab => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setSeoTab(tab.id)}
+                        style={{
+                          flex: 1,
+                          padding: '5px 2px',
+                          border: 'none',
+                          borderRadius: '4px',
+                          background: seoTab === tab.id ? 'linear-gradient(135deg, #dfc07e, #c6a15b)' : 'transparent',
+                          color: seoTab === tab.id ? '#0e0c0a' : '#aaa',
+                          fontWeight: 700,
+                          fontSize: '0.73rem',
+                          cursor: 'pointer',
+                          textAlign: 'center',
+                          transition: 'all 120ms ease'
+                        }}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
                   </div>
 
+                  {/* General Tab Content */}
                   {seoTab === 'general' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                      {/* Live Google Search Preview (SERP Card) */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      
+                      {/* Focus Keyword Input & Live Density Badge */}
                       <div>
-                        <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--gold)', marginBottom: '8px', display: 'block' }}>🔍 Live Google Search Result Preview</label>
-                        <div style={{ background: '#1c1b18', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '16px 20px', fontFamily: 'var(--font-roboto), Arial, sans-serif' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                            <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#c5a059', display: 'inline-block' }} />
-                            <span style={{ fontSize: '0.82rem', color: '#dadce0' }}>{siteOrigin.replace(/^https?:\/\//, '')} › {type === 'POST' ? 'blog › ' : ''}{form.slug || 'page-slug'}</span>
+                        {(() => {
+                          const kw = (form.focusKeyword || '').trim().toLowerCase();
+                          const rawContent = String(form.content || '');
+                          const cleanContent = rawContent.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+                          const wordCount = cleanContent ? cleanContent.split(/\s+/).length : 0;
+                          const kwCount = kw ? (cleanContent.toLowerCase().match(new RegExp(kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length : 0;
+                          const kwDensity = wordCount > 0 && kwCount > 0 ? ((kwCount * kw.split(/\s+/).length / wordCount) * 100).toFixed(1) : '0.0';
+
+                          return (
+                            <>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--gold)', margin: 0 }}>
+                                  🎯 Target Focus Keyword
+                                </label>
+                                {kw && (
+                                  <span style={{ fontSize: '0.68rem', color: '#9aa0a6', background: 'rgba(255,255,255,0.06)', padding: '1px 6px', borderRadius: '4px' }}>
+                                    Density: <b style={{ color: Number(kwDensity) >= 1 && Number(kwDensity) <= 2.5 ? '#81c784' : '#ffa726' }}>{kwDensity}%</b> ({kwCount}x)
+                                  </span>
+                                )}
+                              </div>
+                              <input
+                                className="input"
+                                name="focusKeyword"
+                                value={form.focusKeyword || ''}
+                                onChange={handleChange}
+                                placeholder="e.g. Rice & Peas"
+                                style={{ margin: 0, fontSize: '0.82rem', padding: '7px 10px', background: 'rgba(0,0,0,0.35)', borderColor: 'rgba(255,255,255,0.12)' }}
+                              />
+                            </>
+                          );
+                        })()}
+                      </div>
+
+                      {/* Google Search Result Preview Card */}
+                      <div>
+                        <label style={{ fontSize: '0.72rem', fontWeight: 600, color: '#aaa', marginBottom: '4px', display: 'block' }}>
+                          Google Search Result Preview
+                        </label>
+                        <div style={{ background: '#1c1b18', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '10px 12px', fontFamily: 'var(--font-roboto), Arial, sans-serif' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+                            <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#c5a059', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontSize: '9px', fontWeight: 'bold' }}>P</span>
+                            <div style={{ fontSize: '0.68rem', color: '#9aa0a6', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {siteOrigin.replace(/^https?:\/\//, '')} › {type === 'POST' ? 'blog › ' : ''}{form.slug || 'slug'}
+                            </div>
                           </div>
-                          <div style={{ color: '#8ab4f8', fontSize: '1.25rem', fontWeight: 400, margin: '4px 0', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                            {form.seoTitle || form.title || 'Untitled Page — Preva Detroit'}
+                          <div style={{ color: '#8ab4f8', fontSize: '0.88rem', fontWeight: 500, margin: '2px 0 3px', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                            {form.seoTitle || form.title || 'Untitled | Preva Kitchen'}
                           </div>
-                          <div style={{ color: '#bdc1c6', fontSize: '0.88rem', lineHeight: '1.5', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                            {form.seoDescription || form.excerpt || 'Provide a compelling meta description to improve click-through rates from search engines...'}
+                          <div style={{ color: '#bdc1c6', fontSize: '0.74rem', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                            {form.seoDescription || form.excerpt || 'Custom search engine summary snippet...'}
                           </div>
                         </div>
                       </div>
 
-                      {/* Meta Title with counter */}
+                      {/* SEO Title with Visual Length Meter */}
                       <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                          <label>Meta Title</label>
-                          <span style={{ fontSize: '0.78rem', color: (form.seoTitle || '').length <= 60 ? '#81c784' : '#ffa726', fontWeight: 600 }}>
-                            {(form.seoTitle || '').length} / 60 chars {(form.seoTitle || '').length > 60 ? '(Too Long)' : ''}
+                        {(() => {
+                          const titleLen = (form.seoTitle || '').length;
+                          const isOptimal = titleLen >= 35 && titleLen <= 60;
+                          const isTooLong = titleLen > 60;
+                          const color = isOptimal ? '#4caf50' : isTooLong ? '#ef5350' : titleLen > 0 ? '#ffa726' : '#888';
+                          return (
+                            <>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px', alignItems: 'center' }}>
+                                <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#fff', margin: 0 }}>SEO Title</label>
+                                <span style={{ fontSize: '0.7rem', color: color, fontWeight: 700 }}>
+                                  {titleLen} / 60 chars {isTooLong ? '(Too Long)' : isOptimal ? '(Optimal)' : ''}
+                                </span>
+                              </div>
+                              <input
+                                className="input"
+                                name="seoTitle"
+                                value={form.seoTitle || ''}
+                                onChange={handleChange}
+                                placeholder={`${form.title || 'Title'} | Preva Kitchen`}
+                                style={{ margin: 0, fontSize: '0.82rem', padding: '6px 10px', background: 'rgba(0,0,0,0.35)', borderColor: isTooLong ? '#ef535066' : isOptimal ? '#4caf5066' : 'rgba(255,255,255,0.12)' }}
+                              />
+                              {/* Progress bar */}
+                              <div style={{ height: '3px', width: '100%', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden', marginTop: '4px' }}>
+                                <div style={{
+                                  height: '100%',
+                                  width: `${Math.min(100, (titleLen / 60) * 100)}%`,
+                                  background: color,
+                                  transition: 'width 200ms ease, background 200ms ease'
+                                }} />
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+
+                      {/* Rank Math Snippet Variable Chips */}
+                      <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', padding: '6px 8px', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.66rem', color: 'var(--gold)', fontWeight: 600 }}>Insert:</span>
+                        {[
+                          { label: '%title%', val: form.title || 'Title' },
+                          { label: '%sep%', val: '|' },
+                          { label: '%sitename%', val: 'Preva Kitchen' },
+                          { label: '%keyword%', val: form.focusKeyword || '' }
+                        ].map((v) => (
+                          <button
+                            key={v.label}
+                            type="button"
+                            onClick={() => {
+                              setForm(prev => ({
+                                ...prev,
+                                seoTitle: prev.seoTitle ? `${prev.seoTitle} ${v.val}` : v.val
+                              }));
+                            }}
+                            style={{
+                              padding: '1px 5px',
+                              borderRadius: '3px',
+                              background: 'rgba(255,255,255,0.06)',
+                              border: '1px solid rgba(255,255,255,0.1)',
+                              color: '#fff',
+                              fontSize: '0.67rem',
+                              cursor: 'pointer'
+                            }}
+                            title={`Insert ${v.val} into SEO Title`}
+                          >
+                            + {v.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Meta Description with Visual Length Meter */}
+                      <div>
+                        {(() => {
+                          const descLen = (form.seoDescription || '').length;
+                          const isOptimal = descLen >= 100 && descLen <= 160;
+                          const isTooLong = descLen > 160;
+                          const color = isOptimal ? '#4caf50' : isTooLong ? '#ef5350' : descLen > 0 ? '#ffa726' : '#888';
+                          return (
+                            <>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px', alignItems: 'center' }}>
+                                <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#fff', margin: 0 }}>Meta Description</label>
+                                <span style={{ fontSize: '0.7rem', color: color, fontWeight: 700 }}>
+                                  {descLen} / 160 chars {isTooLong ? '(Too Long)' : isOptimal ? '(Optimal)' : ''}
+                                </span>
+                              </div>
+                              <textarea
+                                className="input"
+                                name="seoDescription"
+                                rows={2}
+                                value={form.seoDescription || ''}
+                                onChange={handleChange}
+                                placeholder="Meta description for search engines..."
+                                style={{ margin: 0, resize: 'vertical', minHeight: '52px', fontSize: '0.8rem', padding: '6px 10px', background: 'rgba(0,0,0,0.35)', borderColor: isTooLong ? '#ef535066' : isOptimal ? '#4caf5066' : 'rgba(255,255,255,0.12)' }}
+                              />
+                              {/* Progress bar */}
+                              <div style={{ height: '3px', width: '100%', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden', marginTop: '4px' }}>
+                                <div style={{
+                                  height: '100%',
+                                  width: `${Math.min(100, (descLen / 160) * 100)}%`,
+                                  background: color,
+                                  transition: 'width 200ms ease, background 200ms ease'
+                                }} />
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+
+                      {/* Comprehensive Rank Math 12-Item Content Analysis Checklist */}
+                      {(() => {
+                        const kw = (form.focusKeyword || '').trim().toLowerCase();
+                        const title = (form.seoTitle || form.title || '').trim();
+                        const desc = (form.seoDescription || form.excerpt || '').trim();
+                        const slug = (form.slug || '').trim().toLowerCase();
+                        const rawContent = String(form.content || '');
+                        const cleanContent = rawContent.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+                        const wordCount = cleanContent ? cleanContent.split(/\s+/).length : 0;
+
+                        const checks = [
+                          { label: 'Keyword in SEO Title', pass: kw && title.toLowerCase().includes(kw) },
+                          { label: 'Keyword in Meta Description', pass: kw && desc.toLowerCase().includes(kw) },
+                          { label: 'Keyword in URL Slug', pass: kw && slug.includes(kw.replace(/\s+/g, '-')) },
+                          { label: 'Keyword in First Paragraph', pass: kw && cleanContent.slice(0, 400).toLowerCase().includes(kw) },
+                          { label: 'Keyword in Subheading (H2/H3)', pass: kw && (rawContent.match(/<h[23][^>]*>(.*?)<\/h[23]>/gi) || []).some(h => h.toLowerCase().includes(kw)) },
+                          { label: 'Keyword in Image Alt Text', pass: kw && (rawContent.match(/<img[^>]+alt=["']([^"']*)["'][^>]*>/gi) || []).some(img => img.toLowerCase().includes(kw)) },
+                          { label: `Content Length (${wordCount} words, min 600)`, pass: wordCount >= 600 },
+                          { label: 'Internal Links Present', pass: /<a[^>]+href=["'](\/|https?:\/\/(www\.)?prevakitchen\.com)[^"']*["']/i.test(rawContent) },
+                          { label: 'External Authoritative Links', pass: /<a[^>]+href=["']https?:\/\/(?!(www\.)?prevakitchen\.com)[^"']+["']/i.test(rawContent) },
+                          { label: 'SEO Title Length (35-60 chars)', pass: title.length >= 35 && title.length <= 60 },
+                          { label: 'Meta Description Length (100-160 chars)', pass: desc.length >= 100 && desc.length <= 160 }
+                        ];
+
+                        const passedCount = checks.filter(c => c.pass).length;
+
+                        return (
+                          <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '6px', padding: '10px 12px', fontSize: '0.74rem', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--gold)' }}>📋 Content SEO Analyzer:</span>
+                              <span style={{ fontSize: '0.68rem', color: passedCount >= 8 ? '#81c784' : '#ffa726', fontWeight: 700 }}>
+                                {passedCount}/{checks.length} Passed
+                              </span>
+                            </div>
+                            {checks.map((item, idx) => (
+                              <div key={idx} style={{ color: item.pass ? '#81c784' : '#888', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span>{item.pass ? '✓' : '○'}</span>
+                                {item.label}
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+
+                  {/* Social Tab Content */}
+                  {seoTab === 'social' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div>
+                        <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#fff', marginBottom: '3px', display: 'block' }}>Social Share Title</label>
+                        <input className="input" name="ogTitle" value={form.ogTitle || ''} onChange={handleChange} placeholder={form.seoTitle || form.title || 'Page Title'} style={{ margin: 0, fontSize: '0.82rem', padding: '6px 10px', background: 'rgba(0,0,0,0.35)' }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#fff', marginBottom: '3px', display: 'block' }}>Social Description</label>
+                        <textarea className="input" name="ogDescription" rows={2} value={form.ogDescription || ''} onChange={handleChange} placeholder={form.seoDescription || form.excerpt || 'Social share description'} style={{ margin: 0, fontSize: '0.8rem', padding: '6px 10px', background: 'rgba(0,0,0,0.35)' }} />
+                      </div>
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+                          <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#fff', margin: 0 }}>Social (OG) Image</label>
+                          <span style={{ fontSize: '0.68rem', color: form.ogImage || form.featuredImage ? '#81c784' : '#888' }}>
+                            {form.ogImage && form.ogImage !== form.featuredImage ? 'Custom' : 'Featured Image'}
                           </span>
                         </div>
-                        <input className="input" name="seoTitle" value={form.seoTitle} onChange={handleChange} placeholder={form.title || 'Custom search engine title'} style={{ margin: 0 }} />
-                      </div>
-
-                      {/* Meta Description with counter */}
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                          <label>Meta Description</label>
-                          <span style={{ fontSize: '0.78rem', color: (form.seoDescription || '').length <= 155 ? '#81c784' : '#ffa726', fontWeight: 600 }}>
-                            {(form.seoDescription || '').length} / 155 chars {(form.seoDescription || '').length > 155 ? '(Too Long)' : ''}
-                          </span>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <input
+                            className="input"
+                            name="ogImage"
+                            value={form.ogImage || form.featuredImage || ''}
+                            onChange={handleChange}
+                            placeholder="Same as Featured Image"
+                            style={{ margin: 0, flex: 1, fontSize: '0.78rem', padding: '6px 8px', background: 'rgba(0,0,0,0.35)' }}
+                          />
+                          <button type="button" className="btn" onClick={() => openMediaSelector('ogImage')} style={{ padding: '4px 10px', fontSize: '0.75rem' }}>Select</button>
                         </div>
-                        <textarea className="input" name="seoDescription" rows="3" value={form.seoDescription} onChange={handleChange} placeholder="Custom search engine summary snippet..." style={{ margin: 0 }} />
-                      </div>
-
-                      {/* Focus Keyword & Checklist */}
-                      <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '16px' }}>
-                        <label style={{ fontWeight: 600, color: '#fff', marginBottom: '6px' }}>Target Focus Keyword</label>
-                        <input className="input" name="focusKeyword" value={form.focusKeyword} onChange={handleChange} placeholder="e.g. detroit nightlife dining" style={{ marginBottom: '14px' }} />
-
-                        {/* Keyword Real-time Analysis Checklist */}
-                        {form.focusKeyword && form.focusKeyword.trim() ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.85rem' }}>
-                            <div style={{ color: (form.seoTitle || form.title || '').toLowerCase().includes(form.focusKeyword.toLowerCase()) ? '#81c784' : '#aaa', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span>{(form.seoTitle || form.title || '').toLowerCase().includes(form.focusKeyword.toLowerCase()) ? '✓' : '○'}</span>
-                              Focus keyword appears in title
-                            </div>
-                            <div style={{ color: (form.seoDescription || '').toLowerCase().includes(form.focusKeyword.toLowerCase()) ? '#81c784' : '#aaa', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span>{(form.seoDescription || '').toLowerCase().includes(form.focusKeyword.toLowerCase()) ? '✓' : '○'}</span>
-                              Focus keyword appears in meta description
-                            </div>
-                            <div style={{ color: (form.content || '').replace(/<[^>]+>/g, ' ').slice(0, 500).toLowerCase().includes(form.focusKeyword.toLowerCase()) ? '#81c784' : '#aaa', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span>{(form.content || '').replace(/<[^>]+>/g, ' ').slice(0, 500).toLowerCase().includes(form.focusKeyword.toLowerCase()) ? '✓' : '○'}</span>
-                              Focus keyword appears in the first 100 words of content
-                            </div>
-                            <div style={{ color: (form.content || '').replace(/<[^>]+>/g, ' ').trim().split(/\s+/).length >= 300 ? '#81c784' : '#aaa', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span>{(form.content || '').replace(/<[^>]+>/g, ' ').trim().split(/\s+/).length >= 300 ? '✓' : '○'}</span>
-                              Content is at least 300 words long (Current: {(form.content || '').replace(/<[^>]+>/g, ' ').trim().split(/\s+/).filter(Boolean).length} words)
-                            </div>
+                        {(form.ogImage || form.featuredImage) && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', background: 'rgba(0,0,0,0.25)', padding: '4px 8px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                            <img
+                              src={form.ogImage || form.featuredImage}
+                              alt="Social preview"
+                              style={{ width: '36px', height: '24px', objectFit: 'cover', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.1)' }}
+                            />
+                            <span style={{ fontSize: '0.7rem', color: '#aaa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {form.ogImage && form.ogImage !== form.featuredImage ? 'Custom OG image selected' : '✓ Synced with Featured Image'}
+                            </span>
                           </div>
-                        ) : (
-                          <p style={{ margin: 0, fontSize: '0.8rem', color: '#888' }}>Type a target focus keyword above to get instant content analysis.</p>
                         )}
                       </div>
                     </div>
                   )}
 
-                  {seoTab === 'social' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                      <div>
-                        <label>Social Share Title</label>
-                        <input className="input" name="ogTitle" value={form.ogTitle} onChange={handleChange} placeholder={form.seoTitle || form.title || 'Uses the SEO title when empty'} />
-                      </div>
-
-                      <div>
-                        <label>Social Share Description</label>
-                        <textarea className="input" name="ogDescription" rows="3" value={form.ogDescription} onChange={handleChange} placeholder={form.seoDescription || form.excerpt || 'Uses the SEO description when empty'} />
-                      </div>
-
-                      <label>Open Graph (Social Share) Image URL</label>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <input className="input" name="ogImage" value={form.ogImage} onChange={handleChange} placeholder={form.featuredImage || 'Paste image URL or select from library'} style={{ margin: 0, flex: 1 }} />
-                        <button type="button" className="btn" onClick={() => openMediaSelector('ogImage')}>Select</button>
-                      </div>
-
-                      {/* Social Share Live Card Preview */}
-                      <div style={{ marginTop: '10px' }}>
-                        <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--gold)', marginBottom: '8px', display: 'block' }}>📱 Facebook / Twitter / WhatsApp Card Preview</label>
-                        <div style={{ width: '100%', maxWidth: '480px', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', overflow: 'hidden', background: '#12100e' }}>
-                          <div style={{ height: '220px', background: '#000', overflow: 'hidden', position: 'relative' }}>
-                            <img src={form.ogImage || form.featuredImage || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80'} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          </div>
-                          <div style={{ padding: '14px 16px' }}>
-                            <span style={{ fontSize: '0.75rem', color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.05em' }}>PREVA.COM</span>
-                            <h4 style={{ margin: '4px 0 6px', color: '#fff', fontSize: '1rem' }}>{form.ogTitle || form.seoTitle || form.title || 'Page Title'}</h4>
-                            <p style={{ margin: 0, color: '#aaa', fontSize: '0.85rem', lineHeight: '1.4' }}>{form.ogDescription || form.seoDescription || form.excerpt || 'Meta description for social sharing...'}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
+                  {/* Advanced Tab Content */}
                   {seoTab === 'advanced' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                       <div>
-                        <label>Canonical URL (Duplicate Content Control)</label>
-                        <input className="input" name="canonicalUrl" value={form.canonicalUrl} onChange={handleChange} placeholder={`${siteOrigin}${type === 'POST' ? '/blog' : ''}/${form.slug || 'page-slug'}`} />
-                        <p style={{ margin: '6px 0 0', fontSize: '0.78rem', color: '#888' }}>Leave empty to use the automatic canonical for this page. Only set this when consolidating duplicate content.</p>
+                        <label style={{ fontSize: '0.78rem', fontWeight: 600, color: '#fff', marginBottom: '3px', display: 'block' }}>Canonical URL</label>
+                        <input className="input" name="canonicalUrl" value={form.canonicalUrl || ''} onChange={handleChange} placeholder={`${siteOrigin}${type === 'POST' ? '/blog' : ''}/${form.slug || 'page-slug'}`} style={{ margin: 0, fontSize: '0.8rem', padding: '6px 10px', background: 'rgba(0,0,0,0.35)' }} />
+                        <span style={{ fontSize: '0.7rem', color: '#888', marginTop: '3px', display: 'block' }}>Leave empty for default canonical.</span>
                       </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
-                        <input type="checkbox" id="noIndexCheck" name="noIndex" checked={!!form.noIndex} onChange={handleChange} style={{ width: 18, height: 18, accentColor: 'var(--gold)', cursor: 'pointer' }} />
-                        <label htmlFor="noIndexCheck" style={{ margin: 0, cursor: 'pointer', color: '#fff', fontSize: '0.9rem' }}>
-                          Exclude this page from search engine index (<code style={{ color: '#ff8ca0' }}>noindex</code>)
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                        <input type="checkbox" id="noIndexCheck" name="noIndex" checked={!!form.noIndex} onChange={handleChange} style={{ width: 16, height: 16, accentColor: 'var(--gold)', cursor: 'pointer' }} />
+                        <label htmlFor="noIndexCheck" style={{ margin: 0, cursor: 'pointer', color: '#fff', fontSize: '0.82rem' }}>
+                          Exclude page from Google (<code style={{ color: '#ff8ca0' }}>noindex</code>)
                         </label>
                       </div>
-                      <p style={{ margin: 0, fontSize: '0.8rem', color: '#888', paddingLeft: '28px' }}>Check this to instruct Google and other crawlers NOT to list this page in search results.</p>
                     </div>
                   )}
                 </div>
               )}
             </div>
-
-            {/* ── WordPress-style Categories (below main column) ── */}
+            {/* Categories & Tags (Only for POST) */}
             {type === 'POST' && (
               <>
                 {/* Categories Box */}
@@ -1778,7 +2001,6 @@ function EditContentForm() {
                               e.preventDefault();
                               const name = newTagInput.trim();
                               if (!name) return;
-                              // optimistically add a fake tag
                               const fakeId = 'new-' + Date.now();
                               setTags(prev => [...prev, { id: fakeId, name }]);
                               setForm(prev => ({ ...prev, tagIds: [...prev.tagIds, fakeId] }));
@@ -1805,10 +2027,7 @@ function EditContentForm() {
                 </div>
               </>
             )}
-          </div>
 
-          {/* Sidebar Settings Column */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             {/* Publish Actions panel */}
             <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <h3 style={{ margin: '0 0 10px', color: '#fff', fontSize: '1.1rem' }}>Publish</h3>
@@ -1868,8 +2087,6 @@ function EditContentForm() {
                 Select Image
               </button>
             </div>
-
-            {/* Post Specific Settings moved to main column below SEO */}
 
             {/* Page Specific Settings (Parent Page, Order, Template) */}
             {type === 'PAGE' && (

@@ -62,7 +62,7 @@ export default function PosShopDashboard({ products = [], categories = [] }) {
 
             {/* Navigation Icons */}
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', alignItems: 'center' }}>
-              <Link href="/shop" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', padding: '12px 14px', borderRadius: '14px', background: 'linear-gradient(135deg, rgba(255,69,0,0.2) 0%, rgba(201,168,76,0.15) 100%)', border: '1px solid #FF4500', color: '#FF4500', textDecoration: 'none', width: '100%' }}>
+              <Link href="/menu" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', padding: '12px 14px', borderRadius: '14px', background: 'linear-gradient(135deg, rgba(255,69,0,0.2) 0%, rgba(201,168,76,0.15) 100%)', border: '1px solid #FF4500', color: '#FF4500', textDecoration: 'none', width: '100%' }}>
                 <SvgIcon name="chart" size={20} />
                 <span style={{ fontSize: '10px', fontWeight: 'bold' }}>Dashboard</span>
               </Link>

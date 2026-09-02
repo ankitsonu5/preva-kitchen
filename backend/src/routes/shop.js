@@ -27,6 +27,8 @@ function toProduct(item) {
     slug: out.slug || out.id,
     name: out.name,
     description: out.description || '',
+    aboutTitle: out.aboutTitle || '',
+    aboutContent: out.aboutContent || '',
     priceCents: itemPriceCents(item),
     price: formatMoney(itemPriceCents(item)),
     image: out.image || '',
@@ -35,6 +37,9 @@ function toProduct(item) {
     featured: Boolean(out.featured),
     badge: out.badge || '',
     tags: out.tags || [],
+    allergens: out.allergens || [],
+    pairings: out.pairings || [],
+    faqs: out.faqs || [],
     servings: out.servings || '',
     calories: out.calories || null,
     optionGroups: (out.optionGroups || []).map((group) => ({

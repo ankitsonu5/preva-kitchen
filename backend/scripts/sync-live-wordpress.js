@@ -11,6 +11,7 @@ import './env.js';
 import { MongoClient } from 'mongodb';
 import sanitizeHtml from 'sanitize-html';
 import { publicHtml } from '../src/lib/sanitize.js';
+import { blogCanonical, rewriteLegacyBlogLinks } from '../src/lib/blog-links.js';
 
 const WORDPRESS_ORIGIN = (process.env.WORDPRESS_ORIGIN || 'https://prevaclub.com').replace(/\/$/, '');
 const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/preva';
@@ -152,7 +153,10 @@ try {
     const existing = await content.findOne({ slug: item.slug });
     const title = plainText(item.title?.rendered, 250) || item.slug;
     const description = seoDescription(item, title);
-    const body = publicHtml(item.content?.rendered || '');
+    const sourceBody = type === 'POST'
+      ? rewriteLegacyBlogLinks(item.content?.rendered || '')
+      : item.content?.rendered || '';
+    const body = publicHtml(sourceBody);
     const pathname = new URL(item.link, WORDPRESS_ORIGIN).pathname.replace(/^\/+|\/+$/g, '');
     const keepSections = Array.isArray(existing?.sections) && existing.sections.length > 0;
     const sections = keepSections
@@ -182,7 +186,7 @@ try {
           ogTitle: plainText(item.yoast_head_json?.og_title, 250) || title,
           ogDescription: plainText(item.yoast_head_json?.og_description, 400) || description,
           ogImage: featuredImage(item) || existing?.ogImage || '',
-          canonicalUrl: item.link,
+          canonicalUrl: type === 'POST' ? blogCanonical(item.slug) : item.link,
           categoryIds: type === 'POST'
             ? (item.categories || []).map((id) => categoryIdByWpId.get(id)).filter(Boolean)
             : (existing?.categoryIds || []),

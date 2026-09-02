@@ -11,7 +11,7 @@ export const ALL_GALLERY_IMAGES = [
     category: 'dishes',
     tag: 'CHEF SIGNATURE',
     desc: 'Rosemary-glazed rack of lamb layered with seasonal vegetables and velvety jus.',
-    src: 'https://prevaclub.com/wp-content/uploads/2026/06/hero-preva-kitchen-.jpeg',
+    src: '/asset/prevaclub/wp-content/uploads/2026/06/hero-preva-kitchen-.jpeg',
     aspect: 'tall'
   },
   {
@@ -29,7 +29,7 @@ export const ALL_GALLERY_IMAGES = [
     category: 'dishes',
     tag: 'HOUSE FAVORITE',
     desc: 'Creamy Caribbean-style penne tossed with authentic house jerk seasoning.',
-    src: 'https://prevaclub.com/wp-content/uploads/2026/08/Rasta-Pasta.webp',
+    src: '/asset/prevaclub/wp-content/uploads/2026/08/Rasta-Pasta.webp',
     fallback: '/asset/hero/preva-pasta-hero.jpg',
     aspect: 'square'
   },
@@ -248,7 +248,7 @@ export default function GalleryPage() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))',
               gap: '24px'
             }}
           >
@@ -384,7 +384,7 @@ export default function GalleryPage() {
 
             <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
               <Link
-                href="/shop"
+                href="/menu"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -408,7 +408,7 @@ export default function GalleryPage() {
                 View Full Menu <ArrowRight size={16} />
               </Link>
               <Link
-                href="/shop"
+                href="/menu"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',

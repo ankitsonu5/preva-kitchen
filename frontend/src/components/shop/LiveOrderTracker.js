@@ -125,7 +125,7 @@ export default function LiveOrderTracker({ initialOrder }) {
             ? 'The refund has been confirmed. Your bank may take a few business days to show it on your statement.'
             : 'This order is no longer active. Please contact Preva Kitchen if you need any help.'}
         </p>
-        <p style={{ marginTop: 28 }}><Link href="/shop" className="ps-more">Back to the menu</Link></p>
+        <p style={{ marginTop: 28 }}><Link href="/menu" className="ps-more">Back to the menu</Link></p>
       </div>
     );
   }
@@ -407,7 +407,7 @@ export default function LiveOrderTracker({ initialOrder }) {
 
         <div style={{ marginTop: '24px', textAlign: 'center' }}>
           <Link
-            href="/shop"
+            href="/menu"
             style={{
               display: 'inline-flex',
               alignItems: 'center',

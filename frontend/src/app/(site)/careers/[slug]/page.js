@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getPublishedCareerJob, getPublishedCareerJobs } from '@/lib/career-api';
 import SvgIcon from '@/components/SvgIcon';
+import { pageMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,11 +10,14 @@ export async function generateMetadata({ params }) {
   const { slug } = await params;
   const job = await getPublishedCareerJob(slug);
   if (!job) return {};
-  return {
+  return pageMetadata({
     title: `${job.title} — Redford, MI`,
     description: `${job.title} opening at ${job.department} in Redford Township, Michigan.`,
-    alternates: { canonical: `/careers/${job.slug}` }
-  };
+    path: `/careers/${job.slug}`,
+    image: job.image,
+    type: 'article',
+    keywords: [job.title, `${job.title} Redford MI`, 'Preva Kitchen jobs']
+  });
 }
 
 export default async function CareerJobPage({ params }) {

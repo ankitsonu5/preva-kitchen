@@ -1,21 +1,14 @@
-function siteOrigin() {
-  const configured =
-    process.env.NEXT_PUBLIC_CANONICAL_URL ||
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    'https://prevakitchen.com';
-
-  return configured.replace(/\/$/, '');
-}
+import { getCanonicalOrigin } from '@/lib/site-url';
 
 export default function robots() {
-  const origin = siteOrigin();
+  const origin = getCanonicalOrigin();
 
   return {
     rules: [
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/admin/', '/checkout', '/order/', '/preview']
+        disallow: ['/admin/', '/api/', '/checkout', '/order/', '/preview']
       }
     ],
     sitemap: `${origin}/sitemap.xml`,

@@ -44,6 +44,10 @@ export function contentMetadata(item, fallback = {}) {
   const title = item.seoTitle || item.metaTitle || item.title || fallback.title;
   const description = item.seoDescription || item.metaDescription || item.excerpt || item.description || fallback.description;
   const image = item.ogImage || item.featuredImage || item.coverImage;
+  const rawKeywords = item.seoKeywords || item.metaKeywords || item.keywords || item.tags || fallback.keywords || [];
+  const keywords = Array.isArray(rawKeywords)
+    ? rawKeywords.map((value) => typeof value === 'string' ? value : value?.name).filter(Boolean)
+    : String(rawKeywords).split(',').map((value) => value.trim()).filter(Boolean);
   // Route-owned canonicals win over legacy CMS values. This keeps migrated
   // WordPress URLs from pinning the new Next site to the old domain; the
   // active origin still comes from metadataBase/NEXT_PUBLIC_CANONICAL_URL.
@@ -51,11 +55,15 @@ export function contentMetadata(item, fallback = {}) {
   return {
     title,
     description,
+    keywords,
     alternates: canonical ? { canonical } : undefined,
     openGraph: {
       type: 'article',
       title: item.ogTitle || title,
       description: item.ogDescription || description,
+      url: canonical,
+      siteName: 'Preva Kitchen',
+      locale: 'en_US',
       images: image ? [{ url: image }] : undefined
     },
     twitter: {
@@ -67,6 +75,16 @@ export function contentMetadata(item, fallback = {}) {
     authors: item.author?.name ? [{ name: item.author.name }] : undefined,
     robots: item.noIndex
       ? { index: false, follow: false }
-      : item.metaRobots || fallback.robots || undefined
+      : item.metaRobots || fallback.robots || {
+          index: true,
+          follow: true,
+          googleBot: {
+            index: true,
+            follow: true,
+            'max-video-preview': -1,
+            'max-image-preview': 'large',
+            'max-snippet': -1
+          }
+        }
   };
 }

@@ -532,45 +532,116 @@ select.pk-ref-booking-input:focus:hover {
 
 @media (max-width: 720px) {
   .pk-ref-wrap { width: min(100% - 32px, 580px); }
-  .pk-ref-hero { min-height: 700px; align-items: flex-end; }
-  .pk-ref-hero-slide { background-position: 63% center; }
-  .pk-ref-hero-shade { background: linear-gradient(90deg, rgba(5,4,4,.92), rgba(5,4,4,.48)), linear-gradient(0deg, rgba(5,4,4,.98) 0%, rgba(5,4,4,.18) 67%); }
-  .pk-ref-hero-inner { padding: 150px 0 82px; }
+
+  /* ── Hero Section ── */
+  .pk-ref-hero { min-height: 100svh; min-height: 100dvh; align-items: flex-end; }
+  .pk-ref-hero-slide { background-position: center center; background-size: cover; }
+  .pk-ref-hero-shade {
+    background:
+      linear-gradient(0deg, rgba(5,4,4,.96) 0%, rgba(5,4,4,.72) 35%, rgba(5,4,4,.18) 60%, rgba(5,4,4,.06) 100%);
+  }
+  .pk-ref-hero-inner { padding: 0 0 32px; }
   .pk-ref-hero-copy { width: 100%; }
-  .pk-ref-script { font-size: 1.85rem; }
-  .pk-ref-hero h1 { font-size: clamp(4rem, 19vw, 5.6rem); }
-  .pk-ref-hero-lead { font-size: .98rem; }
-  .pk-ref-button { min-height: 50px; padding-inline: 19px; }
-  .pk-ref-highlight-grid { grid-template-columns: 1fr; padding-block: 0; }
-  .pk-ref-highlight { min-height: 180px; }
-  .pk-ref-highlight + .pk-ref-highlight, .pk-ref-highlight:nth-child(3) { border-top: 1px solid rgba(213,164,79,.2); border-left: 0; }
-  .pk-ref-story { height: auto; min-height: calc(100svh - var(--preva-fixed-header-height, 76px)); max-height: none; align-items: flex-end; background-position: 66% center; }
-  .pk-ref-story-shade { background: linear-gradient(0deg, rgba(5,5,5,.99) 0%, rgba(5,5,5,.87) 48%, rgba(5,5,5,.18) 100%); }
-  .pk-ref-story-inner { padding: clamp(180px, 31vh, 245px) 0 38px; }
+  .pk-ref-script { font-size: .82rem; margin-bottom: 8px; letter-spacing: .1em; }
+  .pk-ref-hero h1 { font-size: clamp(2.6rem, 10vw, 3.4rem); margin-bottom: 12px; line-height: 1.1; }
+  .pk-ref-hero-lead { font-size: .88rem; line-height: 1.55; margin-bottom: 20px; max-width: 100%; }
+  .pk-ref-hero-actions { gap: 10px; }
+  .pk-ref-button { min-height: 44px; padding-inline: 16px; font-size: .75rem; gap: 8px; border-radius: 6px; }
+  .pk-ref-hero-dots { bottom: 10px; gap: 10px; }
+  .pk-ref-hero-dots button { width: 9px; height: 9px; }
+  .pk-ref-hero-dots button.is-active { width: 20px; }
+
+  /* ── Highlights ── */
+  .pk-ref-highlight-grid { grid-template-columns: 1fr 1fr; padding-block: 0; }
+  .pk-ref-highlight { min-height: 130px; padding: 0 14px; }
+  .pk-ref-highlight svg { width: 32px; height: 32px; margin-bottom: 10px; }
+  .pk-ref-highlight h2 { font-size: .72rem; margin-bottom: 4px; }
+  .pk-ref-highlight p { font-size: .78rem; line-height: 1.45; }
+  .pk-ref-highlight + .pk-ref-highlight { border-left: 1px solid rgba(213,164,79,.2); }
+  .pk-ref-highlight:nth-child(odd) { border-left: 0; }
+  .pk-ref-highlight:nth-child(n + 3) { border-top: 1px solid rgba(213,164,79,.2); }
+
+  /* ── Story / About Section ── */
+  .pk-ref-story {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    align-items: flex-start;
+    background-image: url('/asset/home-reference/story-quesadilla-mobile.jpg');
+    background-position: center center;
+    background-size: cover;
+  }
+  .pk-ref-story-shade {
+    background: linear-gradient(0deg, rgba(5,5,5,.96) 0%, rgba(5,5,5,.88) 50%, rgba(5,5,5,.72) 100%);
+  }
+  .pk-ref-story-inner { padding: 48px 0 42px; }
   .pk-ref-story-copy { width: 100%; }
-  .pk-ref-story h2 { font-size: clamp(2.2rem, 10vw, 3rem); }
-  .pk-ref-categories { padding-block: 58px; }
-  .pk-ref-category-grid { grid-template-columns: repeat(2, 1fr); }
-  .pk-ref-category-image { width: min(100%, 132px); margin-bottom: 14px; }
-  .pk-ref-signatures { padding-bottom: 58px; }
-  .pk-ref-dish-grid { gap: 16px; }
-  .pk-ref-section-heading h2 { font-size: 2.35rem; }
-  .pk-ref-booking { padding: 40px 0; }
-  .pk-ref-booking-card { padding: 26px 16px; border-radius: 16px; }
+  .pk-ref-story h2 { font-size: clamp(1.8rem, 7.5vw, 2.4rem); margin-bottom: 10px; }
+  .pk-ref-kicker { font-size: .7rem; margin-bottom: 10px; }
+  .pk-ref-kicker span { width: 36px; }
+  .pk-ref-ornament { margin-bottom: 12px; }
+  .pk-ref-ornament i { width: 28px; }
+  .pk-ref-story-copy > p:not(.pk-ref-kicker) { font-size: .86rem; line-height: 1.5; margin-bottom: 8px; }
+  .pk-ref-button--wine { font-size: .74rem; min-height: 44px; padding-inline: 18px; }
+
+  /* ── Categories ── */
+  .pk-ref-categories { padding-block: 48px; }
+  .pk-ref-section-heading { margin-bottom: 28px; }
+  .pk-ref-section-heading h2 { font-size: clamp(1.8rem, 7vw, 2.35rem); }
+  .pk-ref-category-grid { grid-template-columns: repeat(3, 1fr); gap: 20px 14px; }
+  .pk-ref-category-image { width: min(100%, 105px); margin-bottom: 10px; }
+  .pk-ref-category strong { font-size: .72rem; }
+  .pk-ref-category small { font-size: .68rem; }
+
+  /* ── Signature Dishes ── */
+  .pk-ref-signatures { padding-bottom: 48px; }
+  .pk-ref-signatures-heading h2 { font-size: clamp(1.8rem, 7vw, 2.2rem); }
+  .pk-ref-dish-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .pk-ref-dish-body { min-height: 140px; padding: 12px; }
+  .pk-ref-dish-title-row h3 { font-size: .88rem; }
+  .pk-ref-dish-title-row strong { font-size: .82rem; }
+  .pk-ref-dish-body > p { font-size: .76rem; margin: 6px 0 12px; min-height: 36px; }
+  .pk-ref-dish-order { min-height: 36px; font-size: .68rem; padding: 0 10px; }
+
+  /* ── Booking ── */
+  .pk-ref-booking { padding: 36px 0; }
+  .pk-ref-booking-card { padding: 22px 14px; border-radius: 14px; }
+  .pk-ref-booking-split-left { padding: 22px 16px; }
+  .pk-ref-booking h2 { font-size: clamp(1.5rem, 6vw, 2rem); }
+  .pk-ref-booking-copy .pk-ref-script { font-size: clamp(1.1rem, 4vw, 1.4rem); }
+  .pk-ref-booking-copy > p { font-size: .82rem; }
   .pk-ref-booking-row { grid-template-columns: 1fr; }
   .pk-ref-booking-row:last-of-type { grid-template-columns: 1fr 1fr; }
-  .pk-ref-booking-submit { height: 52px; }
-  .pk-ref-booking-note { margin-top: 6px; }
+  .pk-ref-booking-submit { height: 48px; font-size: .72rem; }
+  .pk-ref-booking-note { margin-top: 6px; font-size: .8rem; }
+  .pk-ref-booking-split-right { min-height: 220px; }
+  .pk-ref-booking-media-badge { bottom: 14px; left: 14px; right: 14px; padding: 10px 14px; }
+  .pk-ref-booking-badge-tag { font-size: .58rem; }
+  .pk-ref-booking-badge-title { font-size: .84rem; }
 }
 
-@media (max-width: 420px) {
+@media (max-width: 480px) {
+  .pk-ref-wrap { width: min(100% - 24px, 420px); }
+  .pk-ref-hero h1 { font-size: clamp(2.2rem, 9vw, 2.8rem); }
+  .pk-ref-hero-lead { font-size: .84rem; }
+  .pk-ref-hero-actions { flex-direction: column; gap: 8px; }
   .pk-ref-hero-actions .pk-ref-button { width: 100%; }
-  .pk-ref-category-grid { gap: 30px 14px; }
-  .pk-ref-category strong { font-size: .76rem; }
+  .pk-ref-category-grid { grid-template-columns: repeat(2, 1fr); gap: 22px 14px; }
+  .pk-ref-category strong { font-size: .7rem; }
   .pk-ref-dish-grid { grid-template-columns: 1fr; }
+  .pk-ref-story h2 { font-size: clamp(1.65rem, 7vw, 2.1rem); }
+  .pk-ref-booking-split-left { padding: 18px 12px; }
+}
+
+@media (max-width: 360px) {
+  .pk-ref-hero h1 { font-size: 2rem; }
+  .pk-ref-script { font-size: .74rem; }
+  .pk-ref-hero-lead { font-size: .8rem; }
+  .pk-ref-button { min-height: 42px; padding-inline: 14px; font-size: .7rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .pk-ref-button, .pk-ref-category-image img, .pk-ref-category > i, .pk-ref-dish-card, .pk-ref-dish-media img, .pk-ref-dish-order { transition: none; }
   .pk-ref-hero-slide { transition: opacity .2s ease; transform: none; }
 }
+

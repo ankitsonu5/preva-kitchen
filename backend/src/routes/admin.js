@@ -601,7 +601,7 @@ resource({
 resource({
   path: 'menu-items', collection: 'menuItems', entity: 'MENU_ITEM',
   sort: { category: 1, sortOrder: 1, name: 1 },
-  build: (body) => {
+  build: (body, current = null) => {
     const name = cleanText(body?.name, 120);
     if (!name) throw badRequest('An item name is required.');
 
@@ -615,24 +615,28 @@ resource({
       price: cleanText(body?.price, 40) || `$${(priceCents / 100).toFixed(2)}`,
       priceCents,
       description: cleanText(body?.description, 500),
+      aboutTitle: cleanText(body?.aboutTitle ?? current?.aboutTitle, 240),
+      aboutContent: cleanText(body?.aboutContent ?? current?.aboutContent, 6000),
       category: cleanText(body?.category, 80) || 'Others',
       image: cleanText(body?.image, 2000) || null,
       available: cleanBool(body?.available, true),
-      orderable: cleanBool(body?.orderable, false),
+      orderable: cleanBool(body?.orderable, current?.orderable ?? false),
       featured: cleanBool(body?.featured, false),
-      badge: cleanText(body?.badge, 40),
-      servings: cleanText(body?.servings, 40),
-      calories: Number.isFinite(Number(body?.calories)) ? cleanInt(body.calories, 0) : null,
+      badge: cleanText(body?.badge ?? current?.badge, 40),
+      servings: cleanText(body?.servings ?? current?.servings, 40),
+      calories: body?.calories === undefined
+        ? (current?.calories ?? null)
+        : (Number.isFinite(Number(body.calories)) ? cleanInt(body.calories, 0) : null),
       tags: (Array.isArray(body?.tags) ? body.tags : (typeof body?.tags === 'string' ? body.tags.split(',').map(s => s.trim()).filter(Boolean) : [])).slice(0, 20).map((tag) => cleanText(tag, 80)),
       pairings: (Array.isArray(body?.pairings) ? body.pairings : (typeof body?.pairings === 'string' ? body.pairings.split(',').map(s => s.trim()).filter(Boolean) : [])).slice(0, 10).map((p) => cleanText(p, 80)),
       uberEatsUrl: cleanText(body?.uberEatsUrl, 2000) || '',
       doorDashUrl: cleanText(body?.doorDashUrl, 2000) || '',
       grubhubUrl: cleanText(body?.grubhubUrl, 2000) || '',
-      faqs: (Array.isArray(body?.faqs) ? body.faqs : []).slice(0, 15).map(f => ({
+      faqs: (Array.isArray(body?.faqs) ? body.faqs : (current?.faqs || [])).slice(0, 15).map(f => ({
         q: cleanText(f?.q, 200),
         a: cleanText(f?.a, 1000)
       })).filter(f => f.q && f.a),
-      optionGroups: (Array.isArray(body?.optionGroups) ? body.optionGroups : []).slice(0, 10).map((group, gi) => ({
+      optionGroups: (Array.isArray(body?.optionGroups) ? body.optionGroups : (current?.optionGroups || [])).slice(0, 10).map((group, gi) => ({
         id: cleanText(group?.id, 40) || `g${gi + 1}`,
         label: cleanText(group?.label, 80) || `Option ${gi + 1}`,
         type: group?.type === 'check' ? 'check' : 'radio',
@@ -761,7 +765,7 @@ del('/admin/users/:id', { auth: true, roles: MANAGE }, async (ctx) => {
 
 get('/admin/media', { auth: true }, async ({ query }) => {
   const media = await col('media');
-  const limit = Math.min(Number(query.limit) || 100, 300);
+  const limit = Math.min(Number(query.limit) || 1500, 1500);
   const rows = await media.find().sort({ createdAt: -1 }).limit(limit).toArray();
   return rows.map((row) => {
     const { data, ...safe } = row;

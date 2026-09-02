@@ -10,7 +10,11 @@ export async function generateMetadata({ params }) {
   if (!content) notFound();
 
   return contentMetadata(content, {
-    alternates: { canonical: `/${encodeURIComponent(slug)}` }
+    alternates: {
+      canonical: page
+        ? `/${encodeURIComponent(slug)}`
+        : `/blog/${encodeURIComponent(slug)}`
+    }
   });
 }
 

@@ -156,7 +156,7 @@ export default function UsersManager() {
           <input className="input" value={name} onChange={(e) => setName(e.target.value)} required placeholder="e.g. John Doe" />
 
           <label>Email Address</label>
-          <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="e.g. john@prevaclub.com" />
+          <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="e.g. john@prevakitchen.com" />
 
           <label>Password</label>
           <div style={{ position: 'relative' }}>

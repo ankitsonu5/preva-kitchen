@@ -1028,6 +1028,61 @@ button[type="submit"].btn,
   stroke: currentColor;
 }
 
+.footer-follow {
+  margin-top: 1.5rem;
+}
+
+.hours-col > .footer-info-list li {
+  font-size: .86rem;
+  line-height: 1.5;
+}
+
+.hours-col > .footer-info-list strong {
+  font-size: .86rem;
+}
+
+.footer-follow .footer-heading-divider {
+  margin-bottom: 1rem;
+}
+
+.footer-social-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.footer-social-link {
+  display: flex;
+  align-items: flex-start;
+  min-width: 0;
+  gap: 6px;
+  color: #ccc;
+  text-decoration: none;
+  line-height: 1.35;
+  transition: color .25s ease;
+}
+
+.footer-social-link:hover {
+  color: var(--lx-champagne, #c9a34e);
+}
+
+.footer-social-link strong,
+.footer-social-link small {
+  display: block;
+}
+
+.footer-social-link strong {
+  color: #fff;
+  font-size: .8rem;
+}
+
+.footer-social-link small {
+  margin-top: 2px;
+  color: rgba(255, 255, 255, .55);
+  font-size: .72rem;
+  white-space: nowrap;
+}
+
 /* ---------------------------------------------------------------------------
    Restraint & accessibility
 --------------------------------------------------------------------------- */

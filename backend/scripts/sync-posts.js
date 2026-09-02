@@ -4,6 +4,7 @@ dotenv.config();
 
 import { MongoClient } from 'mongodb';
 import sanitizeHtml from 'sanitize-html';
+import { blogCanonical, rewriteLegacyBlogLinks } from '../src/lib/blog-links.js';
 
 const WORDPRESS_ORIGIN = (process.env.WORDPRESS_ORIGIN || 'https://prevaclub.com').replace(/\/$/, '');
 const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/preva';
@@ -116,7 +117,7 @@ async function syncPosts() {
       const existing = await content.findOne({ slug: item.slug });
       const title = plainText(item.title?.rendered, 250) || item.slug;
       const description = seoDescription(item, title);
-      const body = item.content?.rendered || '';
+      const body = rewriteLegacyBlogLinks(item.content?.rendered || '');
       const pathname = new URL(item.link, WORDPRESS_ORIGIN).pathname.replace(/^\/+|\/+$/g, '');
 
       await content.updateOne(
@@ -137,7 +138,7 @@ async function syncPosts() {
             ogTitle: plainText(item.yoast_head_json?.og_title, 250) || title,
             ogDescription: plainText(item.yoast_head_json?.og_description, 400) || description,
             ogImage: featuredImage(item) || existing?.ogImage || '',
-            canonicalUrl: item.link,
+            canonicalUrl: blogCanonical(item.slug),
             categoryIds: (item.categories || []).map((id) => categoryIdByWpId.get(id)).filter(Boolean),
             publishedAt: item.date_gmt ? new Date(`${item.date_gmt}Z`) : existing?.publishedAt || now,
             wpModifiedAt: item.modified_gmt ? new Date(`${item.modified_gmt}Z`) : now,

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Swal from 'sweetalert2';
 import GoogleReviewsSection from '@/components/sections/GoogleReviewsSection';
 import GallerySection from '@/components/sections/GallerySection';
+import { getCanonicalOrigin } from '@/lib/site-url';
 import {
   ArrowRight,
   BadgeCheck,
@@ -21,12 +22,12 @@ import {
   UtensilsCrossed
 } from 'lucide-react';
 
-const CANONICAL_ORIGIN = (process.env.NEXT_PUBLIC_CANONICAL_URL || 'https://prevakitchen.com').replace(/\/$/, '');
+const CANONICAL_ORIGIN = getCanonicalOrigin();
 const HERO_SLIDE_DELAY = 2000;
 
 const restaurantGalleryImages = [
   {
-    src: 'https://prevaclub.com/wp-content/uploads/2026/06/hero-preva-kitchen-.jpeg',
+    src: '/asset/prevaclub/wp-content/uploads/2026/06/hero-preva-kitchen-.jpeg',
     caption: 'Preva Kitchen Atmosphere'
   },
   {
@@ -48,9 +49,9 @@ const restaurantGalleryImages = [
 ];
 
 const heroSlides = [
-  { image: '/asset/home-reference/preva-restaurant-hero.png?v=restaurant-slider', name: 'Preva Lamb Chops' },
-  { image: '/asset/home-reference/preva-rasta-pasta-hero.png?v=dish-size-match-v2', name: 'Preva Rasta Pasta' },
-  { image: '/asset/home-reference/preva-burger-hero.png?v=dish-size-match-v2', name: 'Preva Burger' }
+  { image: '/asset/home-reference/preva-restaurant-hero.png?v=restaurant-slider', mobileImage: '/asset/home-reference/preva-restaurant-hero-mobile.jpg', name: 'Preva Lamb Chops' },
+  { image: '/asset/home-reference/preva-rasta-pasta-hero.png?v=dish-size-match-v2', mobileImage: '/asset/home-reference/preva-rasta-pasta-hero-mobile.jpg', name: 'Preva Rasta Pasta' },
+  { image: '/asset/home-reference/preva-burger-hero.png?v=dish-size-match-v2', mobileImage: '/asset/home-reference/preva-burger-hero-mobile.jpg', name: 'Preva Burger' }
 ];
 
 const highlights = [
@@ -130,8 +131,17 @@ const signatureDishes = [
 
 export default function Home() {
   const [activeHeroSlide, setActiveHeroSlide] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
   const [booking, setBooking] = useState({ name: '', phone: '', purpose: '', date: '', time: '', guests: '2' });
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 720px)');
+    const onChange = (e) => setIsMobile(e.matches);
+    setIsMobile(mql.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
 
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
@@ -249,7 +259,7 @@ export default function Home() {
               role="img"
               aria-label={index === activeHeroSlide ? `${slide.name}, featured dish` : undefined}
               aria-hidden={index !== activeHeroSlide}
-              style={{ backgroundImage: `url(${slide.image})` }}
+              style={{ backgroundImage: `url(${isMobile ? slide.mobileImage : slide.image})` }}
             />
           ))}
         </div>
@@ -260,10 +270,10 @@ export default function Home() {
             <h1 id="pk-ref-hero-title">Good Food<br />Good Mood</h1>
             <p className="pk-ref-hero-lead">Experience the perfect blend of bold flavor, warm ambience and genuine hospitality. Every dish is made fresh with care.</p>
             <div className="pk-ref-hero-actions">
-              <Link className="pk-ref-button pk-ref-button--gold" href="/shop">
+              <Link className="pk-ref-button pk-ref-button--gold" href="/menu">
                 Explore Menu <UtensilsCrossed size={17} aria-hidden="true" />
               </Link>
-              <Link className="pk-ref-button pk-ref-button--outline" href="/shop">
+              <Link className="pk-ref-button pk-ref-button--outline" href="/menu">
                 Order Now <ShoppingBag size={18} aria-hidden="true" />
               </Link>
             </div>
@@ -321,7 +331,7 @@ export default function Home() {
 
           <div className="pk-ref-category-grid">
             {categories.map((category) => (
-              <Link className="pk-ref-category" href="/shop" key={category.name}>
+              <Link className="pk-ref-category" href="/menu" key={category.name}>
                 <span className="pk-ref-category-image">
                   <img src={category.image} alt="" loading="lazy" style={{ objectPosition: category.position }} />
                 </span>
@@ -345,7 +355,7 @@ export default function Home() {
           <div className="pk-ref-dish-grid">
             {signatureDishes.map((dish) => (
               <article className="pk-ref-dish-card" key={dish.slug}>
-                <Link className="pk-ref-dish-media" href={`/shop/${dish.slug}`} aria-label={`View ${dish.name}`}>
+                <Link className="pk-ref-dish-media" href={`/menu/${dish.slug}`} aria-label={`View ${dish.name}`}>
                   <img src={dish.image} alt={dish.name} loading="lazy" />
                 </Link>
                 <div className="pk-ref-dish-body">
@@ -354,7 +364,7 @@ export default function Home() {
                     <strong>{dish.price}</strong>
                   </div>
                   <p>{dish.description}</p>
-                  <Link className="pk-ref-dish-order" href={`/shop/${dish.slug}`}>
+                  <Link className="pk-ref-dish-order" href={`/menu/${dish.slug}`}>
                     Order Now <ArrowRight size={16} aria-hidden="true" />
                   </Link>
                 </div>

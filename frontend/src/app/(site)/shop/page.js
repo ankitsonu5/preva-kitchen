@@ -2,30 +2,45 @@ import { cmsFetch } from '@/lib/cms';
 import { ShopProvider } from '@/components/shop/ShopProvider';
 import ProductGrid from '@/components/shop/ProductGrid';
 import PrivateDiningBanner from '@/components/shop/PrivateDiningBanner';
-import Link from 'next/link';
-import SvgIcon from '@/components/SvgIcon';
+import { pageMetadata } from '@/lib/seo';
+import { getCanonicalOrigin } from '@/lib/site-url';
+import { generateMenuPageSchema } from '@/lib/seo-schema';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = {
-  title: 'Preva Kitchen — Fine-Plated Gourmet & Online Ordering',
+export const metadata = pageMetadata({
+  title: 'Preva Kitchen Menu — Order Online',
   description:
-    'Where Flavor Becomes Art. Order Preva Kitchen directly for pickup or delivery in Redford Township. Chef-driven gourmet menu.',
-  alternates: { canonical: '/shop' }
-};
+    'View the full Preva Kitchen menu and order wings, burgers, tacos, seafood, pasta, sides and dessert for pickup or delivery in Redford Township, MI.',
+  path: '/menu',
+  keywords: [
+    'Preva Kitchen menu',
+    'food delivery Redford MI',
+    'restaurant pickup Redford Township',
+    'wings burgers seafood Redford'
+  ]
+});
+
+import { FALLBACK_PRODUCTS, FALLBACK_CATEGORIES } from '@/data/fallbackMenu';
 
 export default async function ShopPage() {
+  const origin = getCanonicalOrigin();
   const [products, categories, settings] = await Promise.all([
     cmsFetch('/shop/products'),
     cmsFetch('/shop/categories'),
     cmsFetch('/shop/settings')
   ]);
 
-  const list = Array.isArray(products) ? products : [];
-  const cats = Array.isArray(categories) ? categories : [];
+  const list = Array.isArray(products) && products.length > 0 ? products : FALLBACK_PRODUCTS;
+  const cats = Array.isArray(categories) && categories.length > 0 ? categories : FALLBACK_CATEGORIES;
+  const menuSchema = generateMenuPageSchema(list, origin);
 
   return (
     <ShopProvider>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(menuSchema) }}
+      />
       <div className="ps">
         
         {/* ══ 1. MINIMAL LUXURY DISH HERO BANNER ══ */}
@@ -83,7 +98,7 @@ export default async function ShopPage() {
             </div>
           </div>
 
-          {/* ══ 5. PRIVATE DINING & EXCLUSIVE EVENTS BANNER (NOIR FLAME style) ══ */}
+          {/* ══ 5. PRIVATE DINING & EXCLUSIVE EVENTS BANNER ══ */}
           <PrivateDiningBanner />
 
         </div>

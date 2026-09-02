@@ -8,6 +8,29 @@ import { useConfirm } from '@/components/admin/ConfirmDialog';
 import { api } from '@/lib/admin-api';
 import { BookOpen, Copy, Edit, Eye, FilePlus2, FileText, Plus, SlidersHorizontal, Trash2, X, Check, Save } from 'lucide-react';
 
+function getSeoScore(item) {
+  if (!item) return 0;
+  const kw = (item.focusKeyword || '').trim().toLowerCase();
+  const title = (item.seoTitle || item.title || '').trim();
+  const desc = (item.seoDescription || item.excerpt || '').trim();
+  const slug = (item.slug || '').trim().toLowerCase();
+  const contentTxt = String(item.content || '').replace(/<[^>]+>/g, ' ').slice(0, 800).toLowerCase();
+
+  let score = 0;
+  if (kw) {
+    score += 10;
+    if (title.toLowerCase().includes(kw)) score += 20;
+    if (title.toLowerCase().startsWith(kw)) score += 10;
+    if (desc.toLowerCase().includes(kw)) score += 20;
+    if (slug.includes(kw.replace(/\s+/g, '-'))) score += 10;
+    if (contentTxt.includes(kw)) score += 10;
+  }
+  if (title.length >= 35 && title.length <= 60) score += 10;
+  if (desc.length >= 100 && desc.length <= 160) score += 10;
+
+  return score;
+}
+
 function ContentList() {
   const confirmAction = useConfirm();
   const q = useSearchParams();
@@ -35,7 +58,10 @@ function ContentList() {
     slug: '',
     status: 'PUBLISHED',
     excerpt: '',
-    categoryIds: []
+    categoryIds: [],
+    seoTitle: '',
+    seoDescription: '',
+    focusKeyword: ''
   });
   const [quickSaving, setQuickSaving] = useState(false);
 
@@ -137,13 +163,16 @@ function ContentList() {
       slug: item.slug || '',
       status: item.status || 'PUBLISHED',
       excerpt: item.excerpt || '',
-      categoryIds: catIds
+      categoryIds: catIds,
+      seoTitle: item.seoTitle || '',
+      seoDescription: item.seoDescription || '',
+      focusKeyword: item.focusKeyword || ''
     });
   };
 
   const cancelQuickEdit = () => {
     setQuickEditId(null);
-    setQuickForm({ title: '', slug: '', status: 'PUBLISHED', excerpt: '', categoryIds: [] });
+    setQuickForm({ title: '', slug: '', status: 'PUBLISHED', excerpt: '', categoryIds: [], seoTitle: '', seoDescription: '', focusKeyword: '' });
   };
 
   const handleQuickSave = async (item) => {
@@ -158,7 +187,10 @@ function ContentList() {
         slug: quickForm.slug.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '-'),
         status: quickForm.status,
         excerpt: quickForm.excerpt,
-        categoryIds: quickForm.categoryIds
+        categoryIds: quickForm.categoryIds,
+        seoTitle: quickForm.seoTitle,
+        seoDescription: quickForm.seoDescription,
+        focusKeyword: quickForm.focusKeyword
       };
 
       const res = await api(`/admin/content/${item.id}`, {
@@ -384,6 +416,7 @@ function ContentList() {
                   <th>Author</th>
                   {type === 'POST' && <th>Categories</th>}
                   {type === 'POST' && <th>Tags</th>}
+                  <th>SEO Score</th>
                   <th>Status</th>
                   <th>Last Updated</th>
                   <th style={{ textAlign: 'right' }}>Actions</th>
@@ -450,6 +483,35 @@ function ContentList() {
                         </td>
                       )}
                       <td>
+                        {(() => {
+                          const score = getSeoScore(x);
+                          const scoreColor = score >= 80 ? '#4caf50' : score >= 50 ? '#ffa726' : score > 0 ? '#ef5350' : '#888';
+                          const scoreBg = score >= 80 ? 'rgba(76,175,80,0.15)' : score >= 50 ? 'rgba(255,167,38,0.15)' : score > 0 ? 'rgba(239,83,80,0.15)' : 'rgba(255,255,255,0.05)';
+                          return (
+                            <a
+                              href={`/admin/content/edit?id=${x.id}&type=${type}`}
+                              title={`Rank Math SEO Score: ${score}/100. Click to edit SEO.`}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                padding: '3px 9px',
+                                borderRadius: '12px',
+                                background: scoreBg,
+                                border: `1px solid ${scoreColor}44`,
+                                color: scoreColor,
+                                fontSize: '0.76rem',
+                                fontWeight: 700,
+                                textDecoration: 'none'
+                              }}
+                            >
+                              <span>{score >= 80 ? '🟢' : score >= 50 ? '🟡' : score > 0 ? '🔴' : '⚪'}</span>
+                              <span>{score > 0 ? `${score}/100` : 'Set SEO'}</span>
+                            </a>
+                          );
+                        })()}
+                      </td>
+                      <td>
                         <StatusBadge status={x.status} />
                       </td>
                       <td>
@@ -490,7 +552,7 @@ function ContentList() {
                           if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') handleQuickSave(x);
                         }}
                       >
-                        <td colSpan={type === 'POST' ? 8 : 6} style={{ padding: '22px 26px' }}>
+                        <td colSpan={type === 'POST' ? 9 : 7} style={{ padding: '22px 26px' }}>
                           {/* Header Banner */}
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -521,8 +583,8 @@ function ContentList() {
                             </div>
                           </div>
 
-                          {/* Form 3-Column Glass Layout */}
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', alignItems: 'stretch' }}>
+                          {/* Form 4-Column Glass Layout */}
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px', alignItems: 'stretch' }}>
                             
                             {/* Card 1: Title & Slug */}
                             <div className="quick-edit-card">
@@ -601,7 +663,61 @@ function ContentList() {
                               />
                             </div>
 
-                            {/* Card 3: Categories (if Post) or Meta (if Page) */}
+                            {/* Card 3: Rank Math SEO Quick Settings */}
+                            <div className="quick-edit-card">
+                              <div className="quick-edit-card-header" style={{ justifyContent: 'space-between' }}>
+                                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--gold)' }}>
+                                  🚀 Rank Math SEO
+                                </span>
+                                {(() => {
+                                  const tempScore = getSeoScore({ ...x, ...quickForm });
+                                  const color = tempScore >= 80 ? '#4caf50' : tempScore >= 50 ? '#ffa726' : '#ef5350';
+                                  return (
+                                    <span style={{ fontSize: '0.72rem', fontWeight: 700, color }}>
+                                      Score: {tempScore}/100
+                                    </span>
+                                  );
+                                })()}
+                              </div>
+
+                              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--ink)', marginBottom: '5px' }}>
+                                Focus Keyword
+                              </label>
+                              <input
+                                type="text"
+                                className="input"
+                                value={quickForm.focusKeyword || ''}
+                                onChange={(e) => setQuickForm({ ...quickForm, focusKeyword: e.target.value })}
+                                placeholder="e.g. Preva Kitchen Menu"
+                                style={{ width: '100%', margin: '0 0 10px', background: 'rgba(0,0,0,0.3)', fontSize: '0.84rem' }}
+                              />
+
+                              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--ink)', marginBottom: '5px' }}>
+                                SEO Title
+                              </label>
+                              <input
+                                type="text"
+                                className="input"
+                                value={quickForm.seoTitle || ''}
+                                onChange={(e) => setQuickForm({ ...quickForm, seoTitle: e.target.value })}
+                                placeholder={`${quickForm.title || 'Title'} | Preva Kitchen`}
+                                style={{ width: '100%', margin: '0 0 10px', background: 'rgba(0,0,0,0.3)', fontSize: '0.84rem' }}
+                              />
+
+                              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--ink)', marginBottom: '5px' }}>
+                                Meta Description
+                              </label>
+                              <textarea
+                                className="input"
+                                rows={2}
+                                value={quickForm.seoDescription || ''}
+                                onChange={(e) => setQuickForm({ ...quickForm, seoDescription: e.target.value })}
+                                placeholder="Meta description for search engines..."
+                                style={{ width: '100%', margin: 0, resize: 'vertical', minHeight: '52px', background: 'rgba(0,0,0,0.3)', fontSize: '0.82rem' }}
+                              />
+                            </div>
+
+                            {/* Card 4: Categories (if Post) or Meta (if Page) */}
                             <div className="quick-edit-card">
                               {type === 'POST' ? (
                                 <>
@@ -690,7 +806,7 @@ function ContentList() {
                             flexWrap: 'wrap'
                           }}>
                             <div style={{ fontSize: '0.8rem', color: '#9a8f7e' }}>
-                              Quickly updates metadata without reloading or overwriting post body.
+                              Quickly updates metadata &amp; Rank Math SEO without reloading or overwriting post body.
                             </div>
 
                             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>

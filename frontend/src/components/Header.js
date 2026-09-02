@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import SvgIcon from './SvgIcon';
 
 const ORIGINAL_HEADER_MENU = [
-  { title: 'Menu',         url: '/shop',                 openInNewTab: false, visible: true },
+  { title: 'Menu',         url: '/menu',                 openInNewTab: false, visible: true },
   { title: 'Reservations', url: '/#prv-reservations',    openInNewTab: false, visible: true },
   { title: 'Blog',         url: '/blog',                 openInNewTab: false, visible: true },
   { title: 'Careers',      url: '/careers',              openInNewTab: false, visible: true },
@@ -14,7 +14,7 @@ const ORIGINAL_HEADER_MENU = [
 
 const ORIGINAL_HEADER_SETTINGS = {
   siteTitle: 'PREVA KITCHEN',
-  siteLogo: 'https://prevaclub.com/wp-content/uploads/2024/09/preva-logo.png',
+  siteLogo: '/asset/preva-logo.png',
   phone: '(313) 286-3586',
   announcementText: 'Preva Kitchen — Fresh flavor, made in Redford',
   announcementSecondary: 'Dine In • Pickup • Delivery • Catering',
@@ -25,7 +25,7 @@ const ORIGINAL_HEADER_SETTINGS = {
 function includeOrderNavigation(items) {
   // Always enforce the user's exact preferred header navigation items
   return [
-    { title: 'Menu',         url: '/shop',                 openInNewTab: false, visible: true },
+    { title: 'Menu',         url: '/menu',                 openInNewTab: false, visible: true },
     { title: 'Reservations', url: '/#prv-reservations',    openInNewTab: false, visible: true },
     { title: 'Blog',         url: '/blog',                 openInNewTab: false, visible: true },
     { title: 'Careers',      url: '/careers',              openInNewTab: false, visible: true },
@@ -104,7 +104,7 @@ export default function Header() {
     if (typeof window !== 'undefined' && window.openOrderModal) {
       window.openOrderModal();
     } else {
-      router.push('/shop');
+      router.push('/menu');
     }
     setIsOpen(false);
   };
@@ -115,7 +115,7 @@ export default function Header() {
   // Prefetching the page portion keeps those clicks as fast as a Next <Link>.
   useEffect(() => {
     const paths = new Set([
-      '/', '/preva-kitchen', '/preva-kitchen-menu', '/shop', '/blog', '/careers', '/contact',
+      '/', '/preva-kitchen', '/preva-kitchen-menu', '/menu', '/blog', '/careers', '/contact',
       ...menuItems.map((item) => String(item.url || '').split('#')[0])
     ]);
     for (const path of paths) {
@@ -238,7 +238,7 @@ export default function Header() {
               </a>
             </li>
             <li className="nav-order-cta">
-              <a href="/shop" className="preva-order-trigger" onClick={handleLinkClick}>
+              <a href="/menu" className="preva-order-trigger" onClick={handleLinkClick}>
                 {settings.headerCtaText || 'ORDER ONLINE'}
               </a>
             </li>

@@ -2,6 +2,65 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import SvgIcon from '@/components/SvgIcon';
 import { cmsFetch } from '@/lib/cms';
+import { getCanonicalOrigin } from '@/lib/site-url';
+import { rewriteLegacyBlogLinks } from '@/lib/blog-links';
+import { generateBlogPostSchema } from '@/lib/seo-schema';
+
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  const siteOrigin = getCanonicalOrigin();
+  const post = await cmsFetch(`/posts/${encodeURIComponent(slug)}`);
+
+  if (!post) {
+    return {
+      title: 'Blog Post Not Found | Preva Kitchen',
+      robots: { index: false, follow: false }
+    };
+  }
+
+  const cleanTitle = post.seoTitle || `${post.title} | Preva Kitchen`;
+  const cleanDesc = post.seoDescription || post.excerpt || String(post.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160) || 'Preva Kitchen culinary journal.';
+  const shareImg = post.ogImage || post.featuredImage || `${siteOrigin}/asset/home-reference/preva-restaurant-hero.png`;
+  const canonical = post.canonicalUrl || `${siteOrigin}/blog/${encodeURIComponent(post.slug)}`;
+  const tagsList = (post.tags || []).map(t => t.tag?.name || t.name).filter(Boolean);
+  const categoryName = post.categories?.[0]?.category?.name || post.categories?.[0]?.name || 'Culinary Journal';
+
+  return {
+    title: cleanTitle,
+    description: cleanDesc,
+    keywords: post.focusKeyword ? [post.focusKeyword, ...tagsList, 'Preva Kitchen', 'Redford MI'] : [...tagsList, 'Preva Kitchen', 'Redford MI'],
+    alternates: {
+      canonical: canonical
+    },
+    openGraph: {
+      title: post.ogTitle || cleanTitle,
+      description: post.ogDescription || cleanDesc,
+      url: canonical,
+      siteName: 'Preva Kitchen',
+      type: 'article',
+      publishedTime: post.publishedAt || post.createdAt,
+      modifiedTime: post.updatedAt || post.publishedAt || post.createdAt,
+      authors: [post.author?.name || 'Preva Kitchen Culinary Team'],
+      section: categoryName,
+      tags: tagsList,
+      images: [
+        {
+          url: shareImg,
+          width: 1200,
+          height: 630,
+          alt: post.title
+        }
+      ]
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.ogTitle || cleanTitle,
+      description: post.ogDescription || cleanDesc,
+      images: [shareImg]
+    },
+    robots: post.noIndex ? { index: false, follow: false } : { index: true, follow: true }
+  };
+}
 
 export default async function BlogPost({ params }) {
   const { slug } = await params;
@@ -22,65 +81,70 @@ export default async function BlogPost({ params }) {
     : null;
 
   const formattedDate = new Date(post.publishedAt || post.createdAt).toLocaleDateString('en-US', {
-    month: 'short',
+    month: 'long',
     day: 'numeric',
     year: 'numeric'
   });
 
-  const categoryName = post.categories?.[0]?.category?.name || post.categories?.[0]?.name || 'Journal';
-  const siteOrigin = (process.env.NEXT_PUBLIC_CANONICAL_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://prevakitchen.com').replace(/\/$/, '');
+  const categoryName = post.categories?.[0]?.category?.name || post.categories?.[0]?.name || 'Culinary Journal';
+  const siteOrigin = getCanonicalOrigin();
   const articleUrl = `${siteOrigin}/blog/${encodeURIComponent(post.slug)}`;
-  const articleDescription = post.seoDescription || post.excerpt || String(post.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200);
-  const articleSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'BlogPosting',
-    headline: post.seoTitle || post.title,
-    description: articleDescription,
-    image: post.ogImage || post.featuredImage || undefined,
-    datePublished: post.publishedAt || post.createdAt,
-    dateModified: post.updatedAt || post.publishedAt || post.createdAt,
-    author: { '@type': 'Person', name: post.author?.name || 'Preva Team' },
-    publisher: { '@type': 'Organization', name: 'Preva Kitchen', logo: { '@type': 'ImageObject', url: `${siteOrigin}/asset/preva-logo.svg` } },
-    mainEntityOfPage: { '@type': 'WebPage', '@id': articleUrl },
-    articleSection: categoryName,
-    keywords: (post.tags || []).map((item) => item.tag?.name).filter(Boolean).join(', ') || post.focusKeyword || undefined
-  };
+
+  // Comprehensive Schema.org JSON-LD (BlogPosting, BreadcrumbList, FAQPage, Recipe, Person)
+  const fullSchema = generateBlogPostSchema(post, siteOrigin);
 
   return (
     <main id="primary" className="site-main single-post-luxury">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema).replace(/</g, '\\u003c') }}
-      />
+      {fullSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(fullSchema).replace(/</g, '\\u003c') }}
+        />
+      )}
       
-      {/* Powerful Header Section */}
+      {/* Hero Header Section */}
       <section className="blog-hero" style={{ position: 'relative' }}>
         {post.featuredImage && (
           <img src={post.featuredImage} className="blog-hero-image" alt={post.title} />
         )}
-        <div className="overlay" style={{ background: 'rgba(0,0,0,0.65)', position: 'absolute', inset: 0 }}></div>
+        <div className="overlay" style={{ background: 'rgba(0,0,0,0.68)', position: 'absolute', inset: 0 }}></div>
         
-        <div className="container relative-z2" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%', paddingBlock: '60px' }}>
-          <div className="blog-breadcrumbs" style={{ color: 'var(--color-gold, #c5a059)', fontSize: '0.85rem', letterSpacing: '1px', fontWeight: 600 }}>
-            <Link href="/">HOME</Link>
+        <div className="container relative-z2" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%', paddingBlock: '50px' }}>
+          
+          {/* Structured Visual Breadcrumb Bar */}
+          <nav aria-label="Breadcrumb" className="blog-breadcrumbs" itemScope itemType="https://schema.org/BreadcrumbList" style={{ color: 'var(--color-gold, #c5a059)', fontSize: '0.85rem', letterSpacing: '1px', fontWeight: 600, marginBottom: '10px' }}>
+            <span itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
+              <Link href="/" itemProp="item" style={{ color: '#c5a059', textDecoration: 'none' }}>
+                <span itemProp="name">HOME</span>
+              </Link>
+              <meta itemProp="position" content="1" />
+            </span>
             <span className="sep" style={{ margin: '0 8px', color: '#666' }}>/</span>
-            <Link href="/blog">BLOG</Link>
+            <span itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
+              <Link href="/blog" itemProp="item" style={{ color: '#c5a059', textDecoration: 'none' }}>
+                <span itemProp="name">BLOG</span>
+              </Link>
+              <meta itemProp="position" content="2" />
+            </span>
             <span className="sep" style={{ margin: '0 8px', color: '#666' }}>/</span>
-            <span style={{ color: '#aaa' }}>{categoryName.toUpperCase()}</span>
-          </div>
+            <span itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
+              <span itemProp="name" style={{ color: '#aaa' }}>{categoryName.toUpperCase()}</span>
+              <meta itemProp="position" content="3" />
+            </span>
+          </nav>
 
-          <h1 className="blog-title-large" style={{ color: '#fff', fontSize: 'clamp(2rem, 4vw, 3.2rem)', margin: '16px 0', fontWeight: 'bold', lineHeight: '1.2' }}>
+          <h1 className="blog-title-large" style={{ color: '#fff', fontSize: 'clamp(2rem, 4vw, 3.2rem)', margin: '12px 0 16px', fontWeight: 'bold', lineHeight: '1.2' }}>
             {post.title}
           </h1>
 
-          <div className="post-meta-refined" style={{ display: 'flex', gap: '24px', color: '#bbb', fontSize: '0.88rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="post-meta-refined" style={{ display: 'flex', gap: '20px', color: '#bbb', fontSize: '0.88rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <span className="date" style={{ display: 'flex', alignItems: 'center' }}>
               <SvgIcon name="calendar" size={16} style={{ marginRight: '6px', color: '#c5a059' }} />{formattedDate}
             </span>
             <span className="author" style={{ display: 'flex', alignItems: 'center' }}>
-              <SvgIcon name="info" size={16} style={{ marginRight: '6px', color: '#c5a059' }} />BY {(post.author?.name || post.author?.email || 'PREVA TEAM').toUpperCase()}
+              <SvgIcon name="info" size={16} style={{ marginRight: '6px', color: '#c5a059' }} />BY {(post.author?.name || 'PREVA CULINARY TEAM').toUpperCase()}
             </span>
-            <span style={{ background: 'rgba(197, 163, 78, 0.15)', border: '1px solid #c5a059', color: '#c5a059', padding: '4px 12px', borderRadius: '15px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>
+            <span style={{ background: 'rgba(197, 163, 78, 0.15)', border: '1px solid #c5a059', color: '#c5a059', padding: '3px 12px', borderRadius: '15px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>
               {categoryName}
             </span>
           </div>
@@ -105,24 +169,24 @@ export default async function BlogPost({ params }) {
               <div 
                 className="post-main-content" 
                 style={{ color: '#ccc', fontSize: '1.08rem', lineHeight: '1.85' }} 
-                dangerouslySetInnerHTML={{ __html: post.content }} 
+                dangerouslySetInnerHTML={{ __html: rewriteLegacyBlogLinks(post.content) }} 
               />
 
-              {/* Author Info Card Box */}
-              <div style={{ marginTop: '50px', background: 'rgba(18, 18, 18, 0.6)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '24px', display: 'flex', gap: '20px', alignItems: 'center' }}>
-                <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'var(--color-gold, #c5a059)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#000', fontSize: '1.4rem', flexShrink: 0 }}>
+              {/* Author Bio Box */}
+              <div style={{ marginTop: '50px', background: 'rgba(18, 18, 18, 0.65)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '24px', display: 'flex', gap: '20px', alignItems: 'center' }}>
+                <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--color-gold, #c5a059)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#000', fontSize: '1.5rem', flexShrink: 0 }}>
                   P
                 </div>
                 <div>
-                  <h4 style={{ margin: '0 0 6px 0', color: '#fff', fontSize: '1.05rem' }}>Written by PREVA Team</h4>
+                  <h4 style={{ margin: '0 0 6px 0', color: '#fff', fontSize: '1.05rem' }}>Written by {post.author?.name || 'PREVA Culinary Team'}</h4>
                   <p style={{ margin: 0, color: '#aaa', fontSize: '0.88rem', lineHeight: '1.5' }}>
-                    Bringing you chef stories, menu inspiration, kitchen updates and food worth sharing from Redford.
+                    Bringing you chef stories, menu inspirations, kitchen updates and honest food worth sharing from Redford, Michigan.
                   </p>
                 </div>
               </div>
 
               {/* Prev / Next Article Navigation */}
-              <nav className="post-navigation-system" style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: '40px', paddingTop: '28px', gap: '20px' }}>
+              <nav className="post-navigation-system" aria-label="Stories navigation" style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: '40px', paddingTop: '28px', gap: '20px' }}>
                 <div className="nav-system-column" style={{ flex: 1 }}>
                   {prevPost && (
                     <Link href={`/blog/${prevPost.slug}`} className="nav-system-item prev-post" style={{ display: 'block', textDecoration: 'none' }}>
@@ -192,7 +256,7 @@ export default async function BlogPost({ params }) {
               </div>
             )}
 
-            {/* Widget 3: Experience Categories */}
+            {/* Widget 3: Explore Topics */}
             <div className="sidebar-widget-card">
               <h3 className="sidebar-widget-title">
                 <SvgIcon name="info" size={16} /> Explore Topics

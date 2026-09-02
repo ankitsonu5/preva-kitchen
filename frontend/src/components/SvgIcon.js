@@ -56,6 +56,13 @@ export default function SvgIcon({ name, size = 18, className = '', strokeWidth =
           <path d="M14 8h2V5h-2a3 3 0 0 0-3 3v2H8v3h3v8h3v-8h2.5l.5-3H14V8Z" />
         </svg>
       );
+    case 'parking':
+      return (
+        <svg {...commonProps}>
+          <rect x="4" y="3" width="16" height="18" rx="2" />
+          <path d="M9 17V7h4a3 3 0 0 1 0 6H9M9 13h4" />
+        </svg>
+      );
     case 'chef':
       return (
         <svg {...commonProps}>

@@ -1,11 +1,14 @@
 import Link from 'next/link';
 import { cmsFetch } from '@/lib/cms';
+import { pageMetadata } from '@/lib/seo';
 
-export const metadata = {
-  title: 'Experiences',
-  description: 'Discover dining, catering and ordering services from Preva Kitchen.',
-  alternates: { canonical: '/services' }
-};
+export const metadata = pageMetadata({
+  title: 'Dining, Catering & Private Event Experiences',
+  description:
+    'Discover dining, catering, private event and online ordering experiences from Preva Kitchen in Redford Township, Michigan.',
+  path: '/services',
+  keywords: ['Preva Kitchen catering', 'private dining Redford MI', 'restaurant events Redford Township']
+});
 
 export default async function ServicesPage() {
   const services = (await cmsFetch('/services') || []).filter((service) => !/night\s*life|night\s*club|\bclub\b|\bvip\b|bottle service|\bdj\b/i.test(`${service.title || ''} ${service.excerpt || ''}`));

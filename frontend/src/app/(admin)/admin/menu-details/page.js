@@ -19,6 +19,7 @@ import Shell from '@/components/admin/Shell';
 import { PageHeader, LoadingSkeleton } from '@/components/admin/AdminUI';
 import { api } from '@/lib/admin-api';
 import { KITCHEN_MENU_ITEMS } from '@/lib/kitchen-menu-data';
+import { getDefaultAboutTitle, getDefaultFaqs } from '@/lib/dish-detail-content';
 
 const categories = [
   'Preva Wings',
@@ -41,6 +42,8 @@ const blankTemplate = {
   price: '',
   category: 'Preva Wings',
   description: '',
+  aboutTitle: '',
+  aboutContent: '',
   image: '',
   tags: '',
   pairings: '',
@@ -104,17 +107,15 @@ export default function DishDetailsTemplateManager() {
       price: dish.price || '',
       category: dish.category || 'Preva Wings',
       description: dish.description || '',
+      aboutTitle: dish.aboutTitle || getDefaultAboutTitle(dish),
+      aboutContent: dish.aboutContent || '',
       image: dish.image || '',
       tags: Array.isArray(dish.tags) ? dish.tags.join(', ') : (dish.tags || ''),
       pairings: Array.isArray(dish.pairings) ? dish.pairings.join(', ') : (dish.pairings || ''),
       uberEatsUrl: dish.uberEatsUrl || '',
       doorDashUrl: dish.doorDashUrl || '',
       grubhubUrl: dish.grubhubUrl || '',
-      faqs: dish.faqs && dish.faqs.length > 0 ? dish.faqs : [
-        { q: `What is the ${dish.name} at Preva Kitchen?`, a: dish.description || 'Prepared fresh daily with signature house seasonings.' },
-        { q: `How much does the ${dish.name} cost?`, a: `The ${dish.name} costs ${dish.price || '$22.00'} at Preva Kitchen & Lounge, Redford Township, MI.` },
-        { q: `Can I get the ${dish.name} delivered?`, a: `Yes — order for delivery through Uber Eats, DoorDash or Grubhub straight from this page, or call +1 313-286-3586.` }
-      ],
+      faqs: dish.faqs && dish.faqs.length > 0 ? dish.faqs : getDefaultFaqs(dish),
       available: dish.available !== false,
       featured: Boolean(dish.featured),
       sortOrder: dish.sortOrder || 10
@@ -241,7 +242,7 @@ export default function DishDetailsTemplateManager() {
               <Plus size={15} /> Add New Dish Template
             </button>
             <a
-              href={`/preva-kitchen-menu/${publicUrlSlug}`}
+              href={`/menu/${publicUrlSlug}`}
               target="_blank"
               rel="noopener noreferrer"
               className="btn"
@@ -286,7 +287,7 @@ export default function DishDetailsTemplateManager() {
             Live Page Route:
           </span>
           <code style={{ fontSize: '12px', background: 'rgba(201, 163, 78, 0.1)', color: 'var(--accent)', padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(201, 163, 78, 0.25)' }}>
-            /preva-kitchen-menu/{publicUrlSlug}
+            /menu/{publicUrlSlug}
           </code>
         </div>
       </div>
@@ -315,7 +316,7 @@ export default function DishDetailsTemplateManager() {
               </label>
 
               <label className="field">
-                URL Slug (/preva-kitchen-menu/slug) *
+                URL Slug (/menu/slug) *
                 <input className="input" name="slug" value={form.slug} onChange={change} required placeholder="e.g. rasta-pasta" />
               </label>
 
@@ -342,6 +343,30 @@ export default function DishDetailsTemplateManager() {
                 Description &amp; Chef Notes *
                 <textarea className="input" name="description" value={form.description} onChange={change} rows="3" placeholder="Describe the flavors, preparation, ingredients, choice of protein..." />
               </label>
+
+              <div className="field field-span" style={{ borderTop: '1px solid var(--border)', paddingTop: '16px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--ink)', display: 'block', marginBottom: '8px' }}>
+                  Shop Detail Page — About Section
+                </span>
+                <label className="field" style={{ marginBottom: '10px' }}>
+                  About Heading
+                  <input className="input" name="aboutTitle" value={form.aboutTitle} onChange={change} placeholder="e.g. About Honey Hot Wings — Sweet Heat, Made in Redford, MI" />
+                </label>
+                <label className="field">
+                  About Content
+                  <textarea
+                    className="input"
+                    name="aboutContent"
+                    value={form.aboutContent}
+                    onChange={change}
+                    rows="8"
+                    placeholder="Write the About copy here. Leave a blank line between paragraphs."
+                  />
+                  <span style={{ fontSize: '11px', color: 'var(--ink-muted)', marginTop: '2px' }}>
+                    Separate paragraphs with a blank line. If empty, the shop page generates dish-specific content automatically.
+                  </span>
+                </label>
+              </div>
 
               {/* Photo Input & Live Upload */}
               <div className="field field-span">

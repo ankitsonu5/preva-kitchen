@@ -36,7 +36,7 @@ export default async function OrderPage({ params }) {
               started. You are welcome to order again.
             </p>
             <p style={{ marginTop: 28 }}>
-              <Link href="/shop" className="ps-more">Back to the menu</Link>
+              <Link href="/menu" className="ps-more">Back to the menu</Link>
             </p>
           </div>
         </div>

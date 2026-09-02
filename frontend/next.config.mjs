@@ -53,10 +53,11 @@ const nextConfig = {
         permanent: true
       },
       { source: '/contact-us', destination: '/contact', permanent: true },
-      { source: '/order-online', destination: '/shop', permanent: true },
-      { source: '/online-order-platform', destination: '/shop', permanent: true },
+      { source: '/shop/:path*', destination: '/menu/:path*', permanent: true },
+      { source: '/order-online', destination: '/menu', permanent: true },
+      { source: '/online-order-platform', destination: '/menu', permanent: true },
       { source: '/cart', destination: '/checkout', permanent: true },
-      { source: '/my-account', destination: '/shop', permanent: true }
+      { source: '/my-account', destination: '/menu', permanent: true }
     ];
   },
 

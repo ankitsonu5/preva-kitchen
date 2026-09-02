@@ -26,7 +26,7 @@ const contactOptions = [
     icon: Utensils,
     title: 'Catering & Private Dining',
     body: 'Custom party trays, corporate lunches, and celebration feasts prepared fresh for your guests.',
-    href: '/shop',
+    href: '/menu',
     cta: 'Explore catering menu'
   },
   {
@@ -61,10 +61,19 @@ export default function ContactPage() {
 
     setSubmitting(true);
     try {
+      const payload = {
+        name: [form.firstName, form.lastName].filter(Boolean).join(' '),
+        email: form.email,
+        phone: form.phone,
+        subject: form.inquiry,
+        message: form.message,
+        formSource: 'Preva Kitchen Contact Page',
+        pageUrl: window.location.href
+      };
       const response = await fetch(`${API}/contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, formSource: 'Preva Kitchen Contact Page', pageUrl: window.location.href })
+        body: JSON.stringify(payload)
       });
       if (!response.ok) throw new Error('Message could not be sent');
       setSuccess(true);
@@ -96,8 +105,8 @@ export default function ContactPage() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
-              gap: 'clamp(36px, 5vw, 64px)',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
+              gap: 'clamp(32px, 5vw, 64px)',
               alignItems: 'center'
             }}
           >
@@ -188,7 +197,7 @@ export default function ContactPage() {
                 </a>
 
                 <Link
-                  href="/shop"
+                  href="/menu"
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -220,17 +229,17 @@ export default function ContactPage() {
                   <Clock size={16} color="#c5a059" /> Tue–Sun · 5pm–10pm
                 </span>
                 <a
-                  href="https://www.google.com/maps/search/?api=1&query=13090+Inkster+Rd+Redford+Township+MI"
+                  href="https://www.google.com/maps/search/?api=1&query=Preva+Kitchen,+13090+Inkster+Rd,+Redford+Township,+MI+48239,+United+States"
                   target="_blank"
                   rel="noreferrer"
                   style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#c5a059', textDecoration: 'none' }}
                 >
-                  <MapPin size={16} color="#c5a059" /> 13090 Inkster Rd, Redford
+                  <MapPin size={16} color="#c5a059" /> 13090 Inkster Rd, Redford Township, MI 48239
                 </a>
               </div>
             </div>
 
-            {/* Right Hero Image Card */}
+            {/* Right Hero Location Map */}
             <div style={{ position: 'relative' }}>
               <div
                 style={{
@@ -238,49 +247,28 @@ export default function ContactPage() {
                   width: '100%',
                   minHeight: '440px',
                   borderRadius: '18px',
-                  backgroundImage: `url('https://prevaclub.com/wp-content/uploads/2026/06/hero-preva-kitchen-.jpeg')`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
+                  background: '#111',
                   border: '1px solid rgba(213, 164, 79, 0.35)',
                   boxShadow: '0 25px 70px rgba(0, 0, 0, 0.75)',
                   overflow: 'hidden'
                 }}
               >
-                <div
+                <iframe
+                  title="Preva Kitchen, 13090 Inkster Rd, Redford Township, MI 48239, United States"
+                  src="https://www.google.com/maps?q=Preva+Kitchen,+13090+Inkster+Rd,+Redford+Township,+MI+48239,+United+States&output=embed"
+                  loading="lazy"
+                  allowFullScreen
+                  referrerPolicy="no-referrer-when-downgrade"
                   style={{
                     position: 'absolute',
                     inset: 0,
-                    background: 'linear-gradient(180deg, transparent 40%, rgba(8, 6, 8, 0.9) 100%)'
+                    width: '100%',
+                    height: '100%',
+                    minHeight: '440px',
+                    border: 0,
+                    display: 'block'
                   }}
                 />
-
-                {/* Floating Badge */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    bottom: '22px',
-                    left: '22px',
-                    right: '22px',
-                    background: 'rgba(14, 10, 13, 0.9)',
-                    backdropFilter: 'blur(12px)',
-                    border: '1px solid rgba(213, 164, 79, 0.35)',
-                    borderRadius: '12px',
-                    padding: '16px 20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between'
-                  }}
-                >
-                  <div>
-                    <span style={{ display: 'block', color: '#c5a059', fontSize: '0.66rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.14em' }}>
-                      MADE FOR EVERY OCCASION
-                    </span>
-                    <span style={{ fontSize: '1.05rem', color: '#fff', fontWeight: 700, fontFamily: 'var(--font-roboto), Arial, sans-serif' }}>
-                      Dine In · Pickup · Catering
-                    </span>
-                  </div>
-                  <Utensils size={22} color="#c5a059" />
-                </div>
               </div>
             </div>
           </div>
@@ -293,7 +281,7 @@ export default function ContactPage() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
               gap: '24px'
             }}
           >
@@ -394,8 +382,8 @@ export default function ContactPage() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
-              gap: 'clamp(40px, 6vw, 80px)',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
+              gap: 'clamp(36px, 5vw, 80px)',
               alignItems: 'start'
             }}
           >
@@ -430,10 +418,10 @@ export default function ContactPage() {
                       LOCATION &amp; PARKING
                     </span>
                     <p style={{ margin: 0, color: '#d5d0c8', fontSize: '0.94rem', lineHeight: 1.6 }}>
-                      13090 Inkster Rd<br />Redford Township, MI 48239
+                      Preva Kitchen<br />13090 Inkster Rd<br />Redford Township, MI 48239, United States
                     </p>
                     <a
-                      href="https://www.google.com/maps/search/?api=1&query=13090+Inkster+Rd+Redford+Township+MI"
+                      href="https://www.google.com/maps/search/?api=1&query=Preva+Kitchen,+13090+Inkster+Rd,+Redford+Township,+MI+48239,+United+States"
                       target="_blank"
                       rel="noreferrer"
                       style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#c5a059', fontSize: '0.82rem', fontWeight: 700, marginTop: '8px', textDecoration: 'none' }}

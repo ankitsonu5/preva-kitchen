@@ -4,26 +4,86 @@ import { cmsFetch } from '@/lib/cms';
 import { ShopProvider } from '@/components/shop/ShopProvider';
 import { ProductCard } from '@/components/shop/ProductGrid';
 import ProductBuy from '@/components/shop/ProductBuy';
+import {
+  getDefaultAboutTitle,
+  getDishFaqs,
+  parseAboutContent
+} from '@/lib/dish-detail-content';
+import { pageMetadata } from '@/lib/seo';
+import { getCanonicalOrigin } from '@/lib/site-url';
+import { getFallbackProduct, getFallbackRelated } from '@/data/fallbackMenu';
 
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const data = await cmsFetch(`/shop/products/${encodeURIComponent(slug)}`);
-  if (!data?.product) return { title: 'Item not found' };
-  return {
-    title: data.product.name,
-    description: data.product.description,
-    alternates: { canonical: `/shop/${encodeURIComponent(slug)}` }
-  };
+  const product = data?.product || getFallbackProduct(slug);
+  if (!product) return { title: 'Item not found' };
+  const description = product.description
+    ? `${product.description} Order ${product.name} from Preva Kitchen for pickup or delivery in Redford Township, MI.`
+    : `Order ${product.name} from Preva Kitchen for pickup or delivery in Redford Township, MI.`;
+
+  return pageMetadata({
+    title: `${product.name} in Redford, MI`,
+    description: description.slice(0, 160),
+    path: `/menu/${encodeURIComponent(slug)}`,
+    image: product.image,
+    type: 'website',
+    keywords: [
+      product.name,
+      product.category,
+      ...(Array.isArray(product.tags) ? product.tags : []),
+      `${product.name} Redford MI`,
+      'Preva Kitchen menu'
+    ].filter(Boolean)
+  });
 }
 
 export default async function ProductPage({ params }) {
   const { slug } = await params;
   const data = await cmsFetch(`/shop/products/${encodeURIComponent(slug)}`);
-  if (!data?.product) notFound();
+  const product = data?.product || getFallbackProduct(slug);
+  if (!product) notFound();
 
-  const { product, related } = data;
+  const related = data?.related?.length > 0 ? data.related : getFallbackRelated(product);
+  const aboutTitle = product.aboutTitle || getDefaultAboutTitle(product);
+  const aboutParagraphs = parseAboutContent(product.aboutContent, product);
+  const faqs = getDishFaqs(product);
+  const siteOrigin = getCanonicalOrigin();
+  const productUrl = `${siteOrigin}/menu/${encodeURIComponent(slug)}`;
+
+  const detailSchema = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Product',
+        name: product.name,
+        description: product.description,
+        image: product.image || undefined,
+        url: productUrl,
+        brand: { '@type': 'Brand', name: 'Preva Kitchen' },
+        category: product.category,
+        offers: {
+          '@type': 'Offer',
+          url: productUrl,
+          priceCurrency: 'USD',
+          price: (Number(product.priceCents) / 100).toFixed(2),
+          availability: product.available ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+          seller: { '@type': 'Restaurant', name: 'Preva Kitchen' }
+        }
+      },
+      {
+        '@type': 'FAQPage',
+        mainEntity: faqs.map((faq) => ({
+          '@type': 'Question',
+          name: faq.q,
+          acceptedAnswer: { '@type': 'Answer', text: faq.a }
+        }))
+      }
+    ]
+  };
+  const detailSchemaJson = JSON.stringify(detailSchema).replace(/</g, '\\u003c');
 
   const specs = [
     product.servings ? ['Serves', product.servings] : null,
@@ -35,10 +95,14 @@ export default async function ProductPage({ params }) {
   return (
     <ShopProvider>
       <div className="ps">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: detailSchemaJson }}
+        />
         <div className="ps-wrap">
           <nav className="ps-crumbs">
-            <Link href="/shop">Order online</Link> <span>/</span>
-            <Link href="/shop">{product.category}</Link> <span>/</span>
+            <Link href="/menu">Order online</Link> <span>/</span>
+            <Link href="/menu">{product.category}</Link> <span>/</span>
             <span>{product.name}</span>
           </nav>
 
@@ -94,6 +158,34 @@ export default async function ProductPage({ params }) {
             </div>
           </div>
 
+          <section className="ps-dish-about" aria-labelledby="dish-about-title">
+            <span className="ps-detail-kicker">About</span>
+            <h2 id="dish-about-title" className="ps-detail-title">{aboutTitle}</h2>
+            <div className="ps-detail-rule" aria-hidden="true" />
+            <div className="ps-dish-about__copy">
+              {aboutParagraphs.map((paragraph, index) => (
+                <p key={`${index}-${paragraph.slice(0, 24)}`}>{paragraph}</p>
+              ))}
+            </div>
+          </section>
+
+          <section className="ps-dish-faq" aria-labelledby="dish-faq-title">
+            <span className="ps-detail-kicker">FAQ</span>
+            <h2 id="dish-faq-title" className="ps-detail-title">Questions about the {product.name}</h2>
+            <div className="ps-detail-rule" aria-hidden="true" />
+            <div className="ps-dish-faq__list">
+              {faqs.map((faq, index) => (
+                <details key={`${faq.q}-${index}`} open={index === 0}>
+                  <summary>
+                    <span>{faq.q}</span>
+                    <i aria-hidden="true">+</i>
+                  </summary>
+                  <div className="ps-dish-faq__answer"><p>{faq.a}</p></div>
+                </details>
+              ))}
+            </div>
+          </section>
+
           {related?.length > 0 && (
             <section className="ps-sec" style={{ borderTop: '1px solid var(--ps-line)' }}>
               <div className="ps-shead">
@@ -101,7 +193,7 @@ export default async function ProductPage({ params }) {
                   <span className="ps-kicker">Goes well with</span>
                   <h2 className="ps-h2">More {product.category}</h2>
                 </div>
-                <Link href="/shop" className="ps-more">Full menu</Link>
+                <Link href="/menu" className="ps-more">Full menu</Link>
               </div>
               <div className="ps-grid">
                 {related.map((item) => <ProductCard product={item} key={item.id} />)}

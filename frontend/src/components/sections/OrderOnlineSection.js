@@ -44,7 +44,7 @@ export default function OrderOnlineSection({ visible = true, content = {} }) {
       window.openOrderModal();
       return;
     }
-    window.location.assign('/shop');
+    window.location.assign('/menu');
   };
 
   return (
@@ -93,7 +93,7 @@ export default function OrderOnlineSection({ visible = true, content = {} }) {
               >
                 {copy.primaryLabel} <SvgIcon name="arrow-right" size={17} />
               </button>
-              <Link className="home-order-secondary" href="/shop">
+              <Link className="home-order-secondary" href="/menu">
                 {copy.secondaryLabel}
               </Link>
             </div>

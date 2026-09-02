@@ -16,6 +16,9 @@ import '@/styles/typography.css';
 import Shell from '@/components/Shell';
 import { cmsFetch } from '@/lib/cms';
 import { roboto } from '@/lib/fonts';
+import { DEFAULT_OG_IMAGE } from '@/lib/seo';
+import { getCanonicalOrigin } from '@/lib/site-url';
+import { generateSiteWideSchema } from '@/lib/seo-schema';
 
 /*
  * Chrome translation/accessibility extensions can wrap or move text nodes
@@ -62,60 +65,69 @@ export async function generateMetadata() {
   const oldBrand = /night\s*life|night\s*club|\bclub\b|\bvip\b|bottle/i;
   const siteTitle = oldBrand.test(settings?.siteTitle || '') ? 'Preva Kitchen' : (settings?.siteTitle || 'Preva Kitchen');
   const savedDescription = settings?.defaultSeoDescription || settings?.siteDescription || '';
+  const description =
+    (!oldBrand.test(savedDescription) && savedDescription) ||
+    'Chef-driven comfort food, dine-in, pickup, delivery and catering in Redford Township, Michigan.';
+  const defaultImage = settings?.defaultOgImage || DEFAULT_OG_IMAGE;
 
   return {
+    applicationName: 'Preva Kitchen',
     title: {
       default: settings?.defaultSeoTitle || siteTitle,
       template: `%s | ${siteTitle}`
     },
-    description:
-      (!oldBrand.test(savedDescription) && savedDescription) ||
-      'Chef-driven comfort food, dine-in, pickup, delivery and catering in Redford Township, Michigan.',
-    metadataBase: new URL(
-      process.env.NEXT_PUBLIC_CANONICAL_URL ||
-        settings?.siteUrl ||
-        process.env.NEXT_PUBLIC_SITE_URL ||
-        'https://prevakitchen.com'
-    ),
+    description,
+    keywords: [
+      'Preva Kitchen',
+      'restaurant Redford Township',
+      'food delivery Redford MI',
+      'pickup restaurant Redford',
+      'catering Redford Michigan'
+    ],
+    authors: [{ name: 'Preva Kitchen' }],
+    creator: 'Preva Kitchen',
+    publisher: 'Preva Kitchen',
+    metadataBase: new URL(getCanonicalOrigin(settings?.siteUrl)),
     alternates: {
       canonical: '/'
     },
-    openGraph: settings?.defaultOgImage ? { images: [{ url: settings.defaultOgImage }] } : undefined
+    openGraph: {
+      title: settings?.defaultSeoTitle || siteTitle,
+      description,
+      url: '/',
+      siteName: 'Preva Kitchen',
+      locale: 'en_US',
+      type: 'website',
+      images: [{ url: defaultImage, width: 1200, height: 630, alt: 'Preva Kitchen' }]
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: settings?.defaultSeoTitle || siteTitle,
+      description,
+      images: [defaultImage]
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1
+      }
+    },
+    icons: {
+      icon: [{ url: '/favicon.ico', type: 'image/svg+xml' }],
+      shortcut: '/favicon.ico',
+      apple: '/asset/preva-real-logo.png'
+    }
   };
 }
 
 export default function RootLayout({ children }) {
-  // Structured data: helps search engines show rich results (hours, cuisine,
-  // reservations). Values mirror the site's own defaults in settings.
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'Restaurant',
-    name: 'Preva Kitchen',
-    description:
-      'Chef-driven comfort food, dine-in, pickup, delivery and catering in Redford Township, Michigan.',
-    servesCuisine: ['American', 'Seafood', 'Caribbean'],
-    telephone: '+1-313-286-3586',
-    address: {
-      '@type': 'PostalAddress',
-      streetAddress: '13090 Inkster Rd',
-      addressLocality: 'Redford Township',
-      addressRegion: 'MI',
-      postalCode: '48239',
-      addressCountry: 'US'
-    },
-    openingHoursSpecification: [
-      {
-        '@type': 'OpeningHoursSpecification',
-        dayOfWeek: ['Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-        opens: '17:00',
-        closes: '22:00'
-      }
-    ],
-    acceptsReservations: 'True',
-    sameAs: [
-      'https://www.instagram.com/prevakitchen/'
-    ]
-  };
+  const origin = getCanonicalOrigin();
+  const jsonLd = generateSiteWideSchema(origin);
 
   return (
     <html lang="en" className={roboto.variable} suppressHydrationWarning>

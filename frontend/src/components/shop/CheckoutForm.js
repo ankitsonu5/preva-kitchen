@@ -10,7 +10,7 @@ import { showError, showToast, showWarning } from '../../lib/swal';
 /**
  * The cart + checkout page, laid out the way Swiggy's mobile-web cart flow
  * works: restaurant strip on top, editable item rows with quantity steppers,
- * an "Add more items" escape back to the menu, then delivery details, tip,
+ * an "Add more items" escape back to the menu, then delivery details,
  * and a Bill Details card — with a sticky "Proceed to Pay" bar pinned to the
  * bottom on mobile.
  *
@@ -88,7 +88,6 @@ export default function CheckoutForm({ settings, cancelledOrderNumber = '' }) {
   const checkoutAttemptRef = useRef('');
 
   const [fulfilment, setFulfilment] = useState(settings.pickupEnabled ? 'PICKUP' : 'DELIVERY');
-  const [tipPercent, setTipPercent] = useState(settings.tipPresets?.[1] ?? 18);
   const [customer, setCustomer] = useState({ name: '', phone: '', email: '', address: '', postcode: '', note: '' });
   const [quote, setQuote] = useState(null);
   const [error, setError] = useState('');
@@ -97,9 +96,6 @@ export default function CheckoutForm({ settings, cancelledOrderNumber = '' }) {
   const payload = useMemo(
     () => ({
       fulfilment,
-      // The API recalculates the tip from its own trusted subtotal and accepts
-      // only percentages configured by the restaurant.
-      tipPercent,
       lines: cart.lines.map((line) => ({
         itemId: line.itemId,
         qty: line.qty,
@@ -107,7 +103,7 @@ export default function CheckoutForm({ settings, cancelledOrderNumber = '' }) {
         note: line.note
       }))
     }),
-    [cart.lines, cart.subtotalCents, fulfilment, tipPercent]
+    [cart.lines, cart.subtotalCents, fulfilment]
   );
 
   // Re-quote whenever the order changes — including every stepper tap.
@@ -267,7 +263,7 @@ export default function CheckoutForm({ settings, cancelledOrderNumber = '' }) {
           Good food is waiting! Explore delicious dishes from Preva Kitchen.
         </p>
         <Link
-          href="/shop"
+          href="/menu"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -385,7 +381,7 @@ export default function CheckoutForm({ settings, cancelledOrderNumber = '' }) {
         ))}
 
         <Link
-          href="/shop"
+          href="/menu"
           style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '13px 0', fontSize: 13, fontWeight: 700, color: '#C9A84C', textDecoration: 'none', borderTop: '1px dashed rgba(255,255,255,0.08)' }}
         >
           <span style={{ fontSize: 16, lineHeight: 1 }}>＋</span> Add more items
@@ -458,38 +454,6 @@ export default function CheckoutForm({ settings, cancelledOrderNumber = '' }) {
         </div>
       </Card>
 
-      {/* ── tip ────────────────────────────────────────────────────────── */}
-      <Card>
-        <b style={{ display: 'block', fontSize: 12, color: '#8a8a8a', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 10 }}>
-          Tip the team
-        </b>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {[0, ...(settings.tipPresets || [15, 18, 20])].map((percent) => (
-            <button
-              key={percent}
-              type="button"
-              aria-pressed={tipPercent === percent}
-              onClick={() => setTipPercent(percent)}
-              style={{
-                padding: '8px 18px',
-                borderRadius: 999,
-                fontSize: 12.5,
-                fontWeight: 700,
-                cursor: 'pointer',
-                border: tipPercent === percent ? '1.5px solid #C9A84C' : '1px solid rgba(255,255,255,0.15)',
-                background: tipPercent === percent ? 'rgba(201,168,76,0.12)' : 'transparent',
-                color: tipPercent === percent ? '#C9A84C' : '#bbb'
-              }}
-            >
-              {percent === 0 ? 'None' : `${percent}%`}
-            </button>
-          ))}
-        </div>
-        <p style={{ fontSize: 11.5, color: '#777', marginTop: 10, marginBottom: 0 }}>
-          Tips go to the kitchen and front of house. Calculated on the food, not on tax or delivery.
-        </p>
-      </Card>
-
       {/* ── bill details ───────────────────────────────────────────────── */}
       <Card>
         <b style={{ display: 'block', fontSize: 12, color: '#8a8a8a', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 8 }}>
@@ -504,7 +468,6 @@ export default function CheckoutForm({ settings, cancelledOrderNumber = '' }) {
           />
         )}
         <BillRow label="Taxes" value={quote ? money(quote.taxCents) : '—'} />
-        {(quote?.tipCents ?? 0) > 0 && <BillRow label="Tip" value={money(quote.tipCents)} />}
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.12)', marginTop: 8, paddingTop: 10, display: 'flex', justifyContent: 'space-between' }}>
           <b style={{ fontSize: 14, color: '#fff' }}>To pay</b>
           <b style={{ fontSize: 16, color: '#C9A84C' }}>{total !== null ? money(total) : '—'}</b>

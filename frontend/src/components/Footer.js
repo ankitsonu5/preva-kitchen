@@ -8,14 +8,14 @@ import SvgIcon from './SvgIcon';
 const ORBIT_RADIUS = 390;
 
 const FALLBACK_INSTAGRAM_POSTS = [
-  { shortcode: 'DbYY080Ez5X', caption: 'Fresh Flavors & Late-Night Bites at Preva Kitchen', image: 'https://prevaclub.com/wp-content/uploads/2026/08/Preva-Burger-768x768.jpg' },
-  { shortcode: 'DbTZCiolhU8', caption: 'Preva Signature Crispy Jumbo Wings', image: 'https://prevaclub.com/wp-content/uploads/2026/08/Preva-Wings-768x768.jpg' },
-  { shortcode: 'Da9zZp5S-4j', caption: 'Creamy Caribbean Rasta Pasta', image: 'https://prevaclub.com/wp-content/uploads/2026/08/Rasta-Pasta.webp' },
-  { shortcode: 'Da7H3G3So-I', caption: 'Preva Double Smash Burger & Fries', image: 'https://prevaclub.com/wp-content/uploads/2026/08/Preva-Double-Smash-Burger-768x768.jpg' },
-  { shortcode: 'DbdkwJMDv4F', caption: 'Grilled Quesadillas & House Dipping Sauces', image: 'https://prevaclub.com/wp-content/uploads/2026/08/Preva-Quesadilla-768x768.jpg' },
-  { shortcode: 'DayD3BIJafZ', caption: 'Crisp Seasoned Shrimp Tacos', image: 'https://prevaclub.com/wp-content/uploads/2026/08/Shrimp-Tacos-768x768.jpg' },
-  { shortcode: 'DZqdAH7BZEQ', caption: 'Golden Fried Catfish & Lobster Bites', image: 'https://prevaclub.com/wp-content/uploads/2026/08/Preva-Catfish-768x768.jpg' },
-  { shortcode: 'DYDvxvzDp1GtaRKJsKoezu3AcOhFzo-kD3vkSc0', caption: 'Gourmet Seasoned Lamb Chops & Sides', image: 'https://prevaclub.com/wp-content/uploads/2026/08/preva-Lamb-768x768.jpg' }
+  { shortcode: 'DbYY080Ez5X', caption: 'Fresh Flavors & Late-Night Bites at Preva Kitchen', image: '/asset/prevaclub/wp-content/uploads/2026/08/Preva-Burger-768x768.jpg' },
+  { shortcode: 'DbTZCiolhU8', caption: 'Preva Signature Crispy Jumbo Wings', image: '/asset/prevaclub/wp-content/uploads/2026/08/Preva-Wings-768x768.jpg' },
+  { shortcode: 'Da9zZp5S-4j', caption: 'Creamy Caribbean Rasta Pasta', image: '/asset/prevaclub/wp-content/uploads/2026/08/Rasta-Pasta.webp' },
+  { shortcode: 'Da7H3G3So-I', caption: 'Preva Double Smash Burger & Fries', image: '/asset/prevaclub/wp-content/uploads/2026/08/Preva-Double-Smash-Burger-768x768.jpg' },
+  { shortcode: 'DbdkwJMDv4F', caption: 'Grilled Quesadillas & House Dipping Sauces', image: '/asset/prevaclub/wp-content/uploads/2026/08/Preva-Quesadilla-768x768.jpg' },
+  { shortcode: 'DayD3BIJafZ', caption: 'Crisp Seasoned Shrimp Tacos', image: '/asset/prevaclub/wp-content/uploads/2026/08/Shrimp-Tacos-768x768.jpg' },
+  { shortcode: 'DZqdAH7BZEQ', caption: 'Golden Fried Catfish & Lobster Bites', image: '/asset/prevaclub/wp-content/uploads/2026/08/Preva-Catfish-768x768.jpg' },
+  { shortcode: 'DYDvxvzDp1GtaRKJsKoezu3AcOhFzo-kD3vkSc0', caption: 'Gourmet Seasoned Lamb Chops & Sides', image: '/asset/prevaclub/wp-content/uploads/2026/08/preva-Lamb-768x768.jpg' }
 ].map((post) => ({
   ...post,
   url: `https://www.instagram.com/p/${post.shortcode}/`
@@ -31,7 +31,7 @@ export default function Footer() {
   /* Animation state — all in refs so rAF loop never needs re-subscribe */
   const currentAngleRef = useRef(0);
   const targetAngleRef  = useRef(0);
-  const autoOnRef       = useRef(true);
+  const hoverPausedRef  = useRef(false);
   const hoveredIndexRef = useRef(-1);
   const cardsRef        = useRef([]);
   const draggingRef     = useRef(false);
@@ -41,9 +41,6 @@ export default function Footer() {
   const lastXRef        = useRef(0);
   const lastTimeRef     = useRef(0);
   const rafRef          = useRef(null);
-
-  /* UI state — only for button label */
-  const [autoOn, setAutoOn] = useState(true);
 
   const [settings, setSettings] = useState({
     phone: '(313) 286-3586',
@@ -60,8 +57,8 @@ export default function Footer() {
 
   const [menuItems, setMenuItems] = useState([
     { title: 'Reserve a Table', url: '/#prv-reservations' },
-    { title: 'View Menu', url: '/shop' },
-    { title: 'Order Online', url: '/shop' },
+    { title: 'View Menu', url: '/menu' },
+    { title: 'Order Online', url: '/menu' },
     { title: 'Contact Us', url: '/contact' }
   ]);
   const [instagramPosts, setInstagramPosts] = useState(FALLBACK_INSTAGRAM_POSTS);
@@ -108,7 +105,7 @@ export default function Footer() {
   const isLandingPage = pathname === '/preva-kitchen';
   const isCareersPage = Boolean(pathname?.startsWith('/careers'));
   const isShopOrOrderPage = Boolean(
-    pathname?.startsWith('/shop') ||
+    pathname?.startsWith('/menu') ||
     pathname?.startsWith('/order') ||
     pathname?.startsWith('/checkout')
   );
@@ -118,16 +115,7 @@ export default function Footer() {
      ORBIT_RADIUS is a module constant (outside component) so
      useCallback deps stay stable and don't trigger re-runs.
   ── */
-  const autoResumeTimerRef = useRef(null);
   const dragDistanceRef = useRef(0);
-
-  const scheduleAutoResume = useCallback(() => {
-    if (autoResumeTimerRef.current) clearTimeout(autoResumeTimerRef.current);
-    autoResumeTimerRef.current = setTimeout(() => {
-      autoOnRef.current = true;
-      setAutoOn(true);
-    }, 1800);
-  }, []);
 
   /* Render one frame — reads only refs, no state */
   const renderFrame = useCallback(() => {
@@ -156,14 +144,16 @@ export default function Footer() {
   const startLoop = useCallback(() => {
     if (rafRef.current) return;
     const tick = () => {
-      if (autoOnRef.current && !draggingRef.current && hoveredIndexRef.current === -1) {
-        targetAngleRef.current -= 0.22;
+      // Auto-spin whenever NOT hovered and NOT dragging
+      if (!hoverPausedRef.current && !draggingRef.current) {
+        targetAngleRef.current -= 0.32;
       }
+      // Apply momentum/inertia from user drag
       if (!draggingRef.current && Math.abs(velocityRef.current) > 0.01) {
         targetAngleRef.current += velocityRef.current;
         velocityRef.current *= 0.92;
       }
-      currentAngleRef.current += (targetAngleRef.current - currentAngleRef.current) * 0.08;
+      currentAngleRef.current += (targetAngleRef.current - currentAngleRef.current) * 0.1;
       renderFrame();
       rafRef.current = requestAnimationFrame(tick);
     };
@@ -186,14 +176,17 @@ export default function Footer() {
     renderFrame();
     startLoop();
     return () => {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
       cardsRef.current = [];
     };
   }, [instagramPosts, renderFrame, startLoop]);
 
   const handleCardEnter = (index, event) => {
     hoveredIndexRef.current = index;
+    hoverPausedRef.current = true;
     if (event?.currentTarget) {
       event.currentTarget.style.boxShadow = '0 0 0 1.5px #c9a34e, 0 20px 44px rgba(0,0,0,0.72)';
       event.currentTarget.style.transform = 'scale(1.09)';
@@ -202,12 +195,28 @@ export default function Footer() {
 
   const handleCardLeave = (event) => {
     hoveredIndexRef.current = -1;
+    hoverPausedRef.current = false;
     if (event?.currentTarget) {
       event.currentTarget.style.boxShadow = '';
       event.currentTarget.style.transform = 'scale(1)';
     }
-    scheduleAutoResume();
   };
+
+  // Ensure window scroll or blur resets any stuck hover state
+  useEffect(() => {
+    const resetHover = () => {
+      hoverPausedRef.current = false;
+      hoveredIndexRef.current = -1;
+    };
+    window.addEventListener('scroll', resetHover, { passive: true });
+    window.addEventListener('blur', resetHover);
+    window.addEventListener('resize', resetHover);
+    return () => {
+      window.removeEventListener('scroll', resetHover);
+      window.removeEventListener('blur', resetHover);
+      window.removeEventListener('resize', resetHover);
+    };
+  }, []);
 
   const openInstagramPost = (post) => {
     if (dragDistanceRef.current > 8) return; // ignore if user was dragging
@@ -219,6 +228,15 @@ export default function Footer() {
     const stage = stageRef.current;
     if (!stage) return;
 
+    const onMouseEnterStage = () => {
+      hoverPausedRef.current = true;
+    };
+
+    const onMouseLeaveStage = () => {
+      hoverPausedRef.current = false;
+      hoveredIndexRef.current = -1;
+    };
+
     const onMouseDown = (e) => {
       draggingRef.current = true;
       dragStartXRef.current = e.clientX;
@@ -227,10 +245,7 @@ export default function Footer() {
       velocityRef.current   = 0;
       lastXRef.current      = e.clientX;
       lastTimeRef.current   = Date.now();
-      autoOnRef.current = false;
-      setAutoOn(false);
       stage.style.cursor = 'grabbing';
-      if (autoResumeTimerRef.current) clearTimeout(autoResumeTimerRef.current);
     };
 
     const onMouseMove = (e) => {
@@ -249,7 +264,6 @@ export default function Footer() {
       if (!draggingRef.current) return;
       draggingRef.current = false;
       stage.style.cursor = 'grab';
-      scheduleAutoResume();
     };
 
     const onTouchStart = (e) => {
@@ -261,9 +275,7 @@ export default function Footer() {
       lastXRef.current      = touchX;
       lastTimeRef.current   = Date.now();
       draggingRef.current   = true;
-      autoOnRef.current     = false;
-      setAutoOn(false);
-      if (autoResumeTimerRef.current) clearTimeout(autoResumeTimerRef.current);
+      hoverPausedRef.current = true;
     };
 
     const onTouchMove = (e) => {
@@ -280,39 +292,46 @@ export default function Footer() {
 
     const onTouchEnd = () => {
       draggingRef.current = false;
-      scheduleAutoResume();
+      hoverPausedRef.current = false;
     };
 
+    const onInteractionCancel = () => {
+      draggingRef.current = false;
+      hoverPausedRef.current = false;
+      velocityRef.current = 0;
+      stage.style.cursor = 'grab';
+    };
+
+    stage.addEventListener('mouseenter', onMouseEnterStage);
+    stage.addEventListener('mouseleave', onMouseLeaveStage);
     stage.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
     stage.addEventListener('touchstart', onTouchStart, { passive: true });
     stage.addEventListener('touchmove', onTouchMove, { passive: true });
     stage.addEventListener('touchend', onTouchEnd);
+    stage.addEventListener('touchcancel', onInteractionCancel);
+    window.addEventListener('blur', onInteractionCancel);
     return () => {
+      stage.removeEventListener('mouseenter', onMouseEnterStage);
+      stage.removeEventListener('mouseleave', onMouseLeaveStage);
       stage.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
       stage.removeEventListener('touchstart', onTouchStart);
       stage.removeEventListener('touchmove', onTouchMove);
       stage.removeEventListener('touchend', onTouchEnd);
-      if (autoResumeTimerRef.current) clearTimeout(autoResumeTimerRef.current);
+      stage.removeEventListener('touchcancel', onInteractionCancel);
+      window.removeEventListener('blur', onInteractionCancel);
     };
-  }, [instagramPosts, scheduleAutoResume]);
+  }, [instagramPosts]);
 
   /* Arrow clicks: nudge targetAngle smoothly */
   const handleRotateLeft = () => {
     targetAngleRef.current -= 50;
-    scheduleAutoResume();
   };
   const handleRotateRight = () => {
     targetAngleRef.current += 50;
-    scheduleAutoResume();
-  };
-  const handleToggleAuto = () => {
-    const next = !autoOnRef.current;
-    autoOnRef.current = next;
-    setAutoOn(next);
   };
 
   return (
@@ -345,10 +364,6 @@ export default function Footer() {
           id="orbit-stage"
           className="orbit-stage"
           aria-label="Instagram posts carousel — drag to rotate"
-          onMouseLeave={() => {
-            hoveredIndexRef.current = -1;
-            scheduleAutoResume();
-          }}
         >
           <div ref={orbitRef} id="orbit" className="orbit-ring">
             {instagramPosts.map((post, index) => {
@@ -448,25 +463,43 @@ export default function Footer() {
                 <li>
                   <span className="icon-gold"><SvgIcon name="clock" size={16} /></span>
                   <div>
-                    <strong>Tuesday-Sunday:</strong><br />
-                    Dinner service · 5pm-10pm
+                    <strong>Monday-Friday:</strong><br />
+                    11:00 am - 3:30 pm
                   </div>
                 </li>
                 <li>
-                  <span className="icon-gold"><SvgIcon name="lock" size={16} /></span>
+                  <span className="icon-gold"><SvgIcon name="parking" size={16} /></span>
                   <div>
-                    <strong>Monday:</strong><br />
-                    Closed
-                  </div>
-                </li>
-                <li>
-                  <span className="icon-gold"><SvgIcon name="spark" size={16} /></span>
-                  <div>
-                    <strong>Ordering:</strong><br />
-                    Pickup and delivery available
+                    <strong>Parking:</strong><br />
+                    Easy parking available
                   </div>
                 </li>
               </ul>
+
+              <div className="footer-follow">
+                <h4 className="footer-heading">FOLLOW US</h4>
+                <div className="footer-heading-divider"></div>
+                <div className="footer-social-grid">
+                  <a
+                    href={settings.socialLinks?.instagram || 'https://www.instagram.com/prevakitchen/'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="footer-social-link"
+                  >
+                    <span className="icon-gold"><SvgIcon name="instagram" size={16} /></span>
+                    <span><strong>Instagram:</strong><small>@prevakitchen</small></span>
+                  </a>
+                  <a
+                    href={settings.socialLinks?.facebook || 'https://www.facebook.com/prevakitchen'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="footer-social-link"
+                  >
+                    <span className="icon-gold"><SvgIcon name="facebook" size={16} /></span>
+                    <span><strong>Facebook:</strong><small>@prevakitchen</small></span>
+                  </a>
+                </div>
+              </div>
             </div>
 
             {/* Contact Column */}
@@ -505,7 +538,7 @@ export default function Footer() {
           <a href="#prv-reservations"
              onClick={(e) => { e.preventDefault(); selectTabAndScroll('prv-reservations'); }}
              className="sticky-btn">RESERVE TABLE</a>
-          <a href="/shop" className="sticky-btn">ORDER ONLINE</a>
+          <a href="/menu" className="sticky-btn">ORDER ONLINE</a>
           <a href="#prv-reservations"
              onClick={(e) => { e.preventDefault(); selectTabAndScroll('catering'); }}
              className="sticky-btn">CATERING</a>

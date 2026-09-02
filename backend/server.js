@@ -69,39 +69,58 @@ app.use((req, res, next) => {
 });
 
 /* ── CORS ─────────────────────────────────────────────────────────────────
-   Locked to the frontend's origin, with credentials on because the admin
-   session is an httpOnly cookie. A wildcard origin cannot be combined with
-   credentials — the browser rejects it — which is why this is a list, not
-   '*'. Add extra origins (a staging site, a preview URL) comma-separated in
-   FRONTEND_ORIGIN. */
-const productionOrigins = ['https://prevakitchen.com', 'https://www.prevakitchen.com'];
-const configuredOrigins = (
-  process.env.FRONTEND_ORIGIN || (isProduction ? productionOrigins.join(',') : 'http://localhost:3000')
-)
+   Supports local development (all localhost / 127.0.0.1 ports), production
+   storefront domains, Vercel preview URLs, and any custom FRONTEND_ORIGIN.
+   credentials: true is enabled for httpOnly admin and cart session cookies. */
+const productionOrigins = [
+  'https://prevakitchen.com',
+  'https://www.prevakitchen.com',
+  'https://preva-kitchen.vercel.app'
+];
+
+const configuredOrigins = (process.env.FRONTEND_ORIGIN || '')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
 
-// Keep the canonical storefronts in the tracked production allowlist as well
-// as FRONTEND_ORIGIN. Environment files are intentionally gitignored, so a
-// deployment that misses that variable must not break checkout on our domains.
-const allowedOrigins = [
-  ...new Set([
-    ...configuredOrigins,
-    ...productionOrigins
-  ])
-];
+const allowedOrigins = new Set([
+  ...configuredOrigins,
+  ...productionOrigins,
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:3002',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:3001',
+  'http://127.0.0.1:3002'
+]);
+
+function isOriginAllowed(origin) {
+  if (!origin) return true;
+  if (allowedOrigins.has(origin)) return true;
+
+  // Allow all localhost and 127.0.0.1 ports in development
+  if (!isProduction && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+    return true;
+  }
+
+  // Allow Preva Kitchen subdomains and Vercel deployments in production
+  if (/^https:\/\/([a-z0-9-]+\.)*prevakitchen\.com$/i.test(origin)) return true;
+  if (/^https:\/\/([a-z0-9-]+\.)*vercel\.app$/i.test(origin)) return true;
+
+  return false;
+}
 
 app.use(
   cors({
     origin(origin, callback) {
-      // No Origin header = same-origin, curl, or server-to-server. Allow.
-      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error(`Origin ${origin} is not allowed by CORS.`));
+      if (isOriginAllowed(origin)) {
+        return callback(null, true);
+      }
+      return callback(null, false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With']
   })
 );
 
@@ -119,6 +138,7 @@ app.post(
 // one third, so 40 MB leaves safe envelope room while per-file checks below
 // still enforce strict media limits.
 app.use(express.json({ limit: '40mb' }));
+
 
 /* ── tiny cookie parser ───────────────────────────────────────────────────
    The auth layer only ever reads one cookie, so a dependency-free parse is
@@ -201,6 +221,49 @@ app.use((error, req, res, next) => {
   return res.status(500).json({ message: 'Something went wrong on our side.' });
 });
 
+
+/* ── everything else goes through the shared router ───────────────────── */
+app.all(/^\/api\/(.*)/, async (req, res, next) => {
+  try {
+    const path = '/' + req.params[0];
+    const user = await currentUser(asFetchLikeRequest(req)).catch(() => null);
+
+    const outcome = await dispatch({
+      method: req.method,
+      path,
+      query: req.query,
+      body: req.body && Object.keys(req.body).length ? req.body : null,
+      user,
+      request: req,
+      ip: clientIp(req)
+    });
+
+    for (const cookie of outcome.cookies || []) {
+      const options = { ...(cookie.options || {}) };
+      // The router speaks in seconds (fetch-API convention); Express wants ms.
+      if (typeof options.maxAge === 'number') options.maxAge = options.maxAge * 1000;
+      res.cookie(cookie.name, cookie.value, options);
+    }
+    for (const [name, value] of Object.entries(outcome.headers || {})) {
+      res.setHeader(name, value);
+    }
+
+    // Binary bodies (the PDF/Excel exports) pass through untouched.
+    if (Buffer.isBuffer(outcome.body)) return res.status(outcome.status).send(outcome.body);
+    return res.status(outcome.status).json(outcome.body ?? null);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.use((error, req, res, next) => {
+  if (error?.message?.includes('CORS')) {
+    return res.status(403).json({ message: error.message });
+  }
+  console.error('[server]', error);
+  return res.status(500).json({ message: 'Something went wrong on our side.' });
+});
+
 // Production must never appear healthy while orders and Stripe event claims
 // are unable to persist. Local development may still use the explicit
 // in-memory fallback provided by db.js.
@@ -208,7 +271,7 @@ if (isProduction) await connectDatabase();
 
 app.listen(PORT, () => {
   console.log(`[preva-backend] listening on http://localhost:${PORT}`);
-  console.log(`[preva-backend] CORS allows: ${allowedOrigins.join(', ')}`);
+  console.log(`[preva-backend] CORS allows: ${[...allowedOrigins].join(', ')}`);
 });
 
 export default app;

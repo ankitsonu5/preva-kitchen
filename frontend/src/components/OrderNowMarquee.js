@@ -21,7 +21,7 @@ function MarqueeGroup({ duplicate = false }) {
 export default function OrderNowMarquee() {
   return (
     <aside className="pk-order-marquee" aria-label="Order from Preva Kitchen">
-      <Link href="/shop" className="pk-order-marquee-link">
+      <Link href="/menu" className="pk-order-marquee-link">
         <span className="screen-reader-text">Order from Preva Kitchen online</span>
         <span className="pk-order-marquee-track">
           <MarqueeGroup />

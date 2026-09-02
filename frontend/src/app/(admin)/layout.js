@@ -12,7 +12,15 @@ import { roboto } from '@/lib/fonts';
  */
 export const metadata = {
   title: { default: 'Preva Admin', template: '%s | Preva Admin' },
-  robots: { index: false, follow: false }
+  robots: { index: false, follow: false },
+  icons: {
+    icon: [
+      { url: '/favicon.ico', type: 'image/svg+xml' },
+      { url: '/favicon.svg', type: 'image/svg+xml' }
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/asset/preva-logo.svg'
+  }
 };
 
 export default function AdminRootLayout({ children }) {

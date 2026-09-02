@@ -32,7 +32,7 @@ const FALLBACK_PLATFORMS = [
     name: 'TOAST',
     availability: 'BOTH',
     description: 'Pickup + Delivery',
-    url: '/shop',
+    url: '/menu',
     logo: 'toast',
     isActive: true,
   },

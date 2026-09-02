@@ -34,7 +34,6 @@ export async function shopSettings() {
     minOrderCents: num(flat.shopMinOrderCents, 1500),
     pickupMinutes: num(flat.shopPickupMinutes, 25),
     deliveryMinutes: num(flat.shopDeliveryMinutes, 45),
-    tipPresets: Array.isArray(flat.shopTipPresets) ? flat.shopTipPresets : [15, 18, 20],
     pickupEnabled: flat.shopPickupEnabled !== false,
     deliveryEnabled: flat.shopDeliveryEnabled !== false,
     orderingEnabled: flat.shopOrderingEnabled !== false,
@@ -43,7 +42,7 @@ export async function shopSettings() {
 }
 
 /**
- * @param {{ fulfilment:string, lines:Array, tipPercent:number }} input
+ * @param {{ fulfilment:string, lines:Array }} input
  * @returns priced order with every amount in integer cents
  */
 export async function priceOrder(input) {
@@ -143,19 +142,10 @@ export async function priceOrder(input) {
 
   const taxCents = taxOn(subtotalCents, settings.taxRate);
 
-  // The browser selects one configured percentage; it never supplies cents.
-  // The trusted subtotal above is the only input used to calculate the tip.
-  const allowedTipPercents = new Set([
-    0,
-    ...(Array.isArray(settings.tipPresets) ? settings.tipPresets : [])
-      .map(Number)
-      .filter((percent) => Number.isFinite(percent) && percent >= 0 && percent <= 100)
-  ]);
-  const tipPercent = Number(input?.tipPercent ?? 0);
-  if (!Number.isFinite(tipPercent) || !allowedTipPercents.has(tipPercent)) {
-    throw badRequest('Choose one of the available tip options.');
-  }
-  const tipCents = Math.round((subtotalCents * tipPercent) / 100);
+  // Online orders do not collect gratuity. Keep zero-valued fields in the
+  // priced result for backwards-compatible order records and exports.
+  const tipPercent = 0;
+  const tipCents = 0;
 
   return {
     settings,

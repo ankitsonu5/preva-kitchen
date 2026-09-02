@@ -8,23 +8,23 @@ import { Sparkles, ArrowRight } from 'lucide-react';
 
 // High-definition circular category images matching live Preva Kitchen menu
 const CATEGORY_IMAGES = {
-  'All': 'https://prevaclub.com/wp-content/uploads/2026/08/PrevaWings-768x768.webp',
-  'Preva Wings': 'https://prevaclub.com/wp-content/uploads/2026/08/PrevaWings-768x768.webp',
-  'Preva Burger': 'https://prevaclub.com/wp-content/uploads/2026/08/PrevaBurger-768x768.webp',
-  'Quesadillas': 'https://prevaclub.com/wp-content/uploads/2026/08/PrevaQuesadilla-768x768.webp',
-  'Tacos': 'https://prevaclub.com/wp-content/uploads/2026/08/ShrimpTacos-768x768.webp',
-  'Preva Bites': 'https://prevaclub.com/wp-content/uploads/2026/08/PrevaCatfish-768x768.webp',
+  'All': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaWings-768x768.webp',
+  'Preva Wings': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaWings-768x768.webp',
+  'Preva Burger': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaBurger-768x768.webp',
+  'Quesadillas': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaQuesadilla-768x768.webp',
+  'Tacos': '/asset/prevaclub/wp-content/uploads/2026/08/ShrimpTacos-768x768.webp',
+  'Preva Bites': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaCatfish-768x768.webp',
   'Pasta': '/asset/home-reference/signature-dishes/Rasta-Pasta.webp',
-  'Salads': 'https://prevaclub.com/wp-content/uploads/2026/08/house-salad.webp',
-  'Entrées': 'https://prevaclub.com/wp-content/uploads/2026/08/prevaLamb-768x768.webp',
-  'Entrees': 'https://prevaclub.com/wp-content/uploads/2026/08/prevaLamb-768x768.webp',
-  'Sides': 'https://prevaclub.com/wp-content/uploads/2026/08/PrevaMac-768x768.webp',
-  'Dessert': 'https://prevaclub.com/wp-content/uploads/2026/08/red-wine-poached-pear.webp'
+  'Salads': '/asset/prevaclub/wp-content/uploads/2026/08/house-salad.webp',
+  'Entrées': '/asset/prevaclub/wp-content/uploads/2026/08/prevaLamb-768x768.webp',
+  'Entrees': '/asset/prevaclub/wp-content/uploads/2026/08/prevaLamb-768x768.webp',
+  'Sides': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaMac-768x768.webp',
+  'Dessert': '/asset/prevaclub/wp-content/uploads/2026/08/red-wine-poached-pear.webp'
 };
 
 const DISH_LOCAL_MAP = {
   'rasta-pasta': '/asset/home-reference/signature-dishes/Rasta-Pasta.webp',
-  'veggie-pasta': 'https://prevaclub.com/wp-content/uploads/2026/08/Veggie-Pasta-768x614.webp',
+  'veggie-pasta': '/asset/prevaclub/wp-content/uploads/2026/08/Veggie-Pasta-768x614.webp',
   'preva-lamb': '/asset/home-reference/signature-dishes/prevaLamb-600x600.webp',
   'preva-lamb-chops': '/asset/home-reference/signature-dishes/prevaLamb-600x600.webp',
   'catfish-bites': '/asset/home-reference/signature-dishes/PrevaCatfish-600x600.webp',
@@ -32,8 +32,9 @@ const DISH_LOCAL_MAP = {
   'preva-steak-bites': '/asset/home-reference/signature-dishes/PrevaSteakBites-600x600.webp',
   'preva-lobster': 'https://images.unsplash.com/photo-1551248429-40975aa4de74?auto=format&fit=crop&w=800&q=80',
   'lobster-bites': 'https://images.unsplash.com/photo-1551248429-40975aa4de74?auto=format&fit=crop&w=800&q=80',
-  'preva-burger': '/asset/home-reference/signature-dishes/PrevaDoubleSmashBurger-600x600.webp',
-  'preva-wings': '/asset/home-reference/signature-dishes/PrevaWingsChilli-1024x1024.webp',
+  'preva-burger': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaBurger-768x768.webp',
+  'preva-wings': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaWings-768x768.webp',
+  'preva-wings-chilli': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaWingsChilli-768x768.webp',
   'preva-mac': '/asset/home-reference/signature-dishes/PrevaMac-600x600.webp',
   'preva-mac-and-cheese': '/asset/home-reference/signature-dishes/PrevaMac-600x600.webp',
   'preva-quesadillas': '/asset/home-reference/signature-dishes/PrevaQuesadilla-600x600.webp',
@@ -90,7 +91,7 @@ export function ProductCard({ product }) {
 
   return (
     <Tilt3DCard className="ps-card">
-      <Link className="ps-card__shot" href={`/shop/${product.slug}`}>
+      <Link className="ps-card__shot" href={`/menu/${product.slug}`}>
         <img
           src={imageSrc}
           alt={product.name}
@@ -131,7 +132,7 @@ export function ProductCard({ product }) {
         )}
       </Link>
 
-      <Link className="ps-card__name" href={`/shop/${product.slug}`}>{product.name}</Link>
+      <Link className="ps-card__name" href={`/menu/${product.slug}`}>{product.name}</Link>
 
       <div className="lx-rating" aria-label={`Rated ${product.rating || (product.featured ? '4.8' : '4.6')} out of 5`}>
         <span className="lx-stars" aria-hidden="true">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
@@ -147,7 +148,7 @@ export function ProductCard({ product }) {
         </div>
         {!soldOut && (
           needsChoice ? (
-            <Link className="ps-btn ps-btn--gold ps-btn--sm lx-order-btn" href={`/shop/${product.slug}`}>Order</Link>
+            <Link className="ps-btn ps-btn--gold ps-btn--sm lx-order-btn" href={`/menu/${product.slug}`}>Order</Link>
           ) : (
             <button type="button" className="ps-btn ps-btn--gold ps-btn--sm lx-order-btn" onClick={(e) => { e.preventDefault(); quickAdd(); }}>
               Order

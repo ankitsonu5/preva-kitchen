@@ -1,39 +1,60 @@
 import { cmsFetch } from '@/lib/cms';
+import { getCanonicalOrigin } from '@/lib/site-url';
 
-/**
- * Built on request, not at deploy time.
- *
- * A sitemap frozen into the build would list whatever was published the day
- * it shipped, and it would also mean `next build` cannot run without the
- * database up. Both are avoidable.
- */
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function sitemap() {
-  const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://prevakitchen.com';
-  const [pages, posts, products, categories, galleries, services, careerJobs] = await Promise.all([
-    cmsFetch('/pages'), cmsFetch('/posts', { query: { limit: 100 } }), cmsFetch('/shop/products'), cmsFetch('/categories'),
-    cmsFetch('/galleries'), cmsFetch('/services'), cmsFetch('/career-jobs')
+  const base = getCanonicalOrigin();
+  const [pages, posts, products, galleries, services, careerJobs] = await Promise.all([
+    cmsFetch('/pages'),
+    cmsFetch('/posts', { query: { limit: 200 } }),
+    cmsFetch('/shop/products'),
+    cmsFetch('/galleries'),
+    cmsFetch('/services'),
+    cmsFetch('/career-jobs')
   ]);
-  const fixed = [
-    '', '/shop', '/preva-kitchen', '/blog', '/gallery', '/services', '/contact',
-    '/careers', '/careers/apply'
-  ];
-  const entries = fixed.map((path) => ({ url: `${base}${path}`, lastModified: new Date() }));
-  const append = (rows, pathFor) => (rows || []).map((row) => ({
-    url: `${base}/${String(pathFor(row)).replace(/^\/+|\/+$/g, '')}`,
-    lastModified: row.updatedAt || row.publishedAt || new Date()
-  }));
-  const all = entries
-    .concat(append(pages, (row) => row.path || row.slug))
-    .concat(append(posts, (row) => `blog/${row.slug}`))
-    .concat(append(posts, (row) => row.slug))
-    .concat(append(products, (row) => `product/${row.slug}`))
-    .concat(append(categories, (row) => `category/${row.slug}`))
-    .concat(append(galleries, (row) => `gallery/${row.slug}`))
-    .concat(append(services, (row) => `services/${row.slug}`))
-    .concat(append(careerJobs, (row) => `careers/${row.slug}`));
 
-  return [...new Map(all.map((entry) => [entry.url, entry])).values()];
+  const nonKitchen = /night\s*life|night\s*club|\bclub\b|\bvip\b|bottle service|\bdj\b|sports bar/i;
+
+  const coreRoutes = [
+    { url: `${base}`, lastModified: new Date(), changeFrequency: 'daily', priority: 1.0 },
+    { url: `${base}/menu`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.9 },
+    { url: `${base}/blog`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.9 },
+    { url: `${base}/shop`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.85 },
+    { url: `${base}/preva-kitchen`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${base}/gallery`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${base}/services`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.7 },
+    { url: `${base}/contact`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${base}/careers`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.6 }
+  ];
+
+  const postEntries = (Array.isArray(posts) ? posts : [])
+    .filter(p => !p.noIndex && !nonKitchen.test(`${p.title} ${p.excerpt}`))
+    .map(p => ({
+      url: `${base}/blog/${encodeURIComponent(p.slug)}`,
+      lastModified: new Date(p.updatedAt || p.publishedAt || p.createdAt || Date.now()),
+      changeFrequency: 'weekly',
+      priority: 0.8
+    }));
+
+  const productEntries = (Array.isArray(products) ? products : [])
+    .map(prod => ({
+      url: `${base}/menu/${encodeURIComponent(prod.slug || prod.id)}`,
+      lastModified: new Date(prod.updatedAt || Date.now()),
+      changeFrequency: 'weekly',
+      priority: 0.8
+    }));
+
+  const pageEntries = (Array.isArray(pages) ? pages : [])
+    .filter(pg => !pg.noIndex && !nonKitchen.test(pg.title))
+    .map(pg => ({
+      url: `${base}/${String(pg.path || pg.slug).replace(/^\/+/, '')}`,
+      lastModified: new Date(pg.updatedAt || Date.now()),
+      changeFrequency: 'monthly',
+      priority: 0.6
+    }));
+
+  const all = [...coreRoutes, ...postEntries, ...productEntries, ...pageEntries];
+  return [...new Map(all.map(item => [item.url, item])).values()];
 }

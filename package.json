@@ -1,0 +1,14 @@
+{
+  "name": "preva-kitchen",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix backend run dev & npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "seed": "npm --prefix backend run seed",
+    "seed:all": "node backend/scripts/seed-site.js",
+    "clean:pages": "npm --prefix backend run clean:pages"
+  }
+}

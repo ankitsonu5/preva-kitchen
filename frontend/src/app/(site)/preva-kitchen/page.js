@@ -31,9 +31,9 @@ const GALLERY_ITEMS = [
   { src: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=800&q=80', alt: 'Catfish Bites' },
   { src: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=800&q=80', alt: 'Classic Burger' },
   { src: 'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?auto=format&fit=crop&w=800&q=80', alt: 'Preva Wings' },
-  { src: 'https://prevaclub.com/wp-content/uploads/2026/08/Rasta-Pasta.webp', alt: 'Rasta Pasta' },
+  { src: '/asset/prevaclub/wp-content/uploads/2026/08/Rasta-Pasta.webp', alt: 'Rasta Pasta' },
   { src: 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=800&q=80', alt: 'Cheesecake' },
-  { src: 'https://prevaclub.com/wp-content/uploads/2026/06/hero-preva-kitchen-.jpeg', alt: 'Lamb Tower' }
+  { src: '/asset/prevaclub/wp-content/uploads/2026/06/hero-preva-kitchen-.jpeg', alt: 'Lamb Tower' }
 ];
 
 const SIGNATURE_DISHES = [
@@ -56,7 +56,7 @@ const SIGNATURE_DISHES = [
     price: '$22.00',
     tag: 'HOUSE FAVORITE',
     desc: 'Creamy Caribbean-style penne tossed with signature house jerk seasoning.',
-    img: 'https://prevaclub.com/wp-content/uploads/2026/08/Rasta-Pasta.webp'
+    img: '/asset/prevaclub/wp-content/uploads/2026/08/Rasta-Pasta.webp'
   },
   {
     name: 'Wild Lobster Bites',
@@ -196,7 +196,7 @@ export default function PrevaKitchen() {
               loop
               playsInline
               preload="auto"
-              poster="https://prevaclub.com/wp-content/uploads/2026/06/hero-preva-kitchen-.jpeg"
+              poster="/asset/prevaclub/wp-content/uploads/2026/06/hero-preva-kitchen-.jpeg"
               onError={() => setKitchenVideoFailed(true)}
               aria-hidden="true"
             >
@@ -205,7 +205,7 @@ export default function PrevaKitchen() {
             </video>
           ) : (
             <img
-              src="https://prevaclub.com/wp-content/uploads/2026/06/hero-preva-kitchen-.jpeg"
+              src="/asset/prevaclub/wp-content/uploads/2026/06/hero-preva-kitchen-.jpeg"
               alt="Preva Kitchen Daytime Dining"
               className="hero-background-image"
             />
@@ -325,8 +325,8 @@ export default function PrevaKitchen() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
-              gap: 'clamp(36px, 5vw, 64px)',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
+              gap: 'clamp(32px, 5vw, 64px)',
               alignItems: 'center'
             }}
           >
@@ -456,7 +456,7 @@ export default function PrevaKitchen() {
                   width: '100%',
                   minHeight: '440px',
                   borderRadius: '18px',
-                  backgroundImage: `url('https://prevaclub.com/wp-content/uploads/2026/06/hero-preva-kitchen-.jpeg')`,
+                  backgroundImage: `url('/asset/prevaclub/wp-content/uploads/2026/06/hero-preva-kitchen-.jpeg')`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   border: '1px solid rgba(213, 164, 79, 0.35)',
@@ -559,7 +559,7 @@ export default function PrevaKitchen() {
             </div>
 
             <Link
-              href="/shop"
+              href="/menu"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -585,8 +585,8 @@ export default function PrevaKitchen() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: '28px'
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+              gap: '24px'
             }}
           >
             {SIGNATURE_DISHES.slice(0, 3).map((dish, idx) => (
@@ -791,7 +791,7 @@ export default function PrevaKitchen() {
               padding: 'clamp(28px, 4vw, 56px)',
               boxShadow: '0 30px 90px rgba(0, 0, 0, 0.6)',
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
               gap: 'clamp(32px, 5vw, 64px)',
               alignItems: 'center',
               backdropFilter: 'blur(20px)'
@@ -915,7 +915,7 @@ export default function PrevaKitchen() {
               style={{
                 position: 'relative',
                 width: '100%',
-                minHeight: '420px',
+                minHeight: '340px',
                 borderRadius: '16px',
                 backgroundImage: `url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=85')`,
                 backgroundSize: 'cover',
@@ -991,7 +991,7 @@ export default function PrevaKitchen() {
             className="pk-bento-grid"
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
               gap: '20px',
               alignItems: 'stretch'
             }}
@@ -1021,7 +1021,7 @@ export default function PrevaKitchen() {
               }}
             >
               <img
-                src="https://prevaclub.com/wp-content/uploads/2026/06/hero-preva-kitchen-.jpeg"
+                src="/asset/prevaclub/wp-content/uploads/2026/06/hero-preva-kitchen-.jpeg"
                 alt="Lavish Lamb Tower"
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.4s ease' }}
               />
@@ -1110,7 +1110,7 @@ export default function PrevaKitchen() {
                 }}
               >
                 <img
-                  src="https://prevaclub.com/wp-content/uploads/2026/08/Rasta-Pasta.webp"
+                  src="/asset/prevaclub/wp-content/uploads/2026/08/Rasta-Pasta.webp"
                   alt="Creamy Rasta Pasta"
                   onError={(e) => { e.currentTarget.src = '/asset/hero/preva-pasta-hero.jpg'; }}
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.4s ease' }}

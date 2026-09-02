@@ -233,7 +233,7 @@ export default function MediaLibrary() {
               className={`media-card ${selectedItem?.id === item.id ? 'selected' : ''}`}
               onClick={() => setSelectedItem(item)}
             >
-              <img src={item.url} alt={item.altText || item.title || 'Media file'} />
+              <img src={item.url} alt={item.altText || item.title || 'Media file'} loading="lazy" />
             </div>
           ))}
         </div>
@@ -258,6 +258,7 @@ export default function MediaLibrary() {
                     <img 
                       src={item.url} 
                       alt="" 
+                      loading="lazy"
                       style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.08)' }} 
                       onClick={() => setSelectedItem(item)}
                     />
