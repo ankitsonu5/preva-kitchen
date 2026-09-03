@@ -40,7 +40,7 @@ export const normalizeOrderAvailability = (value) => {
 export const publicHtml = (value) =>
   sanitizeHtml(value || '', {
     allowedTags: sanitizeHtml.defaults.allowedTags.concat([
-      'img', 'h1', 'h2', 'table', 'thead', 'tbody', 'tr', 'th', 'td',
+      'img', 'h1', 'h2', 'table', 'caption', 'thead', 'tbody', 'tr', 'th', 'td',
       'video', 'source', 'iframe', 'figure', 'figcaption'
     ]),
     allowedAttributes: {
@@ -52,7 +52,7 @@ export const publicHtml = (value) =>
       source: ['src', 'type'],
       iframe: ['src', 'title', 'width', 'height', 'allow', 'allowfullscreen', 'loading'],
       td: ['colspan', 'rowspan'],
-      th: ['colspan', 'rowspan']
+      th: ['colspan', 'rowspan', 'scope']
     },
     allowedSchemes: ['http', 'https', 'mailto', 'tel'],
     allowedStyles: {

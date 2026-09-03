@@ -90,17 +90,6 @@ export const KITCHEN_MENU_ITEMS = [
     pairings: ["Rice & Peas", "Fried Plantains"]
   },
   {
-    name: "Preva Burger",
-    slug: "preva-burger",
-    category: "Preva Burger",
-    price: "$14.50",
-    description: "PREVA's signature cheeseburger — American cheese, lettuce, tomato, red onion and pickles on a toasted brioche bun.",
-    image: "/asset/prevaclub/wp-content/uploads/2026/08/PrevaBurger-768x768.webp",
-    tags: ["signature", "contains dairy", "contains gluten"],
-    allergens: ["gluten", "dairy"],
-    pairings: ["Fries", "Mac & Cheese"]
-  },
-  {
     name: "Preva Double Smash Burger",
     slug: "preva-double-smash-burger",
     category: "Preva Burger",

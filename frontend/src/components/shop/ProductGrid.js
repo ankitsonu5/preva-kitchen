@@ -134,11 +134,6 @@ export function ProductCard({ product }) {
 
       <Link className="ps-card__name" href={`/menu/${product.slug}`}>{product.name}</Link>
 
-      <div className="lx-rating" aria-label={`Rated ${product.rating || (product.featured ? '4.8' : '4.6')} out of 5`}>
-        <span className="lx-stars" aria-hidden="true">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
-        <span className="lx-rating-num">{product.rating || (product.featured ? '4.8' : '4.6')}</span>
-      </div>
-
       {product.description && <p className="ps-card__desc">{product.description}</p>}
 
       <div className="ps-card__foot lx-card-foot">

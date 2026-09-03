@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import SvgIcon from '@/components/SvgIcon';
 import KitchenLoader from '@/components/KitchenLoader';
@@ -30,9 +31,21 @@ function getBlogFallbackImage(title, index) {
 import { FALLBACK_POSTS } from '@/data/fallbackPosts';
 
 export default function Blog() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [posts, setPosts] = useState(FALLBACK_POSTS);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
+
+  /* Read initial page from URL ?page=N */
+  const pageFromUrl = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+  const [currentPage, setCurrentPage] = useState(pageFromUrl);
+
+  /* Sync currentPage when URL search params change (browser back/forward) */
+  useEffect(() => {
+    const urlPage = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    setCurrentPage(urlPage);
+  }, [searchParams]);
 
   useEffect(() => {
     async function loadPosts() {
@@ -56,33 +69,39 @@ export default function Blog() {
   }, []);
 
   const totalPages = Math.max(1, Math.ceil(posts.length / POSTS_PER_PAGE));
-  const pageStart = (currentPage - 1) * POSTS_PER_PAGE;
+  const safePage = Math.min(currentPage, totalPages);
+  const pageStart = (safePage - 1) * POSTS_PER_PAGE;
   const visiblePosts = posts.slice(pageStart, pageStart + POSTS_PER_PAGE);
 
-  const changePage = (page) => {
+  const changePage = useCallback((page) => {
     const nextPage = Math.min(totalPages, Math.max(1, page));
     if (nextPage === currentPage) return;
     setCurrentPage(nextPage);
+
+    /* Update URL with ?page=N so browser back/forward works */
+    const url = nextPage === 1 ? '/blog' : `/blog?page=${nextPage}`;
+    router.push(url, { scroll: false });
+
     requestAnimationFrame(() => {
       document.querySelector('.blog-content-layout')?.scrollIntoView({
         behavior: 'smooth',
         block: 'start'
       });
     });
-  };
+  }, [totalPages, currentPage, router]);
 
   return (
     <main id="primary" className="site-main" suppressHydrationWarning>
       {/* Hero Section */}
       <section className="blog-hero">
-        <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1600&q=80" className="blog-hero-image" alt="Preva Kitchen journal" />
+        <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1600&q=80" className="blog-hero-image" alt="Preva Kitchen blog" />
         <div className="overlay" style={{ background: 'rgba(0,0,0,0.6)', position: 'absolute', inset: 0 }}></div>
         <div className="container relative-z2 text-center" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
           <span className="section-eyebrow" style={{ color: 'var(--accent-gold, #c5a059)', fontSize: '0.8rem', letterSpacing: '3px', fontWeight: 700, marginBottom: '12px' }}>
             STORIES & INSIGHTS
           </span>
           <h1 className="blog-title-large" style={{ color: '#fff', fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 700, fontFamily: 'var(--font-roboto), Arial, sans-serif', margin: 0 }}>
-            Preva <span style={{ color: 'var(--accent-gold, #c5a059)' }}>Journal</span>
+            Blog
           </h1>
         </div>
       </section>
@@ -105,28 +124,26 @@ export default function Blog() {
                 });
                 const categoryName = p.categories?.[0]?.category?.name || p.categories?.[0]?.name || 'Journal';
                 return (
-                  <article key={p.id} className="post-card-premium">
+                  <article key={p.id || p.slug} className="post-card-premium" onClick={() => router.push(`/blog/${p.slug}`)} style={{ cursor: 'pointer' }}>
                     <div className="post-card-inner">
                       <div className="post-card-image-wrap">
                         {p.featuredImage ? (
-                          <Link href={`/blog/${p.slug}`}>
+                          <Link href={`/blog/${p.slug}`} onClick={(e) => e.stopPropagation()}>
                             <img src={p.featuredImage} alt={p.title} className="post-card-img" />
                           </Link>
                         ) : (
-                          <Link href={`/blog/${p.slug}`} className="post-card-placeholder">
+                          <Link href={`/blog/${p.slug}`} className="post-card-placeholder" onClick={(e) => e.stopPropagation()}>
                             <SvgIcon name="camera" size={24} />
                           </Link>
                         )}
-                        <div className="post-card-category">
-                          {categoryName}
-                        </div>
                       </div>
                       <div className="post-card-info">
-                        <span className="post-card-date">
-                          {formattedDate}
-                        </span>
+                        <div className="post-card-meta-row">
+                          <span className="post-card-date">{formattedDate}</span>
+                          <span className="post-card-category-inline">{categoryName}</span>
+                        </div>
                         <h3 className="post-card-title">
-                          <Link href={`/blog/${p.slug}`}>
+                          <Link href={`/blog/${p.slug}`} onClick={(e) => e.stopPropagation()}>
                             {p.title}
                           </Link>
                         </h3>
@@ -134,7 +151,7 @@ export default function Blog() {
                           {p.excerpt}
                         </div>
                         <div className="post-card-footer">
-                          <Link href={`/blog/${p.slug}`} className="post-card-link">
+                          <Link href={`/blog/${p.slug}`} className="post-card-link" onClick={(e) => e.stopPropagation()}>
                             Explore More <span className="arrow"></span>
                           </Link>
                         </div>
@@ -151,7 +168,7 @@ export default function Blog() {
                     type="button"
                     className="blog-pagination-control"
                     onClick={() => changePage(currentPage - 1)}
-                    disabled={currentPage === 1}
+                    disabled={safePage === 1}
                     aria-label="Previous page"
                   >
                     <span aria-hidden="true">←</span> Previous
@@ -162,10 +179,10 @@ export default function Blog() {
                       <button
                         type="button"
                         key={page}
-                        className={`blog-pagination-page ${page === currentPage ? 'is-active' : ''}`}
+                        className={`blog-pagination-page ${page === safePage ? 'is-active' : ''}`}
                         onClick={() => changePage(page)}
                         aria-label={`Go to page ${page}`}
-                        aria-current={page === currentPage ? 'page' : undefined}
+                        aria-current={page === safePage ? 'page' : undefined}
                       >
                         {page}
                       </button>
@@ -176,7 +193,7 @@ export default function Blog() {
                     type="button"
                     className="blog-pagination-control"
                     onClick={() => changePage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
+                    disabled={safePage === totalPages}
                     aria-label="Next page"
                   >
                     Next <span aria-hidden="true">→</span>
@@ -190,3 +207,4 @@ export default function Blog() {
     </main>
   );
 }
+

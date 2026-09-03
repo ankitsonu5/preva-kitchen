@@ -23,11 +23,9 @@ export default function Shell({ children }) {
   useEffect(() => {
     if (!isOrderOpen) return undefined;
     document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
     window.lenis?.stop();
     return () => {
       document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
       window.lenis?.start();
     };
   }, [isOrderOpen]);

@@ -12,6 +12,7 @@ const BACKEND = (backendUrl || 'http://localhost:4000').replace(/\/$/, '');
 const nextConfig = {
   outputFileTracingRoot: here,
   poweredByHeader: false,
+  compress: true,
 
   async headers() {
     return [
@@ -22,6 +23,12 @@ const nextConfig = {
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' }
+        ]
+      },
+      {
+        source: '/asset/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }
         ]
       }
     ];
@@ -52,6 +59,8 @@ const nextConfig = {
         destination: 'https://prevakitchen.com/:path*',
         permanent: true
       },
+      { source: '/preva-kitchen', destination: '/menu', permanent: true },
+      { source: '/preva-kitchen-menu', destination: '/menu', permanent: true },
       { source: '/contact-us', destination: '/contact', permanent: true },
       { source: '/shop/:path*', destination: '/menu/:path*', permanent: true },
       { source: '/order-online', destination: '/menu', permanent: true },
@@ -61,7 +70,10 @@ const nextConfig = {
     ];
   },
 
-  images: { remotePatterns: [{ protocol: 'https', hostname: '**' }] }
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    remotePatterns: [{ protocol: 'https', hostname: '**' }]
+  }
 };
 
 export default nextConfig;

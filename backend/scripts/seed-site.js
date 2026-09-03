@@ -297,20 +297,6 @@ const MENU = [
     "sortOrder": 8
   },
   {
-    "name": "Preva Burger",
-    "slug": "preva-burger",
-    "category": "Preva Burger",
-    "price": "$15.50",
-    "priceCents": 1550,
-    "description": "PREVA's signature cheeseburger — American cheese, lettuce, tomato, red onion and pickles on a toasted bun.",
-    "image": "/asset/prevaclub/wp-content/uploads/2026/08/PrevaBurger-768x768.webp",
-    "available": true,
-    "orderable": true,
-    "featured": false,
-    "badge": "",
-    "sortOrder": 9
-  },
-  {
     "name": "Preva Double Smash Burger",
     "slug": "preva-double-smash-burger",
     "category": "Preva Burger",
@@ -785,14 +771,11 @@ const MENUS = [
     location: 'primary',
     name: 'Primary Navigation',
     items: [
-      { title: 'Dining',       label: 'Dining',       url: '/#prv-reservations', target: '_self', openInNewTab: false, visible: true, children: [] },
-      { title: 'Nightlife',    label: 'Nightlife',    url: '/#nightlife',        target: '_self', openInNewTab: false, visible: true, children: [] },
       { title: 'Reservations', label: 'Reservations', url: '/#prv-reservations', target: '_self', openInNewTab: false, visible: true, children: [] },
-      { title: 'Kitchen',      label: 'Kitchen',      url: '/preva-kitchen',     target: '_self', openInNewTab: false, visible: true, children: [] },
-      { title: 'Menu',         label: 'Menu',         url: '/preva-kitchen-menu', target: '_self', openInNewTab: false, visible: true, children: [] },
-      { title: 'Blog',         label: 'Blog',         url: '/blog',              target: '_self', openInNewTab: false, visible: true, children: [] },
-      { title: 'Careers',      label: 'Careers',      url: '/careers',           target: '_self', openInNewTab: false, visible: true, children: [] },
-      { title: 'Contact Us',   label: 'Contact Us',   url: '/contact',           target: '_self', openInNewTab: false, visible: true, children: [] }
+      { title: 'Menu',         label: 'Menu',         url: '/menu',               target: '_self', openInNewTab: false, visible: true, children: [] },
+      { title: 'Blog',         label: 'Blog',         url: '/blog',               target: '_self', openInNewTab: false, visible: true, children: [] },
+      { title: 'Careers',      label: 'Careers',      url: '/careers',            target: '_self', openInNewTab: false, visible: true, children: [] },
+      { title: 'Contact Us',   label: 'Contact Us',   url: '/contact',            target: '_self', openInNewTab: false, visible: true, children: [] }
     ]
   },
   {
@@ -802,10 +785,9 @@ const MENUS = [
       { label: 'Preva Kitchen',    url: '/preva-kitchen-menu',     target: '_self', children: [] },
       { label: 'Nightlife',        url: '/nightlife',              target: '_self', children: [] },
       { label: 'Gallery',          url: '/#gallery',               target: '_self', children: [] },
-      { label: 'Services',         url: '/services',               target: '_self', children: [] },
       { label: 'Careers',          url: '/careers',                target: '_self', children: [] },
       { label: 'Contact',          url: '/contact',                target: '_self', children: [] },
-      { label: 'Privacy Policy',   url: '/privacy',                target: '_self', children: [] }
+      { label: 'Blog',             url: '/blog',                   target: '_self', children: [] }
     ]
   },
   {

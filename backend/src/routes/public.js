@@ -831,6 +831,7 @@ post('/career-applications', async ({ body, ip }) => {
     if (!openJob) throw badRequest('Please select a currently published role.');
   }
   if (body?.consent !== true) throw badRequest('Consent is required before submitting.');
+  if (!body?.resume) throw badRequest('Résumé / CV is required. Please upload your résumé (PDF, DOC, or DOCX).');
 
   let resume = null;
   if (body?.resume) {

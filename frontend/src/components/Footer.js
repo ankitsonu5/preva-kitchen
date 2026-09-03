@@ -140,10 +140,20 @@ export default function Footer() {
     if (orbitRef.current) orbitRef.current.style.transform = `rotateY(${angle}deg)`;
   }, []);
 
-  /* Single rAF loop — starts once, runs forever */
+  /* Single rAF loop — only runs when visible, prevents thread locking */
+  const isVisibleRef = useRef(true);
+
   const startLoop = useCallback(() => {
     if (rafRef.current) return;
     const tick = () => {
+      if (!isVisibleRef.current) {
+        rafRef.current = null;
+        return;
+      }
+      if (isNaN(targetAngleRef.current)) targetAngleRef.current = 0;
+      if (isNaN(currentAngleRef.current)) currentAngleRef.current = 0;
+      if (isNaN(velocityRef.current)) velocityRef.current = 0;
+
       // Auto-spin whenever NOT hovered and NOT dragging
       if (!hoverPausedRef.current && !draggingRef.current) {
         targetAngleRef.current -= 0.32;
@@ -163,6 +173,7 @@ export default function Footer() {
   /* Keep the animation engine pointed at the cards React rendered. */
   useEffect(() => {
     const orbit = orbitRef.current;
+    const stage = stageRef.current;
     if (!orbit) return;
     const n = instagramPosts.length;
     if (n === 0) return;
@@ -174,8 +185,26 @@ export default function Footer() {
     }));
 
     renderFrame();
-    startLoop();
+
+    let observer = null;
+    if (typeof IntersectionObserver !== 'undefined' && stage) {
+      observer = new IntersectionObserver((entries) => {
+        const isIntersecting = entries[0]?.isIntersecting ?? true;
+        isVisibleRef.current = isIntersecting;
+        if (isIntersecting) {
+          startLoop();
+        } else if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = null;
+        }
+      }, { rootMargin: '150px' });
+      observer.observe(stage);
+    } else {
+      startLoop();
+    }
+
     return () => {
+      if (observer) observer.disconnect();
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
@@ -437,9 +466,21 @@ export default function Footer() {
             {/* Brand Column */}
             <div className="footer-col brand-col">
               <img src="/asset/preva-logo-silver.png" alt={settings.siteTitle || 'PREVA'} className="footer-logo-img" />
-              <div className="footer-brand-divider"></div>
-              <p className="footer-tagline">Chef-driven comfort food, made fresh in Redford.</p>
-              <p className="footer-desc">Dine in, order your favorites to go, or let Preva Kitchen feed your next gathering.</p>
+              <h4 className="footer-heading footer-brand-heading">CONTACT US</h4>
+              <ul className="footer-info-list footer-brand-contact">
+                <li>
+                  <span className="icon-gold"><SvgIcon name="location" size={16} /></span>
+                  <span>{settings.address}</span>
+                </li>
+                <li>
+                  <span className="icon-gold"><SvgIcon name="phone" size={16} /></span>
+                  <span><a href={`tel:${settings.phone}`}>{settings.phone}</a></span>
+                </li>
+                <li>
+                  <span className="icon-gold"><SvgIcon name="mail" size={16} /></span>
+                  <span><a href={`mailto:${settings.contactEmail}`}>{settings.contactEmail}</a></span>
+                </li>
+              </ul>
             </div>
 
             {/* Quick Links Column */}
@@ -502,24 +543,36 @@ export default function Footer() {
               </div>
             </div>
 
-            {/* Contact Column */}
+            {/* Contact & Map Column */}
             <div className="footer-col contact-col">
-              <h4 className="footer-heading">CONTACT & LOCATION</h4>
+              <h4 className="footer-heading">LOCATION</h4>
               <div className="footer-heading-divider"></div>
-              <ul className="footer-info-list">
-                <li>
-                  <span className="icon-gold"><SvgIcon name="location" size={16} /></span>
-                  <span>{settings.address}</span>
-                </li>
-                <li>
-                  <span className="icon-gold"><SvgIcon name="phone" size={16} /></span>
-                  <span><a href={`tel:${settings.phone}`}>{settings.phone}</a></span>
-                </li>
-                <li>
-                  <span className="icon-gold"><SvgIcon name="mail" size={16} /></span>
-                  <span><a href={`mailto:${settings.contactEmail}`}>{settings.contactEmail}</a></span>
-                </li>
-              </ul>
+              <div
+                className="footer-map-wrapper"
+                style={{
+                  width: '100%',
+                  height: '200px',
+                  borderRadius: '10px',
+                  overflow: 'hidden',
+                  border: '1px solid rgba(213, 164, 79, 0.35)',
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+                  position: 'relative',
+                  marginTop: '16px'
+                }}
+              >
+                <iframe
+                  title="Preva Kitchen Location Map"
+                  src="https://www.google.com/maps?q=Preva+Kitchen,+13090+Inkster+Rd,+Redford+Township,+MI+48239,+United+States&output=embed"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    border: 0,
+                    display: 'block'
+                  }}
+                />
+              </div>
             </div>
           </div>
 

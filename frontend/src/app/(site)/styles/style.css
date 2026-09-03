@@ -2836,8 +2836,8 @@ textarea:focus {
 
 .premium-footer-grid {
     display: grid;
-    grid-template-columns: 1.2fr 1fr 1fr 1fr;
-    gap: 4rem;
+    grid-template-columns: 1.25fr 0.9fr 1.05fr 1.25fr;
+    gap: 3rem;
     max-width: 100%;
     margin: 0 auto;
     align-items: start;

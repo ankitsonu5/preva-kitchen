@@ -6,7 +6,7 @@ export default function Nav() {
     <nav className="site-nav">
       <Link href="/">Home</Link>
       <Link href="/blog">Journal</Link>
-      <Link href="/preva-kitchen">Kitchen</Link>
+      <Link href="/menu">Menu</Link>
       <Link href="/contact">Contact</Link>
     </nav>
   );

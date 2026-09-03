@@ -29,6 +29,7 @@ export default function CareerApplicationForm({ initialRole = '', jobs = [] }) {
     setSubmitting(true);
     setError('');
     try {
+      if (!resume) throw new Error('Please upload your résumé / CV.');
       if (resume && resume.size > 3 * 1024 * 1024) throw new Error('Résumé must be 3 MB or smaller.');
       const response = await fetch('/api/career-applications', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -57,7 +58,7 @@ export default function CareerApplicationForm({ initialRole = '', jobs = [] }) {
       <div className="field full"><label htmlFor="career-role">Role or future interest *</label><select id="career-role" name="role" value={form.role} onChange={update} required><option value="">Select a role</option>{jobs.map((job) => <option value={job.slug} key={job.slug}>{job.title}</option>)}<option value="general-application">General Application</option></select></div>
       <div className="field"><label htmlFor="career-availability">Availability *</label><select id="career-availability" name="availability" value={form.availability} onChange={update} required><option value="">Select one</option><option>Open availability</option><option>Days</option><option>Evenings</option><option>Weekends</option><option>Flexible / discuss</option></select></div>
       <div className="field"><label htmlFor="career-date">Available start date</label><input id="career-date" name="startDate" value={form.startDate} onChange={update} type="date" /></div>
-      <div className="field full"><label htmlFor="career-resume">Résumé (optional for entry-level roles)</label><input id="career-resume" type="file" accept=".pdf,.doc,.docx" onChange={(event) => setResume(event.target.files?.[0] || null)} /></div>
+      <div className="field full"><label htmlFor="career-resume">Résumé / CV *</label><input id="career-resume" type="file" accept=".pdf,.doc,.docx" onChange={(event) => setResume(event.target.files?.[0] || null)} required /></div>
       <div className="field full"><label htmlFor="career-message">Tell us about yourself</label><textarea id="career-message" name="message" value={form.message} onChange={update} placeholder="Experience, preferred shifts, transportation, or why Preva interests you..." /></div>
       <div className="field full"><label className="consent-label"><input name="consent" type="checkbox" checked={form.consent} onChange={update} required />I agree that Preva may contact me about this and future job opportunities. *</label><span className="fine">Your application is stored securely and used only for hiring.</span></div>
       {error && <div className="field full form-error">{error}</div>}

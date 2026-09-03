@@ -773,13 +773,14 @@ a:hover .ps-btn--gold {
   right: 0;
   margin-left: 0;
   margin-right: 0;
-  height: clamp(380px, 48vh, 540px);
+  min-height: clamp(360px, 44vh, 480px);
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
   overflow: hidden;
   margin-bottom: 36px;
+  padding-top: clamp(70px, 10vh, 100px);
   border-bottom: 1px solid rgba(201, 168, 76, 0.25);
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.9);
   background: #08070A;
@@ -806,7 +807,7 @@ a:hover .ps-btn--gold {
 .ps-hero-minimal__content {
   position: relative;
   z-index: 2;
-  width: min(800px, 92vw);
+  width: min(920px, 94vw);
   margin: 0 auto;
   padding: 0 var(--site-gutter, 24px);
   display: flex;
@@ -828,11 +829,11 @@ a:hover .ps-btn--gold {
 
 .ps-hero-minimal__title {
   font-family: var(--font-roboto), Arial, sans-serif;
-  font-size: clamp(42px, 6vw, 76px);
-  font-weight: 600;
-  line-height: 1.05;
+  font-size: clamp(26px, 3.5vw, 44px);
+  font-weight: 700;
+  line-height: 1.15;
   color: #FFFFFF;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
   margin-bottom: 12px;
   text-shadow: 0 4px 30px rgba(0, 0, 0, 0.95);

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import SvgIcon from './SvgIcon';
+import MenuSelectionModal from './MenuSelectionModal';
 
 const ORIGINAL_HEADER_MENU = [
   { title: 'Menu',         url: '/menu',                 openInNewTab: false, visible: true },
@@ -38,7 +39,15 @@ export default function Header() {
   const router = useRouter();
   const [isSticky, setIsSticky] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
   const [settings, setSettings] = useState(ORIGINAL_HEADER_SETTINGS);
+
+  useEffect(() => {
+    window.openOurSelectionModal = () => setIsSelectionModalOpen(true);
+    return () => {
+      delete window.openOurSelectionModal;
+    };
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -63,6 +72,11 @@ export default function Header() {
   const handleNavigate = (href) => (e) => {
     e.preventDefault();
     setIsOpen(false);
+
+    if (href === '#our-selection') {
+      setIsSelectionModalOpen(true);
+      return;
+    }
 
     if (/^(https?:|mailto:|tel:)/i.test(href)) {
       window.location.href = href;
@@ -97,16 +111,6 @@ export default function Header() {
     }
 
     router.push(href);
-  };
-
-  const triggerOrderModal = (e) => {
-    e.preventDefault();
-    if (typeof window !== 'undefined' && window.openOrderModal) {
-      window.openOrderModal();
-    } else {
-      router.push('/menu');
-    }
-    setIsOpen(false);
   };
 
   const [menuItems, setMenuItems] = useState(ORIGINAL_HEADER_MENU);
@@ -150,112 +154,121 @@ export default function Header() {
   }, []);
 
   return (
-    <header id="masthead" className={`site-header ${isSticky ? 'sticky' : ''}`}>
-      {/* Top Announcement Bar */}
-      <div className="top-announcement-bar">
-        <div className="scrolling-content">
-          <span className="live-indicator">
-            <span className="blink-dot"></span>
-          </span>
-          <span className="announce-text">
-            {settings.announcementText}
-          </span>
-          <span className="announce-separator"><SvgIcon name="spark" size={14} /></span>
-          <span className="announce-text">
-            {settings.announcementSecondary}
-          </span>
-        </div>
-      </div>
-
-      <div className="container">
-        <div className="site-branding">
-          <a href="/" className="site-logo-link" onClick={handleNavigate('/')} style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
-            <img
-              src="/asset/preva-logo-silver.png"
-              alt="Preva Kitchen"
-              className="site-logo"
-              style={{ display: 'block' }}
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                if (e.currentTarget.nextSibling) e.currentTarget.nextSibling.style.display = 'block';
-              }}
-            />
-            <span
-              className="brand-text-logo"
-              style={{ display: 'none', fontFamily: 'var(--font-roboto), Arial, sans-serif', fontSize: '1.5rem', fontWeight: 900, color: '#c5a059', letterSpacing: '4px', textTransform: 'uppercase' }}
-            >
-              PREVA KITCHEN
+    <>
+      <header id="masthead" className={`site-header ${isSticky ? 'sticky' : ''}`}>
+        {/* Top Announcement Bar */}
+        <div className="top-announcement-bar">
+          <div className="scrolling-content">
+            <span className="live-indicator">
+              <span className="blink-dot"></span>
             </span>
-          </a>
+            <span className="announce-text">
+              {settings.announcementText}
+            </span>
+            <span className="announce-separator"><SvgIcon name="spark" size={14} /></span>
+            <span className="announce-text">
+              {settings.announcementSecondary}
+            </span>
+          </div>
         </div>
 
-        <nav
-          id="site-navigation"
-          className={`main-navigation ${isOpen ? 'open' : ''}`}
-          aria-label="Primary Navigation"
-        >
-          <ul id="primary-menu" className={`primary-menu ${isOpen ? 'open' : ''}`}>
-            {menuItems.filter((item) => item.visible !== false).map((item, idx) => (
-              <li key={idx} className={item.children?.length ? 'menu-item-has-children' : undefined}>
+        <div className="container">
+          <div className="site-branding">
+            <a href="/" className="site-logo-link" onClick={handleNavigate('/')} style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
+              <img
+                src="/asset/preva-logo-silver.png"
+                alt="Preva Kitchen"
+                className="site-logo"
+                style={{ display: 'block' }}
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  if (e.currentTarget.nextSibling) e.currentTarget.nextSibling.style.display = 'block';
+                }}
+              />
+              <span
+                className="brand-text-logo"
+                style={{ display: 'none', fontFamily: 'var(--font-roboto), Arial, sans-serif', fontSize: '1.5rem', fontWeight: 900, color: '#c5a059', letterSpacing: '4px', textTransform: 'uppercase' }}
+              >
+                PREVA KITCHEN
+              </span>
+            </a>
+          </div>
+
+          <nav
+            id="site-navigation"
+            className={`main-navigation ${isOpen ? 'open' : ''}`}
+            aria-label="Primary Navigation"
+          >
+            <ul id="primary-menu" className={`primary-menu ${isOpen ? 'open' : ''}`}>
+              {menuItems.filter((item) => item.visible !== false).map((item, idx) => (
+                <li key={idx} className={item.children?.length ? 'menu-item-has-children' : undefined}>
+                  <a
+                    href={item.url}
+                    target={item.openInNewTab ? '_blank' : undefined}
+                    rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
+                    onClick={item.openInNewTab ? handleLinkClick : handleNavigate(item.url)}
+                  >
+                    {item.title}
+                  </a>
+                  {item.children?.length ? <ul className="sub-menu">{item.children.filter((child) => child.visible !== false).map((child, childIndex) => <li key={`${child.title}-${childIndex}`}><a href={child.url} target={child.openInNewTab ? '_blank' : undefined} rel={child.openInNewTab ? 'noopener noreferrer' : undefined} onClick={child.openInNewTab ? handleLinkClick : handleNavigate(child.url)}>{child.title}</a></li>)}</ul> : null}
+                </li>
+              ))}
+              <li className="nav-call-cta">
                 <a
-                  href={item.url}
-                  target={item.openInNewTab ? '_blank' : undefined}
-                  rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
-                  onClick={item.openInNewTab ? handleLinkClick : handleNavigate(item.url)}
+                  href={`tel:${(settings.phone || '').replace(/\D/g, '')}`}
+                  className="nav-call-link"
+                  aria-label={`Call Preva Kitchen at ${settings.phone || '(313) 286-3586'}`}
+                  title={`Call ${settings.phone || '(313) 286-3586'}`}
+                  onClick={handleLinkClick}
                 >
-                  {item.title}
+                  <span className="nav-phone-icon" aria-hidden="true"><SvgIcon name="phone" size={20} /></span>
                 </a>
-                {item.children?.length ? <ul className="sub-menu">{item.children.filter((child) => child.visible !== false).map((child, childIndex) => <li key={`${child.title}-${childIndex}`}><a href={child.url} target={child.openInNewTab ? '_blank' : undefined} rel={child.openInNewTab ? 'noopener noreferrer' : undefined} onClick={child.openInNewTab ? handleLinkClick : handleNavigate(child.url)}>{child.title}</a></li>)}</ul> : null}
               </li>
-            ))}
-            <li className="nav-call-cta">
-              <a
-                href={`tel:${(settings.phone || '').replace(/\D/g, '')}`}
-                className="nav-call-link"
-                aria-label={`Call Preva Kitchen at ${settings.phone || '(313) 286-3586'}`}
-                title={`Call ${settings.phone || '(313) 286-3586'}`}
-                onClick={handleLinkClick}
-              >
-                <span className="nav-phone-icon" aria-hidden="true"><SvgIcon name="phone" size={20} /></span>
-              </a>
-            </li>
-            <li className="nav-cart-cta">
-              {/* ── OLD CODE: Opens the Order Online modal popup ──────────────────────
-              <a
-                href={settings.headerCtaUrl || '#preva-order'}
-                className="preva-order-trigger"
-                aria-haspopup="dialog"
-                aria-controls="prevaOrderModal"
-                onClick={triggerOrderModal}
-              >
-                {settings.headerCtaText || 'ORDER ONLINE'}
-              </a>
-              ─────────────────────────────────────────────────────────────────────── */}
+              <li className="nav-cart-cta">
+                <a href="/checkout" className="nav-cart-link" aria-label="View cart" title="View cart" onClick={handleLinkClick}>
+                  <span className="nav-cart-icon" aria-hidden="true"><SvgIcon name="cart" size={20} /></span>
+                </a>
+              </li>
+              <li className="nav-order-cta">
+                <a href="/menu" className="preva-order-trigger" onClick={handleLinkClick}>
+                  {settings.headerCtaText || 'ORDER ONLINE'}
+                </a>
+              </li>
+              <li className="nav-selection-cta">
+                <a
+                  href="#our-selection"
+                  className="preva-order-trigger preva-selection-trigger"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleLinkClick();
+                    setIsSelectionModalOpen(true);
+                  }}
+                  title="View Preva Menu Card"
+                >
+                  VIEW MENU
+                </a>
+              </li>
+            </ul>
+          </nav>
 
-              {/* Compact cart action opens the checkout/cart page directly. */}
-              <a href="/checkout" className="nav-cart-link" aria-label="View cart" title="View cart" onClick={handleLinkClick}>
-                <span className="nav-cart-icon" aria-hidden="true"><SvgIcon name="cart" size={20} /></span>
-              </a>
-            </li>
-            <li className="nav-order-cta">
-              <a href="/menu" className="preva-order-trigger" onClick={handleLinkClick}>
-                {settings.headerCtaText || 'ORDER ONLINE'}
-              </a>
-            </li>
-          </ul>
-        </nav>
+          <button
+            className="menu-toggle"
+            aria-controls="primary-menu"
+            aria-expanded={isOpen ? "true" : "false"}
+            type="button"
+            onClick={handleToggle}
+          >
+            <span className="menu-icon"></span>
+            <span className="screen-reader-text">Menu</span>
+          </button>
+        </div>
+      </header>
 
-        <button
-          className="menu-toggle"
-          aria-controls="primary-menu"
-          aria-expanded={isOpen ? "true" : "false"}
-          type="button"
-          onClick={handleToggle}
-        >
-          <span className="menu-icon"></span>
-          <span className="screen-reader-text">Menu</span>
-        </button>
-      </div>
-    </header>
+      {/* Our Selection Menu Modal */}
+      <MenuSelectionModal
+        isOpen={isSelectionModalOpen}
+        onClose={() => setIsSelectionModalOpen(false)}
+      />
+    </>
   );
 }

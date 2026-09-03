@@ -151,21 +151,6 @@ const INITIAL_FALLBACK_DATA = {
       sortOrder: 8
     },
     {
-      _id: new ObjectId('6699a0000000000000000009'),
-      name: "Preva Burger",
-      slug: "preva-burger",
-      category: "Preva Burger",
-      price: "$15.50",
-      priceCents: 1550,
-      description: "PREVA's signature cheeseburger — American cheese, lettuce, tomato, red onion and pickles on a toasted bun.",
-      image: "/asset/prevaclub/wp-content/uploads/2026/08/PrevaBurger-768x768.webp",
-      available: true,
-      orderable: true,
-      featured: false,
-      badge: "",
-      sortOrder: 9
-    },
-    {
       _id: new ObjectId('6699a0000000000000000010'),
       name: "Preva Double Smash Burger",
       slug: "preva-double-smash-burger",

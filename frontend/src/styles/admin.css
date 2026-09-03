@@ -1079,6 +1079,19 @@ form.editor-layout > div:last-child { position: sticky; top: 110px; }
   cursor: pointer;
 }
 
+.rich-editor-table-tool {
+  display: inline-flex;
+  width: auto;
+  padding: 0 10px;
+  align-items: center;
+  gap: 6px;
+  color: #e8d49d;
+  border-color: rgba(201, 168, 76, 0.24);
+  background: rgba(201, 168, 76, 0.055);
+  font-size: 11px;
+  font-weight: 750;
+}
+
 .rich-editor-tool:hover:not(:disabled),
 .rich-editor-tool.is-active {
   color: var(--gold);
@@ -1141,15 +1154,26 @@ form.editor-layout > div:last-child { position: sticky; top: 110px; }
   border-radius: 10px;
   background: #11110f;
 }
-.rich-editor-canvas .blog-table-wrap table {
+.rich-editor-canvas table {
   width: 100%;
   min-width: 520px;
   border-collapse: collapse;
   color: #dedbd4;
   background: #11110f;
 }
-.rich-editor-canvas .blog-table-wrap th,
-.rich-editor-canvas .blog-table-wrap td {
+.rich-editor-canvas > table {
+  margin: 1.6rem 0;
+  border: 1px solid var(--border-gold);
+}
+.rich-editor-canvas table caption {
+  padding: 10px 14px;
+  color: var(--ink-muted);
+  background: #0d0d0c;
+  font-size: 12px;
+  text-align: left;
+}
+.rich-editor-canvas table th,
+.rich-editor-canvas table td {
   min-width: 110px;
   padding: 12px 14px;
   border-right: 1px solid rgba(201, 168, 76, 0.18);
@@ -1157,17 +1181,17 @@ form.editor-layout > div:last-child { position: sticky; top: 110px; }
   text-align: left;
   vertical-align: top;
 }
-.rich-editor-canvas .blog-table-wrap th:last-child,
-.rich-editor-canvas .blog-table-wrap td:last-child { border-right: 0; }
-.rich-editor-canvas .blog-table-wrap tr:last-child td { border-bottom: 0; }
-.rich-editor-canvas .blog-table-wrap th {
+.rich-editor-canvas table th:last-child,
+.rich-editor-canvas table td:last-child { border-right: 0; }
+.rich-editor-canvas table tr:last-child td { border-bottom: 0; }
+.rich-editor-canvas table th {
   color: #f1d681;
   background: rgba(201, 168, 76, 0.12);
   font-size: 12px;
   font-weight: 750;
   letter-spacing: 0.055em;
 }
-.rich-editor-canvas .blog-table-wrap tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.025); }
+.rich-editor-canvas table tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.025); }
 .rich-editor-canvas figure { margin: 1.8rem 0; }
 .rich-editor-canvas img { display: block; max-width: 100%; height: auto; border-radius: 8px; }
 .rich-editor-canvas figcaption { margin-top: 7px; color: var(--ink-dim); font-size: 12px; text-align: center; }
@@ -1226,6 +1250,7 @@ form.editor-layout > div:last-child { position: sticky; top: 110px; }
   text-transform: uppercase;
 }
 .rich-editor-table-fields .input { margin-top: 6px; }
+.rich-editor-optional { margin-left: 5px; color: var(--ink-dim); font-size: 9px; font-weight: 500; letter-spacing: 0.04em; }
 
 .role-guide-grid {
   display: grid;

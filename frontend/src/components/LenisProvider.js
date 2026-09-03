@@ -2,79 +2,58 @@
 
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import Lenis from 'lenis';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 export default function LenisProvider({ children }) {
   const pathname = usePathname();
 
-  // Clean up any pinned triggers and DOM pin-spacers when navigating to subpages
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (pathname !== '/') {
-      try {
-        document.querySelectorAll('.pin-spacer').forEach((el) => {
-          const child = el.firstElementChild;
-          if (child && el.parentNode) {
-            el.parentNode.insertBefore(child, el);
-            el.remove();
-          } else {
-            el.remove();
+
+    // Remove any legacy lenis-stopped lock on the root HTML/body
+    document.documentElement.classList.remove('lenis-stopped');
+    document.body.classList.remove('lenis-stopped');
+    if (document.documentElement.style.overflow === 'hidden' && !document.querySelector('.preva-selection-modal-backdrop, .lightbox-modal')) {
+      document.documentElement.style.overflow = '';
+    }
+
+    // Bulletproof, non-hijacking scrollTo shim for any component relying on window.lenis
+    window.lenis = {
+      scrollTo: (target, options = {}) => {
+        try {
+          if (typeof target === 'number') {
+            window.scrollTo({ top: target, behavior: 'smooth' });
+          } else if (typeof target === 'string') {
+            const el = document.querySelector(target);
+            if (el) {
+              const offset = options.offset || 0;
+              const y = el.getBoundingClientRect().top + window.scrollY + offset;
+              window.scrollTo({ top: y, behavior: 'smooth' });
+            }
+          } else if (target instanceof HTMLElement) {
+            const offset = options.offset || 0;
+            const y = target.getBoundingClientRect().top + window.scrollY + offset;
+            window.scrollTo({ top: y, behavior: 'smooth' });
           }
-        });
-      } catch (e) {}
-
-      if (typeof gsap !== 'undefined' && ScrollTrigger) {
-        ScrollTrigger.getAll().forEach((trigger) => {
-          try { trigger.kill(true); } catch (e) {}
-        });
-      }
-    } else {
-      const timer = setTimeout(() => {
-        if (typeof ScrollTrigger !== 'undefined') {
-          try { ScrollTrigger.refresh(); } catch (e) {}
+        } catch (e) {
+          try {
+            if (target?.scrollIntoView) {
+              target.scrollIntoView({ behavior: 'smooth' });
+            }
+          } catch (_) {}
         }
-      }, 350);
-      return () => clearTimeout(timer);
-    }
-  }, [pathname]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    if (typeof gsap !== 'undefined' && ScrollTrigger) {
-      gsap.registerPlugin(ScrollTrigger);
-    }
-
-    const lenis = new Lenis({
-      duration: 1.1,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      orientation: 'vertical',
-      gestureOrientation: 'vertical',
-      smoothWheel: true,
-      wheelMultiplier: 1,
-      touchMultiplier: 1.5,
-      infinite: false,
-    });
-
-    window.lenis = lenis;
-
-    lenis.on('scroll', ScrollTrigger.update);
-
-    const updateTicker = (time) => {
-      lenis.raf(time * 1000);
+      },
+      stop: () => {},
+      start: () => {
+        document.documentElement.classList.remove('lenis-stopped');
+        document.body.classList.remove('lenis-stopped');
+      },
+      destroy: () => {}
     };
-
-    gsap.ticker.add(updateTicker);
-    gsap.ticker.lagSmoothing(0);
 
     return () => {
-      gsap.ticker.remove(updateTicker);
-      lenis.destroy();
-      delete window.lenis;
+      // keep clean
     };
-  }, []);
+  }, [pathname]);
 
   return <>{children}</>;
 }

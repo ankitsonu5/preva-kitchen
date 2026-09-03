@@ -20,19 +20,10 @@ export default async function sitemap() {
     { url: `${base}`, lastModified: new Date(), changeFrequency: 'daily', priority: 1.0 },
     { url: `${base}/menu`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.95 },
     { url: `${base}/order-online`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.9 },
-    { url: `${base}/preva-kitchen-menu`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.9 },
-    { url: `${base}/food-delivery-redford-mi`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.85 },
-    { url: `${base}/corporate-catering-redford-mi`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.85 },
-    { url: `${base}/event-catering-redford-mi`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.85 },
-    { url: `${base}/late-night-food-redford-mi`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.85 },
     { url: `${base}/blog`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.85 },
-    { url: `${base}/preva-kitchen`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.8 },
     { url: `${base}/gallery`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.75 },
-    { url: `${base}/services`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.75 },
     { url: `${base}/contact`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${base}/careers`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.6 },
-    { url: `${base}/privacy`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.3 },
-    { url: `${base}/terms`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.3 }
+    { url: `${base}/careers`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.6 }
   ];
 
   const postList = Array.isArray(posts) && posts.length > 0 ? posts : FALLBACK_POSTS;
@@ -56,7 +47,7 @@ export default async function sitemap() {
 
   const pageList = Array.isArray(pages) ? pages : [];
   const pageEntries = pageList
-    .filter(pg => !pg.noIndex && !nonKitchen.test(pg.title || ''))
+    .filter(pg => !pg.noIndex && !nonKitchen.test(pg.title || '') && !/^(terms|privacy)$/i.test(String(pg.slug || pg.path || '')))
     .map(pg => ({
       url: `${base}/${String(pg.path || pg.slug).replace(/^\/+/, '')}`,
       lastModified: new Date(pg.updatedAt || Date.now()),

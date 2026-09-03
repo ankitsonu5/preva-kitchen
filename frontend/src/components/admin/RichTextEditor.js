@@ -28,10 +28,10 @@ import {
   Unlink
 } from 'lucide-react';
 
-const ToolbarButton = ({ label, children, onRun, active = false, disabled = false }) => (
+const ToolbarButton = ({ label, children, onRun, active = false, disabled = false, className = '' }) => (
   <button
     type="button"
-    className={`rich-editor-tool${active ? ' is-active' : ''}`}
+    className={`rich-editor-tool${className ? ` ${className}` : ''}${active ? ' is-active' : ''}`}
     title={label}
     aria-label={label}
     aria-pressed={active || undefined}
@@ -72,6 +72,7 @@ const RichTextEditor = forwardRef(function RichTextEditor(
   const [tableRows, setTableRows] = useState(3);
   const [tableColumns, setTableColumns] = useState(3);
   const [tableHeader, setTableHeader] = useState(true);
+  const [tableCaption, setTableCaption] = useState('');
 
   useEffect(() => {
     setSource(value || '');
@@ -199,6 +200,7 @@ const RichTextEditor = forwardRef(function RichTextEditor(
     setTableRows(3);
     setTableColumns(3);
     setTableHeader(true);
+    setTableCaption('');
     setTableOpen(true);
   };
 
@@ -206,15 +208,19 @@ const RichTextEditor = forwardRef(function RichTextEditor(
     event.preventDefault();
     const rows = Math.min(20, Math.max(1, Number(tableRows) || 1));
     const columns = Math.min(10, Math.max(1, Number(tableColumns) || 1));
+    const captionText = tableCaption.trim();
+    const caption = captionText
+      ? `<caption>${captionText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</caption>`
+      : '';
     const header = tableHeader
-      ? `<thead><tr>${Array.from({ length: columns }, (_, index) => `<th>Column ${index + 1}</th>`).join('')}</tr></thead>`
+      ? `<thead><tr>${Array.from({ length: columns }, (_, index) => `<th scope="col">Column ${index + 1}</th>`).join('')}</tr></thead>`
       : '';
     const body = Array.from(
       { length: rows },
       () => `<tr>${Array.from({ length: columns }, () => '<td>Cell</td>').join('')}</tr>`
     ).join('');
 
-    insertHtml(`<div class="blog-table-wrap"><table>${header}<tbody>${body}</tbody></table></div><p><br></p>`);
+    insertHtml(`<div class="blog-table-wrap"><table>${caption}${header}<tbody>${body}</tbody></table></div><p><br></p>`);
     setTableOpen(false);
   };
 
@@ -252,7 +258,10 @@ const RichTextEditor = forwardRef(function RichTextEditor(
           <ToolbarButton label="Bulleted list" disabled={sourceMode} onRun={() => run('insertUnorderedList')}><List size={16} /></ToolbarButton>
           <ToolbarButton label="Numbered list" disabled={sourceMode} onRun={() => run('insertOrderedList')}><ListOrdered size={16} /></ToolbarButton>
           <ToolbarButton label="Preva quote" disabled={sourceMode} onRun={() => setBlock('blockquote')}><Quote size={16} /></ToolbarButton>
-          <ToolbarButton label="Insert table" disabled={sourceMode} onRun={openTable}><Table2 size={16} /></ToolbarButton>
+          <ToolbarButton className="rich-editor-table-tool" label="Insert table" disabled={sourceMode} onRun={openTable}>
+            <Table2 size={16} />
+            <span>Table</span>
+          </ToolbarButton>
         </div>
 
         <div className="rich-editor-tool-group">
@@ -372,6 +381,17 @@ const RichTextEditor = forwardRef(function RichTextEditor(
                 />
               </label>
             </div>
+            <label htmlFor="editor-table-caption">
+              Table caption <span className="rich-editor-optional">Optional</span>
+            </label>
+            <input
+              id="editor-table-caption"
+              className="input"
+              value={tableCaption}
+              maxLength={160}
+              onChange={(event) => setTableCaption(event.target.value)}
+              placeholder="For example: Current menu comparison"
+            />
             <label className="rich-editor-link-option">
               <input type="checkbox" checked={tableHeader} onChange={(event) => setTableHeader(event.target.checked)} />
               Include a header row

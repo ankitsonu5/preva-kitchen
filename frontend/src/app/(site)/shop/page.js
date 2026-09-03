@@ -46,7 +46,7 @@ export default async function ShopPage() {
         {/* ══ 1. MINIMAL LUXURY DISH HERO BANNER ══ */}
         <section className="ps-hero-minimal">
           <img
-            src="/asset/hero/menu-hero-cinematic.jpg"
+            src="/asset/hero/menu-hero-cinematic.webp"
             alt="Preva Kitchen Menu"
             className="ps-hero-minimal__bg"
           />
@@ -54,7 +54,7 @@ export default async function ShopPage() {
 
           <div className="ps-hero-minimal__content">
             <span className="ps-hero-minimal__kicker">PREVA KITCHEN</span>
-            <h1 className="ps-hero-minimal__title">Our Menu</h1>
+            <h1 className="ps-hero-minimal__title">Explore Our Dishes</h1>
             <p className="ps-hero-minimal__sub">Crafted with passion, served with pride.</p>
           </div>
         </section>
@@ -62,9 +62,8 @@ export default async function ShopPage() {
         {/* MAIN CONTAINER FOR SECTIONS */}
         <div className="ps-wrap" style={{ paddingTop: '0' }}>
 
-          {/* ══ 2. SIGNATURE CREATIONS & PRODUCT GRID ══ */}
+          {/* ══ 2. PRODUCT GRID ══ */}
           <div id="signature-creations" style={{ marginBottom: 56 }}>
-            <h2 className="ps-sec-title">Signature Creations</h2>
             <ProductGrid products={list} categories={cats} />
           </div>
 

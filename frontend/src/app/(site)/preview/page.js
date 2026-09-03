@@ -134,7 +134,7 @@ export default async function PreviewPage({ searchParams }) {
             <aside className="blog-sticky-sidebar">
               <div className="sidebar-widget-card">
                 <div style={{ textAlign: 'center', marginBottom: '14px' }}>
-                  <img src="/asset/preva-logo.svg" alt="Preva Logo" style={{ height: '42px', width: 'auto', margin: '0 auto 10px auto', display: 'block' }} />
+                  <img src="/asset/preva-logo-silver.png" alt="Preva Kitchen" style={{ height: '42px', width: 'auto', margin: '0 auto 10px auto', display: 'block' }} />
                   <span style={{ fontSize: '0.78rem', color: 'var(--color-gold, #c5a059)', letterSpacing: '2px', textTransform: 'uppercase', fontWeight: 'bold' }}>
                     Eat &bull; Drink &bull; Vibe
                   </span>
