@@ -1,16 +1,11 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import SvgIcon from './SvgIcon';
 
 export default function MenuSelectionModal({ isOpen, onClose }) {
-  const [zoom, setZoom] = useState(100);
-
   useEffect(() => {
-    if (!isOpen) {
-      setZoom(100);
-      return;
-    }
+    if (!isOpen) return;
 
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') onClose();
@@ -26,10 +21,6 @@ export default function MenuSelectionModal({ isOpen, onClose }) {
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
-
-  const handleZoomIn = () => setZoom((z) => Math.min(z + 25, 200));
-  const handleZoomOut = () => setZoom((z) => Math.max(z - 25, 75));
-  const handleZoomReset = () => setZoom(100);
 
   return (
     <div
@@ -51,40 +42,6 @@ export default function MenuSelectionModal({ isOpen, onClose }) {
           </div>
 
           <div className="preva-selection-modal-actions">
-            <div className="preva-selection-zoom-controls">
-              <button
-                type="button"
-                onClick={handleZoomOut}
-                disabled={zoom <= 75}
-                title="Zoom Out"
-                aria-label="Zoom Out"
-                className="preva-zoom-btn"
-              >
-                −
-              </button>
-              <span className="preva-zoom-val">{zoom}%</span>
-              <button
-                type="button"
-                onClick={handleZoomIn}
-                disabled={zoom >= 200}
-                title="Zoom In"
-                aria-label="Zoom In"
-                className="preva-zoom-btn"
-              >
-                +
-              </button>
-              {zoom !== 100 && (
-                <button
-                  type="button"
-                  onClick={handleZoomReset}
-                  className="preva-zoom-reset"
-                  title="Reset Zoom"
-                >
-                  Reset
-                </button>
-              )}
-            </div>
-
             <a
               href="/asset/preva-menu-card.jpg"
               download="Preva-Kitchen-Menu.jpg"
@@ -109,10 +66,7 @@ export default function MenuSelectionModal({ isOpen, onClose }) {
 
         {/* Modal Content / Scrollable Image View */}
         <div className="preva-selection-modal-viewer">
-          <div
-            className="preva-selection-image-wrap"
-            style={{ width: `${zoom}%`, transition: 'width 0.2s ease' }}
-          >
+          <div className="preva-selection-image-wrap">
             <img
               src="/asset/preva-menu-card.jpg"
               alt="Preva Kitchen and Lounge Menu — Our Selection"
