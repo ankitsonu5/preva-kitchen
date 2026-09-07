@@ -753,246 +753,254 @@ const RichTextEditor = forwardRef(function RichTextEditor(
       </div>
 
       {linkOpen && (
-        <div className="rich-editor-link-popover" role="dialog" aria-modal="true" aria-label="Insert link">
-          <form onSubmit={applyLink}>
-            <div className="rich-editor-link-heading">
-              <strong>Insert link</strong>
-              <button type="button" onClick={() => setLinkOpen(false)} aria-label="Close link dialog">×</button>
-            </div>
-            <label htmlFor="editor-link-url">URL</label>
-            <input
-              id="editor-link-url"
-              className="input"
-              value={linkUrl}
-              autoFocus
-              required
-              onChange={(event) => setLinkUrl(event.target.value)}
-              placeholder="https://example.com/page"
-            />
-            <p className="rich-editor-link-help">Use a full URL, /internal-page, #section, mailto: or tel: link.</p>
-            <label className="rich-editor-link-option">
-              <input type="checkbox" checked={linkNewTab} onChange={(event) => setLinkNewTab(event.target.checked)} />
-              Open in a new tab
-            </label>
-            <label className="rich-editor-link-option">
-              <input type="checkbox" checked={linkNoFollow} onChange={(event) => setLinkNoFollow(event.target.checked)} />
-              Mark as nofollow
-            </label>
-            <div className="rich-editor-link-actions">
-              <button type="button" className="btn btn-secondary" onClick={() => setLinkOpen(false)}>Cancel</button>
-              <button type="submit" className="btn">Add link</button>
-            </div>
-          </form>
+        <div className="rich-editor-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) closeLink(); }}>
+          <div className="rich-editor-link-popover rich-editor-modal-dialog" role="dialog" aria-modal="true" aria-label="Insert link">
+            <form onSubmit={applyLink}>
+              <div className="rich-editor-link-heading">
+                <strong>Insert link</strong>
+                <button type="button" onClick={closeLink} aria-label="Close link dialog">×</button>
+              </div>
+              <label htmlFor="editor-link-url">URL</label>
+              <input
+                id="editor-link-url"
+                className="input"
+                value={linkUrl}
+                autoFocus
+                required
+                onChange={(event) => setLinkUrl(event.target.value)}
+                placeholder="https://example.com/page"
+              />
+              <p className="rich-editor-link-help">Use a full URL, /internal-page, #section, mailto: or tel: link.</p>
+              <label className="rich-editor-link-option">
+                <input type="checkbox" checked={linkNewTab} onChange={(event) => setLinkNewTab(event.target.checked)} />
+                Open in a new tab
+              </label>
+              <label className="rich-editor-link-option">
+                <input type="checkbox" checked={linkNoFollow} onChange={(event) => setLinkNoFollow(event.target.checked)} />
+                Mark as nofollow
+              </label>
+              <div className="rich-editor-link-actions">
+                <button type="button" className="btn btn-secondary" onClick={closeLink}>Cancel</button>
+                <button type="submit" className="btn">Add link</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
       {tableOpen && (
-        <div className="rich-editor-link-popover rich-editor-table-popover" role="dialog" aria-modal="true" aria-label="Insert table">
-          <form onSubmit={insertTable}>
-            <div className="rich-editor-link-heading">
-              <strong>Insert table</strong>
-              <button type="button" onClick={() => setTableOpen(false)} aria-label="Close table dialog">×</button>
-            </div>
-            <div className="rich-editor-table-fields">
-              <label>
-                Body rows
-                <input
-                  className="input"
-                  type="number"
-                  min="1"
-                  max="20"
-                  value={tableRows}
-                  onChange={(event) => setTableRows(event.target.value)}
-                />
+        <div className="rich-editor-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) closeTable(); }}>
+          <div className="rich-editor-link-popover rich-editor-table-popover rich-editor-modal-dialog" role="dialog" aria-modal="true" aria-label="Insert table">
+            <form onSubmit={insertTable}>
+              <div className="rich-editor-link-heading">
+                <strong>Insert table</strong>
+                <button type="button" onClick={closeTable} aria-label="Close table dialog">×</button>
+              </div>
+              <div className="rich-editor-table-fields">
+                <label>
+                  Body rows
+                  <input
+                    className="input"
+                    type="number"
+                    min="1"
+                    max="20"
+                    value={tableRows}
+                    onChange={(event) => setTableRows(event.target.value)}
+                  />
+                </label>
+                <label>
+                  Columns
+                  <input
+                    className="input"
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={tableColumns}
+                    onChange={(event) => setTableColumns(event.target.value)}
+                  />
+                </label>
+              </div>
+              <label htmlFor="editor-table-caption">
+                Table caption <span className="rich-editor-optional">Optional</span>
               </label>
-              <label>
-                Columns
-                <input
-                  className="input"
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={tableColumns}
-                  onChange={(event) => setTableColumns(event.target.value)}
-                />
+              <input
+                id="editor-table-caption"
+                className="input"
+                value={tableCaption}
+                maxLength={160}
+                onChange={(event) => setTableCaption(event.target.value)}
+                placeholder="For example: Current menu comparison"
+              />
+              <label className="rich-editor-link-option">
+                <input type="checkbox" checked={tableHeader} onChange={(event) => setTableHeader(event.target.checked)} />
+                Include a header row
               </label>
-            </div>
-            <label htmlFor="editor-table-caption">
-              Table caption <span className="rich-editor-optional">Optional</span>
-            </label>
-            <input
-              id="editor-table-caption"
-              className="input"
-              value={tableCaption}
-              maxLength={160}
-              onChange={(event) => setTableCaption(event.target.value)}
-              placeholder="For example: Current menu comparison"
-            />
-            <label className="rich-editor-link-option">
-              <input type="checkbox" checked={tableHeader} onChange={(event) => setTableHeader(event.target.checked)} />
-              Include a header row
-            </label>
-            <p className="rich-editor-link-help">After inserting, click directly inside any cell to replace its text.</p>
-            <div className="rich-editor-link-actions">
-              <button type="button" className="btn btn-secondary" onClick={() => setTableOpen(false)}>Cancel</button>
-              <button type="submit" className="btn">Insert table</button>
-            </div>
-          </form>
+              <p className="rich-editor-link-help">After inserting, click directly inside any cell to replace its text.</p>
+              <div className="rich-editor-link-actions">
+                <button type="button" className="btn btn-secondary" onClick={closeTable}>Cancel</button>
+                <button type="submit" className="btn">Insert table</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
       {ctaOpen && (
-        <div className="rich-editor-link-popover rich-editor-cta-popover" role="dialog" aria-modal="true" aria-label="Insert CTA Box">
-          <form onSubmit={insertCta}>
-            <div className="rich-editor-link-heading">
-              <strong style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Sparkles size={16} color="var(--gold)" /> Insert CTA Card
-              </strong>
-              <button type="button" onClick={() => setCtaOpen(false)} aria-label="Close CTA dialog">×</button>
-            </div>
-
-            <div className="rich-editor-cta-presets">
-              <span>Quick Presets:</span>
-              <button type="button" onClick={() => applyCtaPreset('reservation')} className="rich-editor-preset-pill">🍽️ Reservation</button>
-              <button type="button" onClick={() => applyCtaPreset('menu')} className="rich-editor-preset-pill">📋 Menu</button>
-              <button type="button" onClick={() => applyCtaPreset('events')} className="rich-editor-preset-pill">🥂 Events</button>
-            </div>
-
-            <label htmlFor="editor-cta-headline">Headline / Title</label>
-            <input
-              id="editor-cta-headline"
-              className="input"
-              value={ctaHeadline}
-              onChange={(event) => setCtaHeadline(event.target.value)}
-              placeholder="e.g. Plan Your Next Dining Experience"
-              required
-            />
-
-            <label htmlFor="editor-cta-description" style={{ marginTop: '10px' }}>Description / Message</label>
-            <textarea
-              id="editor-cta-description"
-              className="input"
-              style={{ minHeight: '64px', resize: 'vertical', fontSize: '12.5px', lineHeight: '1.4' }}
-              value={ctaDescription}
-              onChange={(event) => setCtaDescription(event.target.value)}
-              placeholder="e.g. Reserve your table now or browse our handcrafted menu..."
-            />
-
-            <div className="rich-editor-cta-btn-group" style={{ marginTop: '12px' }}>
-              <strong className="rich-editor-cta-group-title">Primary Button (Required)</strong>
-              <div className="rich-editor-table-fields">
-                <label>
-                  Button Text
-                  <input className="input" value={ctaBtn1Text} onChange={(e) => setCtaBtn1Text(e.target.value)} placeholder="Reserve a Table" required />
-                </label>
-                <label>
-                  Link URL
-                  <input className="input" value={ctaBtn1Url} onChange={(e) => setCtaBtn1Url(e.target.value)} placeholder="/#prv-reservations" required />
-                </label>
+        <div className="rich-editor-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) closeCta(); }}>
+          <div className="rich-editor-link-popover rich-editor-cta-popover rich-editor-modal-dialog" role="dialog" aria-modal="true" aria-label="Insert CTA Box">
+            <form onSubmit={insertCta}>
+              <div className="rich-editor-link-heading">
+                <strong style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Sparkles size={16} color="var(--gold)" /> Insert CTA Card
+                </strong>
+                <button type="button" onClick={closeCta} aria-label="Close CTA dialog">×</button>
               </div>
-            </div>
 
-            <div className="rich-editor-cta-btn-group">
-              <strong className="rich-editor-cta-group-title">Secondary Button (Optional)</strong>
-              <div className="rich-editor-table-fields">
-                <label>
-                  Button Text
-                  <input className="input" value={ctaBtn2Text} onChange={(e) => setCtaBtn2Text(e.target.value)} placeholder="View Menu" />
-                </label>
-                <label>
-                  Link URL
-                  <input className="input" value={ctaBtn2Url} onChange={(e) => setCtaBtn2Url(e.target.value)} placeholder="/menu" />
-                </label>
+              <div className="rich-editor-cta-presets">
+                <span>Quick Presets:</span>
+                <button type="button" onClick={() => applyCtaPreset('reservation')} className="rich-editor-preset-pill">🍽️ Reservation</button>
+                <button type="button" onClick={() => applyCtaPreset('menu')} className="rich-editor-preset-pill">📋 Menu</button>
+                <button type="button" onClick={() => applyCtaPreset('events')} className="rich-editor-preset-pill">🥂 Events</button>
               </div>
-            </div>
 
-            <div className="rich-editor-cta-btn-group">
-              <strong className="rich-editor-cta-group-title">Tertiary Button (Optional)</strong>
-              <div className="rich-editor-table-fields">
-                <label>
-                  Button Text
-                  <input className="input" value={ctaBtn3Text} onChange={(e) => setCtaBtn3Text(e.target.value)} placeholder="Contact Us" />
-                </label>
-                <label>
-                  Link URL
-                  <input className="input" value={ctaBtn3Url} onChange={(e) => setCtaBtn3Url(e.target.value)} placeholder="/contact" />
-                </label>
+              <label htmlFor="editor-cta-headline">Headline / Title</label>
+              <input
+                id="editor-cta-headline"
+                className="input"
+                value={ctaHeadline}
+                onChange={(event) => setCtaHeadline(event.target.value)}
+                placeholder="e.g. Plan Your Next Dining Experience"
+                required
+              />
+
+              <label htmlFor="editor-cta-description" style={{ marginTop: '10px' }}>Description / Message</label>
+              <textarea
+                id="editor-cta-description"
+                className="input"
+                style={{ minHeight: '64px', resize: 'vertical', fontSize: '12.5px', lineHeight: '1.4' }}
+                value={ctaDescription}
+                onChange={(event) => setCtaDescription(event.target.value)}
+                placeholder="e.g. Reserve your table now or browse our handcrafted menu..."
+              />
+
+              <div className="rich-editor-cta-btn-group" style={{ marginTop: '12px' }}>
+                <strong className="rich-editor-cta-group-title">Primary Button (Required)</strong>
+                <div className="rich-editor-table-fields">
+                  <label>
+                    Button Text
+                    <input className="input" value={ctaBtn1Text} onChange={(e) => setCtaBtn1Text(e.target.value)} placeholder="Reserve a Table" required />
+                  </label>
+                  <label>
+                    Link URL
+                    <input className="input" value={ctaBtn1Url} onChange={(e) => setCtaBtn1Url(e.target.value)} placeholder="/#prv-reservations" required />
+                  </label>
+                </div>
               </div>
-            </div>
 
-            <p className="rich-editor-link-help" style={{ marginTop: '8px' }}>
-              Inserts a beautiful luxury dark callout card with gold pill buttons. You can also edit text directly in the visual editor canvas after inserting.
-            </p>
+              <div className="rich-editor-cta-btn-group">
+                <strong className="rich-editor-cta-group-title">Secondary Button (Optional)</strong>
+                <div className="rich-editor-table-fields">
+                  <label>
+                    Button Text
+                    <input className="input" value={ctaBtn2Text} onChange={(e) => setCtaBtn2Text(e.target.value)} placeholder="View Menu" />
+                  </label>
+                  <label>
+                    Link URL
+                    <input className="input" value={ctaBtn2Url} onChange={(e) => setCtaBtn2Url(e.target.value)} placeholder="/menu" />
+                  </label>
+                </div>
+              </div>
 
-            <div className="rich-editor-link-actions">
-              <button type="button" className="btn btn-secondary" onClick={() => setCtaOpen(false)}>Cancel</button>
-              <button type="submit" className="btn">Insert CTA Box</button>
-            </div>
-          </form>
+              <div className="rich-editor-cta-btn-group">
+                <strong className="rich-editor-cta-group-title">Tertiary Button (Optional)</strong>
+                <div className="rich-editor-table-fields">
+                  <label>
+                    Button Text
+                    <input className="input" value={ctaBtn3Text} onChange={(e) => setCtaBtn3Text(e.target.value)} placeholder="Contact Us" />
+                  </label>
+                  <label>
+                    Link URL
+                    <input className="input" value={ctaBtn3Url} onChange={(e) => setCtaBtn3Url(e.target.value)} placeholder="/contact" />
+                  </label>
+                </div>
+              </div>
+
+              <p className="rich-editor-link-help" style={{ marginTop: '8px' }}>
+                Inserts a beautiful luxury dark callout card with gold pill buttons. You can also edit text directly in the visual editor canvas after inserting.
+              </p>
+
+              <div className="rich-editor-link-actions">
+                <button type="button" className="btn btn-secondary" onClick={closeCta}>Cancel</button>
+                <button type="submit" className="btn">Insert CTA Box</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
       {faqOpen && (
-        <div className="rich-editor-link-popover rich-editor-faq-popover" role="dialog" aria-modal="true" aria-label="Insert FAQ">
-          <form onSubmit={insertFaq}>
-            <div className="rich-editor-link-heading">
-              <strong style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <CircleHelp size={16} color="var(--gold)" /> Insert FAQ Section
-              </strong>
-              <button type="button" onClick={() => setFaqOpen(false)} aria-label="Close FAQ dialog">×</button>
-            </div>
+        <div className="rich-editor-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) closeFaq(); }}>
+          <div className="rich-editor-link-popover rich-editor-faq-popover rich-editor-modal-dialog" role="dialog" aria-modal="true" aria-label="Insert FAQ">
+            <form onSubmit={insertFaq}>
+              <div className="rich-editor-link-heading">
+                <strong style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <CircleHelp size={18} color="var(--gold)" /> Insert FAQ Section
+                </strong>
+                <button type="button" onClick={closeFaq} aria-label="Close FAQ dialog">×</button>
+              </div>
 
-            <label htmlFor="editor-faq-title">Section Title</label>
-            <input
-              id="editor-faq-title"
-              className="input"
-              value={faqTitle}
-              onChange={(e) => setFaqTitle(e.target.value)}
-              placeholder="e.g. Frequently Asked Questions"
-            />
+              <label htmlFor="editor-faq-title">Section Title</label>
+              <input
+                id="editor-faq-title"
+                className="input"
+                value={faqTitle}
+                onChange={(e) => setFaqTitle(e.target.value)}
+                placeholder="e.g. Frequently Asked Questions"
+              />
 
-            <div className="rich-editor-faq-items">
-              {faqItems.map((item, index) => (
-                <div key={index} className="rich-editor-faq-item-row">
-                  <div className="rich-editor-faq-item-header">
-                    <span className="rich-editor-faq-item-num">Q{index + 1}</span>
-                    {faqItems.length > 1 && (
-                      <button type="button" className="rich-editor-faq-remove" onClick={() => removeFaqItem(index)} aria-label={`Remove question ${index + 1}`}>
-                        <Trash2 size={13} />
-                      </button>
-                    )}
+              <div className="rich-editor-faq-items">
+                {faqItems.map((item, index) => (
+                  <div key={index} className="rich-editor-faq-item-row">
+                    <div className="rich-editor-faq-item-header">
+                      <span className="rich-editor-faq-item-num">Question {index + 1}</span>
+                      {faqItems.length > 1 && (
+                        <button type="button" className="rich-editor-faq-remove" onClick={() => removeFaqItem(index)} aria-label={`Remove question ${index + 1}`}>
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      className="input"
+                      value={item.question}
+                      onChange={(e) => updateFaqItem(index, 'question', e.target.value)}
+                      placeholder={`Question ${index + 1}…`}
+                      required
+                    />
+                    <textarea
+                      className="input"
+                      style={{ minHeight: '52px', resize: 'vertical', fontSize: '12.5px', lineHeight: '1.4', marginTop: '6px' }}
+                      value={item.answer}
+                      onChange={(e) => updateFaqItem(index, 'answer', e.target.value)}
+                      placeholder="Answer (editable directly in canvas later)…"
+                    />
                   </div>
-                  <input
-                    className="input"
-                    value={item.question}
-                    onChange={(e) => updateFaqItem(index, 'question', e.target.value)}
-                    placeholder={`Question ${index + 1}…`}
-                    required
-                  />
-                  <textarea
-                    className="input"
-                    style={{ minHeight: '48px', resize: 'vertical', fontSize: '12px', lineHeight: '1.4', marginTop: '5px' }}
-                    value={item.answer}
-                    onChange={(e) => updateFaqItem(index, 'answer', e.target.value)}
-                    placeholder="Answer…"
-                  />
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            <button type="button" className="rich-editor-faq-add" onClick={addFaqItem}>
-              <Plus size={14} /> Add Question
-            </button>
+              <button type="button" className="rich-editor-faq-add" onClick={addFaqItem}>
+                <Plus size={14} /> Add Another Question
+              </button>
 
-            <p className="rich-editor-link-help" style={{ marginTop: '10px' }}>
-              Creates a clickable FAQ accordion. Visitors tap a question to reveal the answer.
-            </p>
+              <p className="rich-editor-link-help" style={{ marginTop: '12px' }}>
+                Inserts a luxury FAQ accordion at your cursor position. Both questions and answers remain directly editable in the canvas.
+              </p>
 
-            <div className="rich-editor-link-actions">
-              <button type="button" className="btn btn-secondary" onClick={() => setFaqOpen(false)}>Cancel</button>
-              <button type="submit" className="btn">Insert FAQ</button>
-            </div>
-          </form>
+              <div className="rich-editor-link-actions">
+                <button type="button" className="btn btn-secondary" onClick={closeFaq}>Cancel</button>
+                <button type="submit" className="btn btn-primary" style={{ background: 'var(--gold)', color: '#000', fontWeight: 600 }}>Insert FAQ</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
