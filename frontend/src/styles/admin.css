@@ -1079,7 +1079,8 @@ form.editor-layout > div:last-child { position: sticky; top: 110px; }
   cursor: pointer;
 }
 
-.rich-editor-table-tool {
+.rich-editor-table-tool,
+.rich-editor-cta-tool {
   display: inline-flex;
   width: auto;
   padding: 0 10px;
@@ -1090,6 +1091,11 @@ form.editor-layout > div:last-child { position: sticky; top: 110px; }
   background: rgba(201, 168, 76, 0.055);
   font-size: 11px;
   font-weight: 750;
+}
+.rich-editor-cta-tool {
+  color: #f1dfa8;
+  background: rgba(201, 168, 76, 0.12);
+  border-color: rgba(201, 168, 76, 0.38);
 }
 
 .rich-editor-tool:hover:not(:disabled),
@@ -1264,6 +1270,127 @@ form.editor-layout > div:last-child { position: sticky; top: 110px; }
 .rich-editor-link-help { margin: 6px 0 12px !important; color: var(--ink-dim) !important; font-size: 11px !important; }
 .rich-editor-link-option { display: flex; align-items: center; gap: 8px; margin: 8px 0; color: var(--ink-muted) !important; font-size: 12px; }
 .rich-editor-link-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 15px; }
+.rich-editor-canvas .wp-block-group,
+.rich-editor-canvas .has-background {
+  background: rgba(255, 255, 255, 0.035) !important;
+  background-color: rgba(255, 255, 255, 0.035) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-radius: 14px !important;
+  padding: 24px 26px !important;
+  margin: 2rem 0 !important;
+  color: #ddd !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.rich-editor-canvas .wp-block-group p,
+.rich-editor-canvas .has-background p {
+  color: #ccc !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.rich-editor-canvas .wp-block-group strong,
+.rich-editor-canvas .has-background strong {
+  color: #fff !important;
+  font-size: 1.25rem !important;
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+.rich-editor-canvas .wp-block-buttons {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  margin-top: 1.1rem !important;
+}
+
+.rich-editor-canvas .wp-block-button {
+  margin: 0 !important;
+}
+
+.rich-editor-canvas .wp-block-button__link {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 10px 20px !important;
+  border-radius: 30px !important;
+  background: rgba(197, 160, 89, 0.12) !important;
+  color: #e2c077 !important;
+  border: 1px solid rgba(197, 160, 89, 0.38) !important;
+  font-size: 0.88rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.5px !important;
+  text-decoration: none !important;
+  transition: all 0.22s ease !important;
+  cursor: pointer;
+}
+
+.rich-editor-canvas .wp-block-button__link:hover {
+  background: rgba(197, 160, 89, 0.22) !important;
+  color: #fff !important;
+  border-color: rgba(197, 160, 89, 0.6) !important;
+  box-shadow: 0 4px 14px rgba(197, 160, 89, 0.18);
+}
+
+.rich-editor-cta-popover {
+  width: min(440px, calc(100% - 20px));
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.rich-editor-cta-presets {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 10px;
+  margin-bottom: 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.rich-editor-cta-presets span {
+  font-size: 11px;
+  color: var(--ink-dim);
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.rich-editor-preset-pill {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--ink-muted);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rich-editor-preset-pill:hover {
+  color: #fff;
+  border-color: var(--border-gold);
+  background: rgba(201, 168, 76, 0.15);
+}
+
+.rich-editor-cta-btn-group {
+  margin-bottom: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.rich-editor-cta-group-title {
+  display: block;
+  font-size: 11px;
+  color: var(--gold);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .rich-editor-table-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

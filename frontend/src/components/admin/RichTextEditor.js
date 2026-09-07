@@ -21,6 +21,7 @@ import {
   Quote,
   Redo2,
   RemoveFormatting,
+  Sparkles,
   Strikethrough,
   Table2,
   Underline,
@@ -50,6 +51,19 @@ function plainTextFromHtml(html) {
   return element.textContent || '';
 }
 
+function findEnclosingBlock(editorEl, node) {
+  if (!node || !editorEl) return null;
+  let curr = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+  while (curr && curr !== editorEl) {
+    const tag = curr.tagName?.toLowerCase();
+    if (['h1', 'h2', 'h3', 'h4', 'blockquote', 'p', 'div', 'li', 'pre'].includes(tag)) {
+      return curr;
+    }
+    curr = curr.parentElement;
+  }
+  return null;
+}
+
 function isSafeEditorUrl(value) {
   const url = String(value || '').trim();
   return /^(https?:\/\/|mailto:|tel:|\/|#)/i.test(url);
@@ -73,6 +87,15 @@ const RichTextEditor = forwardRef(function RichTextEditor(
   const [tableColumns, setTableColumns] = useState(3);
   const [tableHeader, setTableHeader] = useState(true);
   const [tableCaption, setTableCaption] = useState('');
+  const [ctaOpen, setCtaOpen] = useState(false);
+  const [ctaHeadline, setCtaHeadline] = useState('Plan Your Next Dining Experience');
+  const [ctaDescription, setCtaDescription] = useState('Reserve your table now or browse our handcrafted menu to explore Chef Preva’s latest culinary creations.');
+  const [ctaBtn1Text, setCtaBtn1Text] = useState('Reserve a Table');
+  const [ctaBtn1Url, setCtaBtn1Url] = useState('/#prv-reservations');
+  const [ctaBtn2Text, setCtaBtn2Text] = useState('View Menu');
+  const [ctaBtn2Url, setCtaBtn2Url] = useState('/menu');
+  const [ctaBtn3Text, setCtaBtn3Text] = useState('Contact Us');
+  const [ctaBtn3Url, setCtaBtn3Url] = useState('/contact');
 
   useEffect(() => {
     setSource(value || '');
@@ -104,15 +127,13 @@ const RichTextEditor = forwardRef(function RichTextEditor(
   const updateCurrentBlockType = () => {
     const selection = window.getSelection();
     if (!selection?.rangeCount || !editorRef.current?.contains(selection.anchorNode)) return;
-    let node = selection.anchorNode;
-    if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
-    while (node && node !== editorRef.current) {
-      const tag = node.tagName?.toLowerCase();
+    const block = findEnclosingBlock(editorRef.current, selection.anchorNode);
+    if (block) {
+      const tag = block.tagName?.toLowerCase();
       if (['h1', 'h2', 'h3', 'h4', 'blockquote', 'p'].includes(tag)) {
         setBlockType(tag);
         return;
       }
-      node = node.parentElement;
     }
     setBlockType('p');
   };
@@ -134,30 +155,117 @@ const RichTextEditor = forwardRef(function RichTextEditor(
     restoreSelection();
 
     const selection = window.getSelection();
-    if (selection?.rangeCount && editorRef.current?.contains(selection.anchorNode)) {
-      let node = selection.anchorNode;
-      if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
-      const bq = node?.closest?.('blockquote');
-      if (bq && tag !== 'blockquote') {
+    let anchorNode = selection?.anchorNode;
+    if (!anchorNode && savedRangeRef.current) {
+      anchorNode = savedRangeRef.current.startContainer;
+    }
+
+    const currentBlock = findEnclosingBlock(editorRef.current, anchorNode);
+
+    if (currentBlock && currentBlock !== editorRef.current && currentBlock.tagName?.toLowerCase() !== 'li') {
+      const currentTag = currentBlock.tagName.toLowerCase();
+      if (currentTag !== tag) {
         const replacement = document.createElement(tag);
-        replacement.innerHTML = bq.innerHTML;
-        bq.parentNode?.replaceChild(replacement, bq);
-        rememberSelection();
+        replacement.innerHTML = currentBlock.innerHTML || '<br>';
+
+        if (!replacement.textContent.trim() && !replacement.querySelector('img, table, iframe, br')) {
+          replacement.innerHTML = '<br>';
+        }
+
+        currentBlock.parentNode?.replaceChild(replacement, currentBlock);
+
+        const range = document.createRange();
+        range.selectNodeContents(replacement);
+        range.collapse(false);
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+        savedRangeRef.current = range.cloneRange();
         emit();
         return;
       }
-    }
-
-    try {
-      const ok = document.execCommand('formatBlock', false, `<${tag}>`);
-      if (!ok) {
+    } else {
+      try {
+        const ok = document.execCommand('formatBlock', false, `<${tag}>`);
+        if (!ok) {
+          document.execCommand('formatBlock', false, tag);
+        }
+      } catch {
         document.execCommand('formatBlock', false, tag);
       }
-    } catch {
-      document.execCommand('formatBlock', false, tag);
     }
+
     rememberSelection();
     emit();
+  };
+
+  const handleKeyDown = (event) => {
+    if (sourceMode) return;
+
+    if (event.key === 'Enter' && !event.shiftKey) {
+      const selection = window.getSelection();
+      if (!selection?.rangeCount) return;
+
+      const range = selection.getRangeAt(0);
+      let anchorNode = range.startContainer;
+      const currentBlock = findEnclosingBlock(editorRef.current, anchorNode);
+
+      if (currentBlock && ['h1', 'h2', 'h3', 'h4'].includes(currentBlock.tagName?.toLowerCase())) {
+        event.preventDefault();
+
+        const newParagraph = document.createElement('p');
+
+        const endRange = document.createRange();
+        endRange.selectNodeContents(currentBlock);
+        endRange.setStart(range.endContainer, range.endOffset);
+        const textAfter = endRange.toString();
+
+        if (!textAfter.trim() && !endRange.cloneContents().querySelector('img, table')) {
+          newParagraph.innerHTML = '<br>';
+          currentBlock.after(newParagraph);
+        } else {
+          const splitRange = document.createRange();
+          splitRange.setStart(range.startContainer, range.startOffset);
+          splitRange.setEndAfter(currentBlock.lastChild || currentBlock);
+          const frag = splitRange.extractContents();
+          if (frag.textContent.trim() || frag.querySelector('img, table')) {
+            newParagraph.appendChild(frag);
+          } else {
+            newParagraph.innerHTML = '<br>';
+          }
+          currentBlock.after(newParagraph);
+        }
+
+        const newRange = document.createRange();
+        newRange.setStart(newParagraph, 0);
+        newRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+        savedRangeRef.current = newRange.cloneRange();
+
+        setBlockType('p');
+        emit();
+        return;
+      }
+
+      if (currentBlock && currentBlock.tagName?.toLowerCase() === 'blockquote') {
+        const text = currentBlock.textContent.trim();
+        if (!text) {
+          event.preventDefault();
+          const newParagraph = document.createElement('p');
+          newParagraph.innerHTML = '<br>';
+          currentBlock.parentNode?.replaceChild(newParagraph, currentBlock);
+          const newRange = document.createRange();
+          newRange.setStart(newParagraph, 0);
+          newRange.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(newRange);
+          savedRangeRef.current = newRange.cloneRange();
+          setBlockType('p');
+          emit();
+          return;
+        }
+      }
+    }
   };
 
   const insertHtml = (html) => {
@@ -198,6 +306,7 @@ const RichTextEditor = forwardRef(function RichTextEditor(
   const openLink = () => {
     rememberSelection();
     setTableOpen(false);
+    setCtaOpen(false);
     setLinkUrl('https://');
     setLinkNewTab(false);
     setLinkNoFollow(false);
@@ -244,6 +353,7 @@ const RichTextEditor = forwardRef(function RichTextEditor(
   const openTable = () => {
     rememberSelection();
     setLinkOpen(false);
+    setCtaOpen(false);
     setTableRows(3);
     setTableColumns(3);
     setTableHeader(true);
@@ -271,6 +381,66 @@ const RichTextEditor = forwardRef(function RichTextEditor(
     setTableOpen(false);
   };
 
+  const openCta = () => {
+    rememberSelection();
+    setLinkOpen(false);
+    setTableOpen(false);
+    setCtaOpen(true);
+  };
+
+  const applyCtaPreset = (preset) => {
+    if (preset === 'reservation') {
+      setCtaHeadline('Plan Your Next Dining Experience');
+      setCtaDescription('Reserve your table now or browse our handcrafted menu to explore Chef Preva’s latest culinary creations.');
+      setCtaBtn1Text('Reserve a Table');
+      setCtaBtn1Url('/#prv-reservations');
+      setCtaBtn2Text('View Menu');
+      setCtaBtn2Url('/menu');
+      setCtaBtn3Text('Contact Us');
+      setCtaBtn3Url('/contact');
+    } else if (preset === 'menu') {
+      setCtaHeadline('Taste the Art of Preva');
+      setCtaDescription('Explore our seasonal flavors, artisanal cocktails, and signature chef-crafted plates.');
+      setCtaBtn1Text('Explore Full Menu');
+      setCtaBtn1Url('/menu');
+      setCtaBtn2Text('Save a Table');
+      setCtaBtn2Url('/#prv-reservations');
+      setCtaBtn3Text('');
+      setCtaBtn3Url('');
+    } else if (preset === 'events') {
+      setCtaHeadline('Host Your Private Gathering');
+      setCtaDescription('From intimate celebrations to corporate dinners, craft unforgettable moments with Preva.');
+      setCtaBtn1Text('Inquire for Events');
+      setCtaBtn1Url('/contact');
+      setCtaBtn2Text('Browse Menu');
+      setCtaBtn2Url('/menu');
+      setCtaBtn3Text('');
+      setCtaBtn3Url('');
+    }
+  };
+
+  const insertCta = (event) => {
+    event.preventDefault();
+    const headline = (ctaHeadline || '').trim();
+    const desc = (ctaDescription || '').trim();
+
+    let buttonsHtml = '';
+    if (ctaBtn1Text.trim() && ctaBtn1Url.trim()) {
+      buttonsHtml += `<div class="wp-block-button"><a class="wp-block-button__link" href="${ctaBtn1Url.trim().replace(/"/g, '&quot;')}">${ctaBtn1Text.trim().replace(/</g, '&lt;').replace(/>/g, '&gt;')}</a></div>`;
+    }
+    if (ctaBtn2Text.trim() && ctaBtn2Url.trim()) {
+      buttonsHtml += `<div class="wp-block-button"><a class="wp-block-button__link" href="${ctaBtn2Url.trim().replace(/"/g, '&quot;')}">${ctaBtn2Text.trim().replace(/</g, '&lt;').replace(/>/g, '&gt;')}</a></div>`;
+    }
+    if (ctaBtn3Text.trim() && ctaBtn3Url.trim()) {
+      buttonsHtml += `<div class="wp-block-button"><a class="wp-block-button__link" href="${ctaBtn3Url.trim().replace(/"/g, '&quot;')}">${ctaBtn3Text.trim().replace(/</g, '&lt;').replace(/>/g, '&gt;')}</a></div>`;
+    }
+
+    const html = `<div class="wp-block-group has-background">${headline ? `<p style="text-align: center;"><strong>${headline.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</strong></p>` : ''}${desc ? `<p style="text-align: center;">${desc.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>` : ''}${buttonsHtml ? `<div class="wp-block-buttons">${buttonsHtml}</div>` : ''}</div><p><br></p>`;
+
+    insertHtml(html);
+    setCtaOpen(false);
+  };
+
   const text = plainTextFromHtml(sourceMode ? source : value).trim();
   const wordCount = text ? text.split(/\s+/).filter(Boolean).length : 0;
   const readingMinutes = Math.max(1, Math.ceil(wordCount / 220));
@@ -284,6 +454,7 @@ const RichTextEditor = forwardRef(function RichTextEditor(
             aria-label="Text style"
             value={blockType}
             disabled={sourceMode}
+            onFocus={rememberSelection}
             onMouseDown={rememberSelection}
             onChange={(event) => setBlock(event.target.value)}
           >
@@ -310,6 +481,10 @@ const RichTextEditor = forwardRef(function RichTextEditor(
           <ToolbarButton className="rich-editor-table-tool" label="Insert table" disabled={sourceMode} onRun={openTable}>
             <Table2 size={16} />
             <span>Table</span>
+          </ToolbarButton>
+          <ToolbarButton className="rich-editor-cta-tool" label="Insert Preva CTA Card" disabled={sourceMode} onRun={openCta}>
+            <Sparkles size={16} />
+            <span>CTA Box</span>
           </ToolbarButton>
         </div>
 
@@ -354,8 +529,11 @@ const RichTextEditor = forwardRef(function RichTextEditor(
           aria-label="Post content"
           data-placeholder="Start writing your story…"
           onInput={emit}
+          onKeyDown={handleKeyDown}
           onKeyUp={() => { rememberSelection(); updateCurrentBlockType(); }}
           onMouseUp={() => { rememberSelection(); updateCurrentBlockType(); }}
+          onClick={() => { rememberSelection(); updateCurrentBlockType(); }}
+          onPointerUp={() => { rememberSelection(); updateCurrentBlockType(); }}
           onSelect={() => { rememberSelection(); updateCurrentBlockType(); }}
           onBlur={rememberSelection}
         />
@@ -450,6 +628,97 @@ const RichTextEditor = forwardRef(function RichTextEditor(
             <div className="rich-editor-link-actions">
               <button type="button" className="btn btn-secondary" onClick={() => setTableOpen(false)}>Cancel</button>
               <button type="submit" className="btn">Insert table</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {ctaOpen && (
+        <div className="rich-editor-link-popover rich-editor-cta-popover" role="dialog" aria-modal="true" aria-label="Insert CTA Box">
+          <form onSubmit={insertCta}>
+            <div className="rich-editor-link-heading">
+              <strong style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Sparkles size={16} color="var(--gold)" /> Insert CTA Card
+              </strong>
+              <button type="button" onClick={() => setCtaOpen(false)} aria-label="Close CTA dialog">×</button>
+            </div>
+
+            <div className="rich-editor-cta-presets">
+              <span>Quick Presets:</span>
+              <button type="button" onClick={() => applyCtaPreset('reservation')} className="rich-editor-preset-pill">🍽️ Reservation</button>
+              <button type="button" onClick={() => applyCtaPreset('menu')} className="rich-editor-preset-pill">📋 Menu</button>
+              <button type="button" onClick={() => applyCtaPreset('events')} className="rich-editor-preset-pill">🥂 Events</button>
+            </div>
+
+            <label htmlFor="editor-cta-headline">Headline / Title</label>
+            <input
+              id="editor-cta-headline"
+              className="input"
+              value={ctaHeadline}
+              onChange={(event) => setCtaHeadline(event.target.value)}
+              placeholder="e.g. Plan Your Next Dining Experience"
+              required
+            />
+
+            <label htmlFor="editor-cta-description" style={{ marginTop: '10px' }}>Description / Message</label>
+            <textarea
+              id="editor-cta-description"
+              className="input"
+              style={{ minHeight: '64px', resize: 'vertical', fontSize: '12.5px', lineHeight: '1.4' }}
+              value={ctaDescription}
+              onChange={(event) => setCtaDescription(event.target.value)}
+              placeholder="e.g. Reserve your table now or browse our handcrafted menu..."
+            />
+
+            <div className="rich-editor-cta-btn-group" style={{ marginTop: '12px' }}>
+              <strong className="rich-editor-cta-group-title">Primary Button (Required)</strong>
+              <div className="rich-editor-table-fields">
+                <label>
+                  Button Text
+                  <input className="input" value={ctaBtn1Text} onChange={(e) => setCtaBtn1Text(e.target.value)} placeholder="Reserve a Table" required />
+                </label>
+                <label>
+                  Link URL
+                  <input className="input" value={ctaBtn1Url} onChange={(e) => setCtaBtn1Url(e.target.value)} placeholder="/#prv-reservations" required />
+                </label>
+              </div>
+            </div>
+
+            <div className="rich-editor-cta-btn-group">
+              <strong className="rich-editor-cta-group-title">Secondary Button (Optional)</strong>
+              <div className="rich-editor-table-fields">
+                <label>
+                  Button Text
+                  <input className="input" value={ctaBtn2Text} onChange={(e) => setCtaBtn2Text(e.target.value)} placeholder="View Menu" />
+                </label>
+                <label>
+                  Link URL
+                  <input className="input" value={ctaBtn2Url} onChange={(e) => setCtaBtn2Url(e.target.value)} placeholder="/menu" />
+                </label>
+              </div>
+            </div>
+
+            <div className="rich-editor-cta-btn-group">
+              <strong className="rich-editor-cta-group-title">Tertiary Button (Optional)</strong>
+              <div className="rich-editor-table-fields">
+                <label>
+                  Button Text
+                  <input className="input" value={ctaBtn3Text} onChange={(e) => setCtaBtn3Text(e.target.value)} placeholder="Contact Us" />
+                </label>
+                <label>
+                  Link URL
+                  <input className="input" value={ctaBtn3Url} onChange={(e) => setCtaBtn3Url(e.target.value)} placeholder="/contact" />
+                </label>
+              </div>
+            </div>
+
+            <p className="rich-editor-link-help" style={{ marginTop: '8px' }}>
+              Inserts a beautiful luxury dark callout card with gold pill buttons. You can also edit text directly in the visual editor canvas after inserting.
+            </p>
+
+            <div className="rich-editor-link-actions">
+              <button type="button" className="btn btn-secondary" onClick={() => setCtaOpen(false)}>Cancel</button>
+              <button type="submit" className="btn">Insert CTA Box</button>
             </div>
           </form>
         </div>
