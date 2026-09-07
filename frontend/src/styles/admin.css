@@ -1097,6 +1097,11 @@ form.editor-layout > div:last-child { position: sticky; top: 110px; }
   background: rgba(201, 168, 76, 0.12);
   border-color: rgba(201, 168, 76, 0.38);
 }
+.rich-editor-faq-tool {
+  color: #a8d4f1;
+  background: rgba(89, 160, 197, 0.1);
+  border-color: rgba(89, 160, 197, 0.32);
+}
 
 .rich-editor-tool:hover:not(:disabled),
 .rich-editor-tool.is-active {
@@ -1406,6 +1411,227 @@ form.editor-layout > div:last-child { position: sticky; top: 110px; }
 }
 .rich-editor-table-fields .input { margin-top: 6px; }
 .rich-editor-optional { margin-left: 5px; color: var(--ink-dim); font-size: 9px; font-weight: 500; letter-spacing: 0.04em; }
+
+/* ── Rich Editor Centered Modal Backdrop ── */
+.rich-editor-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: editorModalFadeIn 0.18s ease-out;
+}
+
+@keyframes editorModalFadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.rich-editor-link-popover.rich-editor-modal-dialog {
+  position: relative !important;
+  top: auto !important;
+  right: auto !important;
+  left: auto !important;
+  bottom: auto !important;
+  margin: auto !important;
+  width: min(540px, 95vw) !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+  border: 1.5px solid rgba(201, 168, 76, 0.45) !important;
+  border-radius: 16px !important;
+  background: #181613 !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.06) !important;
+  padding: 22px 24px !important;
+  z-index: 10000 !important;
+}
+
+/* ── FAQ Popover Dialog ── */
+.rich-editor-faq-popover.rich-editor-modal-dialog {
+  width: min(580px, 95vw) !important;
+}
+
+.rich-editor-faq-popover .rich-editor-link-heading strong {
+  font-size: 1.15rem;
+  color: #fff;
+}
+
+.rich-editor-faq-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 14px 0 16px;
+}
+
+.rich-editor-faq-item-row {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  transition: border-color 0.2s ease;
+}
+.rich-editor-faq-item-row:focus-within {
+  border-color: rgba(201, 168, 76, 0.55);
+  background: rgba(201, 168, 76, 0.03);
+}
+
+.rich-editor-faq-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.rich-editor-faq-item-num {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--gold);
+  letter-spacing: 0.05em;
+  background: rgba(201, 168, 76, 0.12);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(201, 168, 76, 0.25);
+  text-transform: uppercase;
+}
+
+.rich-editor-faq-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba(255, 80, 80, 0.25);
+  border-radius: 5px;
+  background: rgba(255, 80, 80, 0.08);
+  color: #f87171;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.rich-editor-faq-remove:hover {
+  background: rgba(255, 80, 80, 0.2);
+  border-color: rgba(255, 80, 80, 0.5);
+  color: #fff;
+}
+
+.rich-editor-faq-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 8px 16px;
+  border: 1px dashed rgba(201, 168, 76, 0.5);
+  border-radius: 8px;
+  background: rgba(201, 168, 76, 0.08);
+  color: var(--gold);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.rich-editor-faq-add:hover {
+  background: rgba(201, 168, 76, 0.18);
+  border-color: var(--gold);
+  color: #fff;
+}
+
+/* ── FAQ Canvas Preview (Admin Editor) ── */
+.rich-editor-canvas .preva-faq-block {
+  margin: 2.2rem 0 !important;
+  padding: 24px 24px !important;
+  border: 1.5px solid rgba(201, 168, 76, 0.4) !important;
+  border-left: 5px solid var(--gold) !important;
+  border-radius: 14px !important;
+  background: rgba(22, 20, 17, 0.98) !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  position: relative !important;
+}
+
+.rich-editor-canvas .preva-faq-block::before {
+  content: '❓ FAQ ACCORDION SECTION';
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold);
+  background: rgba(201, 168, 76, 0.15);
+  border: 1px solid rgba(201, 168, 76, 0.35);
+  padding: 4px 10px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.rich-editor-canvas .preva-faq-title {
+  text-align: center !important;
+  color: #ffffff !important;
+  font-size: 1.4rem !important;
+  font-weight: 700 !important;
+  margin: 0 0 1.2rem !important;
+  padding-bottom: 1rem !important;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.25) !important;
+  letter-spacing: 0.01em !important;
+}
+
+.rich-editor-canvas .preva-faq-item {
+  margin-bottom: 10px !important;
+  border: 1.5px solid rgba(201, 168, 76, 0.25) !important;
+  border-radius: 12px !important;
+  background: rgba(30, 27, 23, 0.8) !important;
+  overflow: hidden !important;
+  transition: all 0.2s ease !important;
+}
+
+.rich-editor-canvas .preva-faq-item[open] {
+  border-color: rgba(201, 168, 76, 0.55) !important;
+  background: rgba(36, 32, 26, 0.95) !important;
+}
+
+.rich-editor-canvas .preva-faq-question {
+  display: block !important;
+  padding: 14px 18px !important;
+  color: #f7e6b8 !important;
+  font-weight: 600 !important;
+  font-size: 1.05rem !important;
+  cursor: pointer !important;
+  background: rgba(201, 168, 76, 0.06) !important;
+  list-style: none !important;
+  transition: background 0.2s ease, color 0.2s ease !important;
+  user-select: none !important;
+  line-height: 1.5 !important;
+}
+.rich-editor-canvas .preva-faq-question::-webkit-details-marker { display: none !important; }
+.rich-editor-canvas .preva-faq-question::before {
+  content: '▸' !important;
+  display: inline-block !important;
+  margin-right: 10px !important;
+  transition: transform 0.2s ease !important;
+  color: var(--gold) !important;
+  font-size: 1.15em !important;
+}
+.rich-editor-canvas .preva-faq-item[open] .preva-faq-question::before {
+  transform: rotate(90deg) !important;
+}
+.rich-editor-canvas .preva-faq-question:hover {
+  background: rgba(201, 168, 76, 0.14) !important;
+  color: #ffffff !important;
+}
+
+.rich-editor-canvas .preva-faq-answer {
+  padding: 14px 18px 18px !important;
+  color: #e5e2da !important;
+  font-size: 0.98rem !important;
+  line-height: 1.7 !important;
+  border-top: 1px solid rgba(201, 168, 76, 0.18) !important;
+  background: rgba(14, 13, 11, 0.7) !important;
+}
+.rich-editor-canvas .preva-faq-answer p {
+  margin: 0 !important;
+  color: #e5e2da !important;
+}
 
 .role-guide-grid {
   display: grid;

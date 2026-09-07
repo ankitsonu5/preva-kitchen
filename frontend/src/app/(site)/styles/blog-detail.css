@@ -604,3 +604,99 @@ body:has(.single-post-luxury) {
   box-shadow: 0 4px 16px rgba(197, 160, 89, 0.35) !important;
   transform: translateY(-1px);
 }
+
+/* ───────────────────────────────────────────────────────────
+   FAQ Accordion Block (Public Blog)
+─────────────────────────────────────────────────────────── */
+.post-main-content .preva-faq-block,
+.single-post-luxury .post-main-content .preva-faq-block {
+  margin: 2.5rem 0 !important;
+  padding: 28px 26px !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px !important;
+  background: rgba(255, 255, 255, 0.025) !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+}
+
+.post-main-content .preva-faq-title,
+.single-post-luxury .post-main-content .preva-faq-title {
+  text-align: center !important;
+  color: #fff !important;
+  font-size: 1.4rem !important;
+  font-weight: 700 !important;
+  margin: 0 0 1.2rem !important;
+  padding-bottom: 1rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
+  letter-spacing: 0.01em;
+}
+
+.post-main-content .preva-faq-item,
+.single-post-luxury .post-main-content .preva-faq-item {
+  margin-bottom: 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  transition: border-color 0.25s ease;
+}
+
+.post-main-content .preva-faq-item[open],
+.single-post-luxury .post-main-content .preva-faq-item[open] {
+  border-color: rgba(197, 160, 89, 0.22) !important;
+}
+
+.post-main-content .preva-faq-question,
+.single-post-luxury .post-main-content .preva-faq-question {
+  display: block !important;
+  padding: 14px 18px !important;
+  color: #e8d49d !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  cursor: pointer !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  list-style: none !important;
+  transition: background 0.2s ease, color 0.2s ease !important;
+  user-select: none;
+  line-height: 1.5 !important;
+}
+
+.post-main-content .preva-faq-question::-webkit-details-marker,
+.single-post-luxury .post-main-content .preva-faq-question::-webkit-details-marker {
+  display: none !important;
+}
+
+.post-main-content .preva-faq-question::before,
+.single-post-luxury .post-main-content .preva-faq-question::before {
+  content: '▸' !important;
+  display: inline-block !important;
+  margin-right: 10px !important;
+  transition: transform 0.25s ease !important;
+  color: rgba(197, 160, 89, 0.7) !important;
+  font-size: 1.1em;
+}
+
+.post-main-content .preva-faq-item[open] .preva-faq-question::before,
+.single-post-luxury .post-main-content .preva-faq-item[open] .preva-faq-question::before {
+  transform: rotate(90deg) !important;
+}
+
+.post-main-content .preva-faq-question:hover,
+.single-post-luxury .post-main-content .preva-faq-question:hover {
+  background: rgba(255, 255, 255, 0.045) !important;
+  color: #fff !important;
+}
+
+.post-main-content .preva-faq-answer,
+.single-post-luxury .post-main-content .preva-faq-answer {
+  padding: 12px 18px 18px !important;
+  color: #c0bfb8 !important;
+  font-size: 0.95rem !important;
+  line-height: 1.7 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+  background: rgba(0, 0, 0, 0.12) !important;
+}
+
+.post-main-content .preva-faq-answer p,
+.single-post-luxury .post-main-content .preva-faq-answer p {
+  margin: 0 !important;
+  color: #c0bfb8 !important;
+}

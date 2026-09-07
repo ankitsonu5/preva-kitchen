@@ -1209,13 +1209,11 @@ function EditContentForm() {
         const tokenRes = await api(`/admin/content/${targetId}/preview-token`, { method: 'POST' });
         if (tokenRes.ok) {
           const { token } = await tokenRes.json();
-          let siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-          if (!siteUrl && typeof window !== 'undefined') {
-            siteUrl = window.location.origin;
-          }
-          if (!siteUrl) siteUrl = 'https://prevakitchen.com';
+          const origin = (typeof window !== 'undefined' && window.location.origin)
+            ? window.location.origin
+            : (process.env.NEXT_PUBLIC_SITE_URL || 'https://prevakitchen.com');
 
-          window.open(`${siteUrl}/preview?token=${encodeURIComponent(token)}`, '_blank', 'noopener,noreferrer');
+          window.open(`${origin}/preview?token=${encodeURIComponent(token)}`, '_blank', 'noopener,noreferrer');
           setMessage('Preview opened in new tab!');
         } else {
           setMessage('Saved, but preview token could not be generated.');

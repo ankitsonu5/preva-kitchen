@@ -11,6 +11,7 @@ import {
   AlignCenter,
   AlignLeft,
   Bold,
+  CircleHelp,
   Code2,
   ImagePlus,
   Italic,
@@ -18,12 +19,14 @@ import {
   List,
   ListOrdered,
   Pilcrow,
+  Plus,
   Quote,
   Redo2,
   RemoveFormatting,
   Sparkles,
   Strikethrough,
   Table2,
+  Trash2,
   Underline,
   Undo2,
   Unlink
@@ -96,6 +99,12 @@ const RichTextEditor = forwardRef(function RichTextEditor(
   const [ctaBtn2Url, setCtaBtn2Url] = useState('/menu');
   const [ctaBtn3Text, setCtaBtn3Text] = useState('Contact Us');
   const [ctaBtn3Url, setCtaBtn3Url] = useState('/contact');
+  const [faqOpen, setFaqOpen] = useState(false);
+  const [faqTitle, setFaqTitle] = useState('Frequently Asked Questions');
+  const [faqItems, setFaqItems] = useState([
+    { question: '', answer: '' },
+    { question: '', answer: '' }
+  ]);
 
   useEffect(() => {
     setSource(value || '');
@@ -103,6 +112,9 @@ const RichTextEditor = forwardRef(function RichTextEditor(
       if (editorRef.current.innerHTML !== (value || '')) editorRef.current.innerHTML = value || '';
     }
   }, [value, sourceMode]);
+
+  const lastActiveBlockRef = useRef(null);
+  const MARKER_ID = 'preva-editor-insert-marker';
 
   const emit = () => {
     const html = editorRef.current?.innerHTML || '';
@@ -114,6 +126,10 @@ const RichTextEditor = forwardRef(function RichTextEditor(
     const selection = window.getSelection();
     if (!selection?.rangeCount || !editorRef.current?.contains(selection.anchorNode)) return;
     savedRangeRef.current = selection.getRangeAt(0).cloneRange();
+    const block = findEnclosingBlock(editorRef.current, selection.anchorNode);
+    if (block && block !== editorRef.current) {
+      lastActiveBlockRef.current = block;
+    }
   };
 
   const restoreSelection = () => {
@@ -124,11 +140,54 @@ const RichTextEditor = forwardRef(function RichTextEditor(
     return true;
   };
 
+  const plantMarker = () => {
+    removeMarker();
+    if (sourceMode || !editorRef.current) return;
+
+    const marker = document.createElement('span');
+    marker.id = MARKER_ID;
+    marker.setAttribute('data-preva-marker', 'true');
+    marker.style.display = 'none';
+
+    const selection = window.getSelection();
+    let range = null;
+    if (selection?.rangeCount && editorRef.current.contains(selection.anchorNode)) {
+      range = selection.getRangeAt(0).cloneRange();
+    } else if (savedRangeRef.current && editorRef.current.contains(savedRangeRef.current.startContainer)) {
+      range = savedRangeRef.current.cloneRange();
+    }
+
+    if (range) {
+      const block = findEnclosingBlock(editorRef.current, range.startContainer);
+      if (block && block !== editorRef.current && block.parentNode) {
+        block.after(marker);
+        return;
+      } else {
+        range.collapse(true);
+        range.insertNode(marker);
+        return;
+      }
+    }
+
+    if (lastActiveBlockRef.current && editorRef.current.contains(lastActiveBlockRef.current) && lastActiveBlockRef.current !== editorRef.current && lastActiveBlockRef.current.parentNode) {
+      lastActiveBlockRef.current.after(marker);
+      return;
+    }
+
+    editorRef.current.appendChild(marker);
+  };
+
+  const removeMarker = () => {
+    const marker = editorRef.current?.querySelector(`#${MARKER_ID}`);
+    if (marker) marker.remove();
+  };
+
   const updateCurrentBlockType = () => {
     const selection = window.getSelection();
     if (!selection?.rangeCount || !editorRef.current?.contains(selection.anchorNode)) return;
     const block = findEnclosingBlock(editorRef.current, selection.anchorNode);
     if (block) {
+      lastActiveBlockRef.current = block;
       const tag = block.tagName?.toLowerCase();
       if (['h1', 'h2', 'h3', 'h4', 'blockquote', 'p'].includes(tag)) {
         setBlockType(tag);
@@ -270,15 +329,91 @@ const RichTextEditor = forwardRef(function RichTextEditor(
 
   const insertHtml = (html) => {
     if (sourceMode) {
-      const next = `${source}${html}`;
+      const next = `${source}\n\n${html}\n\n`;
       setSource(next);
       onChange(next);
       return;
     }
-    editorRef.current?.focus();
-    restoreSelection();
-    document.execCommand('insertHTML', false, html);
-    rememberSelection();
+
+    const marker = editorRef.current?.querySelector(`#${MARKER_ID}`);
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+    const frag = document.createDocumentFragment();
+    let firstInsertedNode = null;
+    let lastInsertedNode = null;
+    while (temp.firstChild) {
+      if (!firstInsertedNode) firstInsertedNode = temp.firstChild;
+      lastInsertedNode = temp.firstChild;
+      frag.appendChild(temp.firstChild);
+    }
+
+    const trailingP = document.createElement('p');
+    trailingP.innerHTML = '<br>';
+
+    if (marker && marker.parentNode) {
+      marker.parentNode.insertBefore(frag, marker);
+      marker.parentNode.insertBefore(trailingP, marker);
+      marker.remove();
+    } else {
+      const selection = window.getSelection();
+      let range = savedRangeRef.current;
+
+      if (!range || !editorRef.current?.contains(range.startContainer)) {
+        if (selection?.rangeCount && editorRef.current?.contains(selection.anchorNode)) {
+          range = selection.getRangeAt(0);
+        }
+      }
+
+      if (range && editorRef.current?.contains(range.startContainer)) {
+        const block = findEnclosingBlock(editorRef.current, range.startContainer);
+        if (block && block !== editorRef.current && block.parentNode) {
+          block.after(frag);
+          if (lastInsertedNode && lastInsertedNode.parentNode) {
+            lastInsertedNode.after(trailingP);
+          } else {
+            block.after(trailingP);
+          }
+        } else {
+          range.deleteContents();
+          range.insertNode(frag);
+          if (lastInsertedNode && lastInsertedNode.parentNode) {
+            lastInsertedNode.after(trailingP);
+          } else {
+            editorRef.current?.appendChild(trailingP);
+          }
+        }
+      } else if (lastActiveBlockRef.current && editorRef.current?.contains(lastActiveBlockRef.current) && lastActiveBlockRef.current !== editorRef.current && lastActiveBlockRef.current.parentNode) {
+        lastActiveBlockRef.current.after(frag);
+        if (lastInsertedNode && lastInsertedNode.parentNode) {
+          lastInsertedNode.after(trailingP);
+        } else {
+          lastActiveBlockRef.current.after(trailingP);
+        }
+      } else {
+        editorRef.current?.appendChild(frag);
+        editorRef.current?.appendChild(trailingP);
+      }
+    }
+
+    // Smoothly scroll the inserted block into view so user sees it right in front of them
+    const targetToScroll = firstInsertedNode || trailingP;
+    if (targetToScroll && typeof targetToScroll.scrollIntoView === 'function') {
+      setTimeout(() => {
+        try {
+          targetToScroll.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } catch {}
+      }, 60);
+    }
+
+    // Place cursor in the trailing paragraph
+    const selection = window.getSelection();
+    const newRange = document.createRange();
+    newRange.setStart(trailingP, 0);
+    newRange.collapse(true);
+    selection?.removeAllRanges();
+    selection?.addRange(newRange);
+    savedRangeRef.current = newRange.cloneRange();
+
     emit();
   };
 
@@ -305,12 +440,19 @@ const RichTextEditor = forwardRef(function RichTextEditor(
 
   const openLink = () => {
     rememberSelection();
+    plantMarker();
     setTableOpen(false);
     setCtaOpen(false);
+    setFaqOpen(false);
     setLinkUrl('https://');
     setLinkNewTab(false);
     setLinkNoFollow(false);
     setLinkOpen(true);
+  };
+
+  const closeLink = () => {
+    removeMarker();
+    setLinkOpen(false);
   };
 
   const applyLink = (event) => {
@@ -324,6 +466,7 @@ const RichTextEditor = forwardRef(function RichTextEditor(
     const selectedText = restored ? selection?.toString() : '';
 
     if (selectedText) {
+      removeMarker();
       document.execCommand('createLink', false, url);
       const anchorNode = selection?.anchorNode?.nodeType === Node.TEXT_NODE
         ? selection.anchorNode.parentElement
@@ -352,13 +495,20 @@ const RichTextEditor = forwardRef(function RichTextEditor(
 
   const openTable = () => {
     rememberSelection();
+    plantMarker();
     setLinkOpen(false);
     setCtaOpen(false);
+    setFaqOpen(false);
     setTableRows(3);
     setTableColumns(3);
     setTableHeader(true);
     setTableCaption('');
     setTableOpen(true);
+  };
+
+  const closeTable = () => {
+    removeMarker();
+    setTableOpen(false);
   };
 
   const insertTable = (event) => {
@@ -383,9 +533,63 @@ const RichTextEditor = forwardRef(function RichTextEditor(
 
   const openCta = () => {
     rememberSelection();
+    plantMarker();
     setLinkOpen(false);
     setTableOpen(false);
+    setFaqOpen(false);
     setCtaOpen(true);
+  };
+
+  const closeCta = () => {
+    removeMarker();
+    setCtaOpen(false);
+  };
+
+  const openFaq = () => {
+    rememberSelection();
+    plantMarker();
+    setLinkOpen(false);
+    setTableOpen(false);
+    setCtaOpen(false);
+    setFaqTitle('Frequently Asked Questions');
+    setFaqItems([{ question: '', answer: '' }, { question: '', answer: '' }]);
+    setFaqOpen(true);
+  };
+
+  const closeFaq = () => {
+    removeMarker();
+    setFaqOpen(false);
+  };
+
+  const addFaqItem = () => {
+    setFaqItems(prev => [...prev, { question: '', answer: '' }]);
+  };
+
+  const removeFaqItem = (index) => {
+    setFaqItems(prev => prev.length <= 1 ? prev : prev.filter((_, i) => i !== index));
+  };
+
+  const updateFaqItem = (index, field, value) => {
+    setFaqItems(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
+  };
+
+  const insertFaq = (event) => {
+    event.preventDefault();
+    const title = (faqTitle || '').trim();
+    const validItems = faqItems.filter(item => item.question.trim());
+    if (!validItems.length) {
+      closeFaq();
+      return;
+    }
+
+    const esc = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const itemsHtml = validItems.map(item =>
+      `<details class="preva-faq-item" open><summary class="preva-faq-question">${esc(item.question.trim())}</summary><div class="preva-faq-answer"><p>${item.answer.trim() ? esc(item.answer.trim()) : 'Answer coming soon.'}</p></div></details>`
+    ).join('');
+
+    const html = `<div class="preva-faq-block">${title ? `<h3 class="preva-faq-title">${esc(title)}</h3>` : ''}${itemsHtml}</div>`;
+    insertHtml(html);
+    setFaqOpen(false);
   };
 
   const applyCtaPreset = (preset) => {
@@ -485,6 +689,10 @@ const RichTextEditor = forwardRef(function RichTextEditor(
           <ToolbarButton className="rich-editor-cta-tool" label="Insert Preva CTA Card" disabled={sourceMode} onRun={openCta}>
             <Sparkles size={16} />
             <span>CTA Box</span>
+          </ToolbarButton>
+          <ToolbarButton className="rich-editor-faq-tool" label="Insert FAQ Section" disabled={sourceMode} onRun={openFaq}>
+            <CircleHelp size={16} />
+            <span>FAQ</span>
           </ToolbarButton>
         </div>
 
@@ -719,6 +927,70 @@ const RichTextEditor = forwardRef(function RichTextEditor(
             <div className="rich-editor-link-actions">
               <button type="button" className="btn btn-secondary" onClick={() => setCtaOpen(false)}>Cancel</button>
               <button type="submit" className="btn">Insert CTA Box</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {faqOpen && (
+        <div className="rich-editor-link-popover rich-editor-faq-popover" role="dialog" aria-modal="true" aria-label="Insert FAQ">
+          <form onSubmit={insertFaq}>
+            <div className="rich-editor-link-heading">
+              <strong style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <CircleHelp size={16} color="var(--gold)" /> Insert FAQ Section
+              </strong>
+              <button type="button" onClick={() => setFaqOpen(false)} aria-label="Close FAQ dialog">×</button>
+            </div>
+
+            <label htmlFor="editor-faq-title">Section Title</label>
+            <input
+              id="editor-faq-title"
+              className="input"
+              value={faqTitle}
+              onChange={(e) => setFaqTitle(e.target.value)}
+              placeholder="e.g. Frequently Asked Questions"
+            />
+
+            <div className="rich-editor-faq-items">
+              {faqItems.map((item, index) => (
+                <div key={index} className="rich-editor-faq-item-row">
+                  <div className="rich-editor-faq-item-header">
+                    <span className="rich-editor-faq-item-num">Q{index + 1}</span>
+                    {faqItems.length > 1 && (
+                      <button type="button" className="rich-editor-faq-remove" onClick={() => removeFaqItem(index)} aria-label={`Remove question ${index + 1}`}>
+                        <Trash2 size={13} />
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    className="input"
+                    value={item.question}
+                    onChange={(e) => updateFaqItem(index, 'question', e.target.value)}
+                    placeholder={`Question ${index + 1}…`}
+                    required
+                  />
+                  <textarea
+                    className="input"
+                    style={{ minHeight: '48px', resize: 'vertical', fontSize: '12px', lineHeight: '1.4', marginTop: '5px' }}
+                    value={item.answer}
+                    onChange={(e) => updateFaqItem(index, 'answer', e.target.value)}
+                    placeholder="Answer…"
+                  />
+                </div>
+              ))}
+            </div>
+
+            <button type="button" className="rich-editor-faq-add" onClick={addFaqItem}>
+              <Plus size={14} /> Add Question
+            </button>
+
+            <p className="rich-editor-link-help" style={{ marginTop: '10px' }}>
+              Creates a clickable FAQ accordion. Visitors tap a question to reveal the answer.
+            </p>
+
+            <div className="rich-editor-link-actions">
+              <button type="button" className="btn btn-secondary" onClick={() => setFaqOpen(false)}>Cancel</button>
+              <button type="submit" className="btn">Insert FAQ</button>
             </div>
           </form>
         </div>

@@ -263,12 +263,10 @@ function ContentList() {
       const tokenRes = await api(`/admin/content/${item.id}/preview-token`, { method: 'POST' });
       if (tokenRes.ok) {
         const { token } = await tokenRes.json();
-        let siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-        if (!siteUrl && typeof window !== 'undefined') {
-          siteUrl = window.location.origin;
-        }
-        if (!siteUrl) siteUrl = 'https://prevakitchen.com';
-        window.open(`${siteUrl}/preview?token=${encodeURIComponent(token)}`, '_blank', 'noopener,noreferrer');
+        const origin = (typeof window !== 'undefined' && window.location.origin)
+          ? window.location.origin
+          : (process.env.NEXT_PUBLIC_SITE_URL || 'https://prevakitchen.com');
+        window.open(`${origin}/preview?token=${encodeURIComponent(token)}`, '_blank', 'noopener,noreferrer');
       } else {
         alert('Could not generate preview token.');
       }
