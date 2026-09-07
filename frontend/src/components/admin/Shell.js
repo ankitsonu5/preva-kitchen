@@ -6,6 +6,17 @@ import AdminHeader from '@/components/admin/AdminHeader';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import { getUser } from '@/lib/admin-api';
 
+const CAREERS_MANAGER_ROUTES = [
+  '/admin/careers',
+  '/admin/career-jobs',
+  '/admin/career-applications',
+  '/admin/profile'
+];
+
+function isCareersManagerRoute(pathname) {
+  return CAREERS_MANAGER_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
+}
+
 export default function Shell({ children }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -72,7 +83,7 @@ export default function Shell({ children }) {
           setUser(activeUser);
           if (activeUser.mustChangePassword && pathname !== '/admin/profile') {
             router.replace('/admin/profile?first=1');
-          } else if (activeUser.role === 'CAREERS_MANAGER' && pathname === '/admin') {
+          } else if (activeUser.role === 'CAREERS_MANAGER' && !isCareersManagerRoute(pathname)) {
             router.replace('/admin/careers');
           }
         }
@@ -100,10 +111,16 @@ export default function Shell({ children }) {
 
     const fetchCounts = async () => {
       try {
-        const res = await fetch('/api/admin/dashboard');
+        const isCareersManager = user.role === 'CAREERS_MANAGER';
+        const res = await fetch(isCareersManager ? '/api/admin/careers/dashboard' : '/api/admin/dashboard');
         if (!res.ok) return;
         const data = await res.json();
         if (!active || !data) return;
+
+        if (isCareersManager) {
+          setBadges((prev) => ({ ...prev, careerApps: data.counts?.new ?? 0 }));
+          return;
+        }
 
         setBadges((prev) => {
           const newOrders = data.activeOrders ?? data.counts?.openOrders ?? 0;
@@ -200,6 +217,15 @@ export default function Shell({ children }) {
 
   const role = user.role;
   const careersManager = role === 'CAREERS_MANAGER';
+
+  if (careersManager && !isCareersManagerRoute(pathname)) {
+    return (
+      <div className="admin-auth-loading" aria-live="polite">
+        <div className="loader">Opening your Hiring Dashboard…</div>
+      </div>
+    );
+  }
+
   const permissions = {
     dashboard: !careersManager,
     content: !careersManager,

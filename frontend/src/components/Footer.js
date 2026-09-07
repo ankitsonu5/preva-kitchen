@@ -109,7 +109,7 @@ export default function Footer() {
     pathname?.startsWith('/order') ||
     pathname?.startsWith('/checkout')
   );
-  const showInstagram = !isCareersPage && !isShopOrOrderPage;
+  const showInstagram = isLandingPage;
 
   /* ── Orbit carousel engine ─────────────────────────────────
      ORBIT_RADIUS is a module constant (outside component) so

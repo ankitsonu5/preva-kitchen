@@ -145,6 +145,10 @@ export default function UsersManager() {
           <strong>Author</strong>
           <span>Writes and publishes their own posts, without access to other authors or site settings.</span>
         </div>
+        <div className="role-guide-card">
+          <strong>Careers Manager</strong>
+          <span>Only sees the Hiring Dashboard, career jobs, applications and their own profile.</span>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '30px' }} className="editor-layout">

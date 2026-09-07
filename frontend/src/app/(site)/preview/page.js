@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { cmsFetch } from '@/lib/cms';
 import PageBuilder from '@/components/PageBuilder';
 import SvgIcon from '@/components/SvgIcon';
+import { rewriteLegacyBlogLinks } from '@/lib/blog-links';
 
 export const metadata = { title: 'Content preview | Preva', robots: { index: false, follow: false } };
 
@@ -112,7 +113,7 @@ export default async function PreviewPage({ searchParams }) {
                 <div 
                   className="post-main-content" 
                   style={{ color: '#ccc', fontSize: '1.08rem', lineHeight: '1.85' }} 
-                  dangerouslySetInnerHTML={{ __html: content.content || '<p>No content written yet.</p>' }} 
+                  dangerouslySetInnerHTML={{ __html: rewriteLegacyBlogLinks(content.content || '<p>No content written yet.</p>') }} 
                 />
 
                 {/* Author Info Card Box */}

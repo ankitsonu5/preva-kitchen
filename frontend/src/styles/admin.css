@@ -1100,8 +1100,32 @@ form.editor-layout > div:last-child { position: sticky; top: 110px; }
 }
 
 .rich-editor-tool:disabled { opacity: 0.35; cursor: not-allowed; }
-.rich-editor-format { min-width: 122px; padding: 0 9px; outline: 0; cursor: pointer; color-scheme: dark; }
-.rich-editor-format:hover, .rich-editor-format:focus { border-color: var(--border-gold); color: var(--ink); }
+.rich-editor-format {
+  min-width: 135px;
+  height: 32px;
+  padding: 0 10px;
+  outline: 0;
+  cursor: pointer;
+  color-scheme: dark;
+  color: #f5f0e8 !important;
+  background-color: #1a1612 !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.rich-editor-format:hover,
+.rich-editor-format:focus {
+  border-color: var(--gold) !important;
+  color: #fff !important;
+  background-color: #241e18 !important;
+}
+.rich-editor-format option {
+  background-color: #1a1612 !important;
+  color: #f5f0e8 !important;
+  padding: 8px 12px;
+  font-size: 13px;
+}
 
 .rich-editor-canvas,
 .rich-editor-source {
@@ -1126,7 +1150,11 @@ form.editor-layout > div:last-child { position: sticky; top: 110px; }
 }
 
 .rich-editor-canvas p { margin: 0 0 1.2em; }
-.rich-editor-canvas h2, .rich-editor-canvas h3, .rich-editor-canvas h4 { margin: 1.5em 0 0.65em; color: #fff; line-height: 1.25; }
+.rich-editor-canvas h1,
+.rich-editor-canvas h2,
+.rich-editor-canvas h3,
+.rich-editor-canvas h4 { margin: 1.5em 0 0.65em; color: #fff; line-height: 1.25; }
+.rich-editor-canvas h1 { font-size: 2.1rem; }
 .rich-editor-canvas h2 { font-size: 1.75rem; }
 .rich-editor-canvas h3 { font-size: 1.4rem; }
 .rich-editor-canvas h4 { font-size: 1.15rem; }

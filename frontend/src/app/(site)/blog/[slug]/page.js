@@ -74,11 +74,6 @@ export default async function BlogPost({ params }) {
   const postsResponse = await cmsFetch('/posts', { query: { limit: 100 } });
   const allPosts = (Array.isArray(postsResponse) ? postsResponse : []).filter((item) => !nonKitchenCopy.test(`${item.title || ''} ${item.excerpt || ''} ${(item.categories || []).map((entry) => entry.category?.name || entry.name || '').join(' ')}`));
   const recentPosts = allPosts.filter((item) => item.slug !== slug).slice(0, 4);
-  const currentIndex = allPosts.findIndex((item) => item.slug === slug);
-  const nextPost = currentIndex > 0 ? allPosts[currentIndex - 1] : null;
-  const prevPost = currentIndex >= 0 && currentIndex < allPosts.length - 1
-    ? allPosts[currentIndex + 1]
-    : null;
 
   const formattedDate = new Date(post.publishedAt || post.createdAt).toLocaleDateString('en-US', {
     month: 'long',
@@ -102,17 +97,12 @@ export default async function BlogPost({ params }) {
         />
       )}
       
-      {/* Hero Header Section */}
-      <section className="blog-hero" style={{ position: 'relative' }}>
-        {post.featuredImage && (
-          <img src={post.featuredImage} className="blog-hero-image" alt={post.title} />
-        )}
-        <div className="overlay" style={{ background: 'rgba(0,0,0,0.68)', position: 'absolute', inset: 0 }}></div>
-        
-        <div className="container relative-z2" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%', paddingBlock: '50px' }}>
+      {/* Header Section — clean simple typography & breadcrumb centered */}
+      <section className="blog-hero">
+        <div className="container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', height: 'auto', paddingBlock: '14px 16px' }}>
           
           {/* Structured Visual Breadcrumb Bar */}
-          <nav aria-label="Breadcrumb" className="blog-breadcrumbs" itemScope itemType="https://schema.org/BreadcrumbList" style={{ color: 'var(--color-gold, #c5a059)', fontSize: '0.85rem', letterSpacing: '1px', fontWeight: 600, marginBottom: '10px' }}>
+          <nav aria-label="Breadcrumb" className="blog-breadcrumbs" itemScope itemType="https://schema.org/BreadcrumbList" style={{ color: 'var(--color-gold, #c5a059)', fontSize: '0.8rem', letterSpacing: '1px', fontWeight: 600, paddingTop: '32px', marginBottom: '10px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             <span itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
               <Link href="/" itemProp="item" style={{ color: '#c5a059', textDecoration: 'none' }}>
                 <span itemProp="name">HOME</span>
@@ -133,11 +123,11 @@ export default async function BlogPost({ params }) {
             </span>
           </nav>
 
-          <h1 className="blog-title-large" style={{ color: '#fff', fontSize: 'clamp(2rem, 4vw, 3.2rem)', margin: '12px 0 16px', fontWeight: 'bold', lineHeight: '1.2' }}>
+          <h1 className="blog-title-large" style={{ color: '#fff', fontSize: 'clamp(1.45rem, 2.3vw, 2.15rem)', margin: '6px auto 14px', maxWidth: '880px', fontWeight: 'bold', lineHeight: '1.28', textAlign: 'center' }}>
             {post.title}
           </h1>
 
-          <div className="post-meta-refined" style={{ display: 'flex', gap: '20px', color: '#bbb', fontSize: '0.88rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="post-meta-refined" style={{ display: 'flex', gap: '18px', color: '#bbb', fontSize: '0.84rem', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', margin: '0 auto' }}>
             <span className="date" style={{ display: 'flex', alignItems: 'center' }}>
               <SvgIcon name="calendar" size={16} style={{ marginRight: '6px', color: '#c5a059' }} />{formattedDate}
             </span>
@@ -152,7 +142,7 @@ export default async function BlogPost({ params }) {
       </section>
 
       {/* Main Content Area with Sticky Sidebar */}
-      <div className="container" style={{ paddingBlock: '60px' }}>
+      <div className="container" style={{ paddingBlock: '32px 60px' }}>
         <div className="blog-details-layout">
           
           {/* Left Main Article Column */}
@@ -185,26 +175,7 @@ export default async function BlogPost({ params }) {
                 </div>
               </div>
 
-              {/* Prev / Next Article Navigation */}
-              <nav className="post-navigation-system" aria-label="Stories navigation" style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: '40px', paddingTop: '28px', gap: '20px' }}>
-                <div className="nav-system-column" style={{ flex: 1 }}>
-                  {prevPost && (
-                    <Link href={`/blog/${prevPost.slug}`} className="nav-system-item prev-post" style={{ display: 'block', textDecoration: 'none' }}>
-                      <span className="nav-system-label" style={{ display: 'block', fontSize: '0.78rem', color: '#c5a059', letterSpacing: '1px', fontWeight: 600 }}>← PREVIOUS STORY</span>
-                      <div className="nav-system-title" style={{ fontSize: '0.95rem', color: '#fff', marginTop: '4px', fontWeight: 'bold' }}>{prevPost.title}</div>
-                    </Link>
-                  )}
-                </div>
 
-                <div className="nav-system-column" style={{ flex: 1, textAlign: 'right' }}>
-                  {nextPost && (
-                    <Link href={`/blog/${nextPost.slug}`} className="nav-system-item next-post" style={{ display: 'block', textDecoration: 'none' }}>
-                      <span className="nav-system-label" style={{ display: 'block', fontSize: '0.78rem', color: '#c5a059', letterSpacing: '1px', fontWeight: 600 }}>NEXT STORY →</span>
-                      <div className="nav-system-title" style={{ fontSize: '0.95rem', color: '#fff', marginTop: '4px', fontWeight: 'bold' }}>{nextPost.title}</div>
-                    </Link>
-                  )}
-                </div>
-              </nav>
             </div>
           </article>
 

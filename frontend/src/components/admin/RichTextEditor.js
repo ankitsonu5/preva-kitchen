@@ -101,17 +101,63 @@ const RichTextEditor = forwardRef(function RichTextEditor(
     return true;
   };
 
+  const updateCurrentBlockType = () => {
+    const selection = window.getSelection();
+    if (!selection?.rangeCount || !editorRef.current?.contains(selection.anchorNode)) return;
+    let node = selection.anchorNode;
+    if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+    while (node && node !== editorRef.current) {
+      const tag = node.tagName?.toLowerCase();
+      if (['h1', 'h2', 'h3', 'h4', 'blockquote', 'p'].includes(tag)) {
+        setBlockType(tag);
+        return;
+      }
+      node = node.parentElement;
+    }
+    setBlockType('p');
+  };
+
   const run = (command, commandValue = null) => {
     if (sourceMode) return;
     editorRef.current?.focus();
+    restoreSelection();
     document.execCommand(command, false, commandValue);
     rememberSelection();
+    updateCurrentBlockType();
     emit();
   };
 
   const setBlock = (tag) => {
+    if (sourceMode) return;
     setBlockType(tag);
-    run('formatBlock', `<${tag}>`);
+    editorRef.current?.focus();
+    restoreSelection();
+
+    const selection = window.getSelection();
+    if (selection?.rangeCount && editorRef.current?.contains(selection.anchorNode)) {
+      let node = selection.anchorNode;
+      if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+      const bq = node?.closest?.('blockquote');
+      if (bq && tag !== 'blockquote') {
+        const replacement = document.createElement(tag);
+        replacement.innerHTML = bq.innerHTML;
+        bq.parentNode?.replaceChild(replacement, bq);
+        rememberSelection();
+        emit();
+        return;
+      }
+    }
+
+    try {
+      const ok = document.execCommand('formatBlock', false, `<${tag}>`);
+      if (!ok) {
+        document.execCommand('formatBlock', false, tag);
+      }
+    } catch {
+      document.execCommand('formatBlock', false, tag);
+    }
+    rememberSelection();
+    emit();
   };
 
   const insertHtml = (html) => {
@@ -124,6 +170,7 @@ const RichTextEditor = forwardRef(function RichTextEditor(
     editorRef.current?.focus();
     restoreSelection();
     document.execCommand('insertHTML', false, html);
+    rememberSelection();
     emit();
   };
 
@@ -237,9 +284,11 @@ const RichTextEditor = forwardRef(function RichTextEditor(
             aria-label="Text style"
             value={blockType}
             disabled={sourceMode}
+            onMouseDown={rememberSelection}
             onChange={(event) => setBlock(event.target.value)}
           >
             <option value="p">Paragraph</option>
+            <option value="h1">Heading 1</option>
             <option value="h2">Heading 2</option>
             <option value="h3">Heading 3</option>
             <option value="h4">Heading 4</option>
@@ -305,8 +354,9 @@ const RichTextEditor = forwardRef(function RichTextEditor(
           aria-label="Post content"
           data-placeholder="Start writing your story…"
           onInput={emit}
-          onKeyUp={rememberSelection}
-          onMouseUp={rememberSelection}
+          onKeyUp={() => { rememberSelection(); updateCurrentBlockType(); }}
+          onMouseUp={() => { rememberSelection(); updateCurrentBlockType(); }}
+          onSelect={() => { rememberSelection(); updateCurrentBlockType(); }}
           onBlur={rememberSelection}
         />
       )}

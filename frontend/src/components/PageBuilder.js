@@ -10,6 +10,7 @@ import GoogleReviewsSection from './sections/GoogleReviewsSection';
 import NewsletterSection from './sections/NewsletterSection';
 import SvgIcon from './SvgIcon';
 import { showSuccess } from '../lib/swal';
+import { rewriteLegacyBlogLinks } from '../lib/blog-links';
 
 export default function PageBuilder({ sections = [], fallbackContent = '' }) {
   if (!sections || !Array.isArray(sections) || sections.length === 0) {
@@ -19,7 +20,7 @@ export default function PageBuilder({ sections = [], fallbackContent = '' }) {
         <div className="blog-main-content" style={{ maxWidth: '900px', margin: '0 auto' }}>
           <article className="post-content-inner">
             <div className="luxury-divider" style={{ width: '60px', height: '2px', background: '#c5a059', margin: '20px auto 40px' }}></div>
-            <div className="post-main-content" style={{ color: '#ccc', fontSize: '1.1rem', lineHeight: '1.8' }} dangerouslySetInnerHTML={{ __html: fallbackContent }} />
+            <div className="post-main-content" style={{ color: '#ccc', fontSize: '1.1rem', lineHeight: '1.8' }} dangerouslySetInnerHTML={{ __html: rewriteLegacyBlogLinks(fallbackContent) }} />
           </article>
         </div>
       </div>
