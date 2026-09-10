@@ -26,8 +26,8 @@ const CANONICAL_ORIGIN = getCanonicalOrigin();
 
 const restaurantGalleryImages = [
   {
-    src: '/asset/gallery/DIAMOND01.jpg',
-    caption: 'Meet the Preva Team'
+    src: '/asset/prevaclub/wp-content/uploads/2026/08/Preva-Burger-768x768.jpg',
+    caption: 'Preva Burger'
   },
   {
     src: '/asset/gallery/STEAK02.jpg',
