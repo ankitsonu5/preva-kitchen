@@ -41,7 +41,14 @@ export const publicHtml = (value) =>
   sanitizeHtml(value || '', {
     allowedTags: sanitizeHtml.defaults.allowedTags.concat([
       'img', 'h1', 'h2', 'table', 'caption', 'thead', 'tbody', 'tr', 'th', 'td',
-      'video', 'source', 'iframe', 'figure', 'figcaption'
+      'video', 'source', 'iframe', 'figure', 'figcaption',
+      // The FAQ accordion the editor inserts is built from <details>/<summary>
+      // (see RichTextEditor.js insertFaq) — without these, sanitize-html's
+      // default allowlist silently drops both tags on save, unwrapping their
+      // content into plain text and leaving the accordion with no questions,
+      // no numbering and no expand/collapse (only the surrounding
+      // .preva-faq-answer <div> — already an allowed tag — survives).
+      'details', 'summary'
     ]),
     allowedAttributes: {
       ...sanitizeHtml.defaults.allowedAttributes,
@@ -52,7 +59,10 @@ export const publicHtml = (value) =>
       source: ['src', 'type'],
       iframe: ['src', 'title', 'width', 'height', 'allow', 'allowfullscreen', 'loading'],
       td: ['colspan', 'rowspan'],
-      th: ['colspan', 'rowspan', 'scope']
+      th: ['colspan', 'rowspan', 'scope'],
+      // `open` keeps a per-item expanded state possible; `name` is what makes
+      // a set of <details> behave as a single-open-at-a-time group natively.
+      details: ['open', 'name']
     },
     allowedSchemes: ['http', 'https', 'mailto', 'tel'],
     allowedStyles: {

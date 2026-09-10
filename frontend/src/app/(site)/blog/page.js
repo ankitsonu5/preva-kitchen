@@ -129,7 +129,7 @@ export default function Blog() {
                       <div className="post-card-image-wrap">
                         {p.featuredImage ? (
                           <Link href={`/blog/${p.slug}`} onClick={(e) => e.stopPropagation()}>
-                            <img src={p.featuredImage} alt={p.title} className="post-card-img" />
+                            <img src={p.featuredImage} alt={p.featuredImageAlt || p.title} className="post-card-img" />
                           </Link>
                         ) : (
                           <Link href={`/blog/${p.slug}`} className="post-card-placeholder" onClick={(e) => e.stopPropagation()}>

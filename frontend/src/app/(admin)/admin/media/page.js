@@ -16,6 +16,8 @@ function toDataUrl(file) {
   });
 }
 
+const MEDIA_PAGE_SIZE = 20;
+
 export default function MediaLibrary() {
   const confirmAction = useConfirm();
   const [media, setMedia] = useState([]);
@@ -23,18 +25,30 @@ export default function MediaLibrary() {
   const [uploading, setUploading] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [search, setSearch] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [dragActive, setDragActive] = useState(false);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
-  
+
   const fileInputRef = useRef(null);
 
-  const fetchMedia = async () => {
+  const fetchMedia = async (requestedPage = 1, searchTerm = appliedSearch) => {
     setLoading(true);
     try {
-      const res = await api('/admin/media');
+      const params = new URLSearchParams({ page: String(requestedPage), limit: String(MEDIA_PAGE_SIZE) });
+      if (searchTerm.trim()) params.set('search', searchTerm.trim());
+      const res = await api(`/admin/media?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
-        setMedia(data);
+        const items = Array.isArray(data) ? data : (data?.items || []);
+        const pagination = data?.pagination || { page: requestedPage, total: items.length, totalPages: 1 };
+        setMedia(items);
+        setPage(pagination.page || requestedPage);
+        setTotal(pagination.total || items.length);
+        setTotalPages(pagination.totalPages || 1);
+        setAppliedSearch(searchTerm);
       }
     } catch (err) {
       console.error(err);
@@ -44,8 +58,11 @@ export default function MediaLibrary() {
   };
 
   useEffect(() => {
-    fetchMedia();
+    fetchMedia(1, '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const runSearch = () => fetchMedia(1, search);
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -102,7 +119,9 @@ export default function MediaLibrary() {
         if (!res.ok) throw new Error(data?.message || `Failed to upload ${file.name}.`);
         uploaded.push(...(Array.isArray(data) ? data : []));
       }
-      setMedia((prev) => [...uploaded, ...prev]);
+      setSearch('');
+      await fetchMedia(1, '');
+      if (uploaded[0]) setSelectedItem(uploaded[0]);
     } catch (err) {
       console.error(err);
       alert(err.message || 'Network upload failure.');
@@ -142,8 +161,10 @@ export default function MediaLibrary() {
     try {
       const res = await api(`/admin/media/${id}`, { method: 'DELETE' });
       if (res.ok) {
-        setMedia(media.filter(item => item.id !== id));
         setSelectedItem(null);
+        const remainingOnPage = media.filter(item => item.id !== id).length;
+        const targetPage = remainingOnPage === 0 && page > 1 ? page - 1 : page;
+        await fetchMedia(targetPage, appliedSearch);
       } else {
         alert('Could not delete media record.');
       }
@@ -159,15 +180,6 @@ export default function MediaLibrary() {
       alert('Failed to copy. URL: ' + url);
     });
   };
-
-  const filteredMedia = media.filter((item) => {
-    const term = search.toLowerCase();
-    return (
-      (item.title && item.title.toLowerCase().includes(term)) ||
-      (item.altText && item.altText.toLowerCase().includes(term)) ||
-      (item.url && item.url.toLowerCase().includes(term))
-    );
-  });
 
   return (
     <Shell>
@@ -210,26 +222,31 @@ export default function MediaLibrary() {
       {/* Search and Filters */}
       <div className="panel" style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '24px', padding: '16px' }}>
         <div style={{ flex: 1 }}>
-          <input 
-            className="input" 
-            placeholder="Search media files by title..." 
-            value={search} 
-            onChange={(e) => setSearch(e.target.value)} 
+          <input
+            className="input"
+            placeholder="Search media files by title, filename, alt text or caption…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); runSearch(); } }}
             style={{ margin: 0 }}
           />
         </div>
+        <button type="button" className="btn btn-secondary" onClick={runSearch}>Search</button>
+        {appliedSearch && (
+          <button type="button" className="btn btn-secondary" onClick={() => { setSearch(''); fetchMedia(1, ''); }}>Clear</button>
+        )}
       </div>
 
       {loading ? (
         <div className="panel"><LoadingSkeleton rows={5} /></div>
-      ) : filteredMedia.length === 0 ? (
+      ) : media.length === 0 ? (
         <div className="panel"><EmptyState icon={Images} title="No media found" description="Upload an image or change your search to see media here." action={<button className="btn" onClick={() => fileInputRef.current.click()}><Upload size={15} /> Upload media</button>} /></div>
       ) : viewMode === 'grid' ? (
         /* Grid Display Mode */
         <div className="media-grid">
-          {filteredMedia.map((item) => (
-            <div 
-              key={item.id} 
+          {media.map((item) => (
+            <div
+              key={item.id}
               className={`media-card ${selectedItem?.id === item.id ? 'selected' : ''}`}
               onClick={() => setSelectedItem(item)}
             >
@@ -252,7 +269,7 @@ export default function MediaLibrary() {
               </tr>
             </thead>
             <tbody>
-              {filteredMedia.map((item) => (
+              {media.map((item) => (
                 <tr key={item.id}>
                   <td>
                     <img 
@@ -284,6 +301,17 @@ export default function MediaLibrary() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {!loading && media.length > 0 && (
+        <div className="panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginTop: '20px', padding: '14px 16px' }}>
+          <span style={{ color: '#90a4ae', fontSize: '0.85rem' }}>{total} {total === 1 ? 'item' : 'items'}{appliedSearch ? ` matching "${appliedSearch}"` : ''}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button type="button" className="btn btn-secondary" disabled={loading || page <= 1} onClick={() => fetchMedia(page - 1, appliedSearch)}>← Prev</button>
+            <span style={{ color: '#90a4ae', fontSize: '0.85rem' }}>Page {page} of {totalPages}</span>
+            <button type="button" className="btn btn-secondary" disabled={loading || page >= totalPages} onClick={() => fetchMedia(page + 1, appliedSearch)}>Next →</button>
+          </div>
         </div>
       )}
 

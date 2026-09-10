@@ -17,6 +17,7 @@ const MANAGE = ['SUPER_ADMIN', 'ADMIN'];
 const CAREERS = ['SUPER_ADMIN', 'ADMIN', 'CAREERS_MANAGER'];
 
 const slug = (value) => slugify(String(value || ''), { lower: true, strict: true });
+const escapeRegex = (value) => String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /* ══════════════════════════════════════════════════════════════════════════
    Dashboard
@@ -139,8 +140,9 @@ function contentPayload(body, user) {
     body: publicHtml(body?.body ?? body?.content),
     sections: (Array.isArray(body?.sections) ? body.sections : []).slice(0, 80),
     featuredImage: cleanText(body?.featuredImage, 2000),
-    categoryIds: (Array.isArray(body?.categoryIds) ? body.categoryIds : []).map(String).slice(0, 20),
-    tagIds: (Array.isArray(body?.tagIds) ? body.tagIds : []).map(String).slice(0, 40),
+    featuredImageAlt: cleanText(body?.featuredImageAlt, 300),
+    categoryIds: [...new Set((Array.isArray(body?.categoryIds) ? body.categoryIds : []).map(String).filter((id) => /^[a-f0-9]{24}$/i.test(id)))].slice(0, 20),
+    tagIds: [...new Set((Array.isArray(body?.tagIds) ? body.tagIds : []).map(String).filter((id) => /^[a-f0-9]{24}$/i.test(id)))].slice(0, 40),
     seoTitle: cleanText(body?.seoTitle, 250),
     seoDescription: cleanText(body?.seoDescription, 400),
     ogTitle: cleanText(body?.ogTitle, 250),
@@ -409,6 +411,9 @@ resource({
 
 resource({
   path: 'tags', collection: 'tags', entity: 'TAG', unique: 'slug',
+  // Matches WordPress: authors can create post tags on the fly from the
+  // editor even though creating categories still needs an editor/admin role.
+  roles: AUTHOR,
   build: (body) => {
     const name = cleanText(body?.name, 120);
     if (!name) throw badRequest('A tag name is required.');
@@ -765,12 +770,31 @@ del('/admin/users/:id', { auth: true, roles: MANAGE }, async (ctx) => {
 
 get('/admin/media', { auth: true }, async ({ query }) => {
   const media = await col('media');
-  const limit = Math.min(Number(query.limit) || 1500, 1500);
-  const rows = await media.find().sort({ createdAt: -1 }).limit(limit).toArray();
-  return rows.map((row) => {
+  const wantsPagination = query.page !== undefined || query.paginated === 'true';
+  const limit = Math.max(1, Math.min(Number(query.limit) || (wantsPagination ? 20 : 1500), 1500));
+  const page = Math.max(1, Number(query.page) || 1);
+  const search = cleanText(query.search, 100);
+  const filter = search ? {
+    $or: ['title', 'filename', 'altText', 'caption'].map((field) => ({
+      [field]: { $regex: escapeRegex(search), $options: 'i' }
+    }))
+  } : {};
+  const total = wantsPagination ? await media.countDocuments(filter) : 0;
+  const rows = await media.find(filter).sort({ createdAt: -1 }).skip(wantsPagination ? (page - 1) * limit : 0).limit(limit).toArray();
+  const items = rows.map((row) => {
     const { data, ...safe } = row;
     return serialize(safe);
   });
+  if (!wantsPagination) return items;
+  return {
+    items,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / limit))
+    }
+  };
 });
 
 const IMAGE_MEDIA_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']);
@@ -802,7 +826,8 @@ post('/admin/media/upload', { auth: true, roles: AUTHOR }, async (ctx) => {
       filename,
       title: cleanText(file?.title, 180) || filename.replace(/\.[^.]+$/, ''),
       altText: cleanText(file?.altText, 200),
-      caption: '',
+      caption: cleanText(file?.caption, 500),
+      description: cleanText(file?.description, 1000),
       mimeType,
       size: bytes.length,
       data: bytes,
@@ -829,11 +854,14 @@ put('/admin/media/:id', { auth: true, roles: AUTHOR }, async (ctx) => {
     altText: cleanText(ctx.body?.altText ?? ctx.body?.alt, 200),
     title: cleanText(ctx.body?.title, 200),
     caption: cleanText(ctx.body?.caption, 500),
+    description: cleanText(ctx.body?.description, 1000),
     updatedAt: new Date()
   };
   const changed = await media.updateOne({ _id: id }, { $set: update });
   if (!changed.matchedCount) throw notFound('Media not found.');
-  return { ok: true };
+  const current = await media.findOne({ _id: id });
+  const { data, ...safe } = current;
+  return serialize(safe);
 });
 
 del('/admin/media/:id', { auth: true, roles: WRITE }, async (ctx) => {

@@ -616,6 +616,7 @@ body:has(.single-post-luxury) {
   border-radius: 16px !important;
   background: rgba(255, 255, 255, 0.025) !important;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+  counter-reset: preva-faq;
 }
 
 .post-main-content .preva-faq-title,
@@ -646,11 +647,13 @@ body:has(.single-post-luxury) {
 
 .post-main-content .preva-faq-question,
 .single-post-luxury .post-main-content .preva-faq-question {
+  counter-increment: preva-faq;
+  position: relative !important;
   display: block !important;
-  padding: 14px 18px !important;
-  color: #e8d49d !important;
-  font-weight: 600 !important;
-  font-size: 1rem !important;
+  padding: 16px 50px 16px 18px !important;
+  color: #f4e2ac !important;
+  font-weight: 700 !important;
+  font-size: 1.12rem !important;
   cursor: pointer !important;
   background: rgba(255, 255, 255, 0.02) !important;
   list-style: none !important;
@@ -664,19 +667,42 @@ body:has(.single-post-luxury) {
   display: none !important;
 }
 
+/* "Q1 — " label, auto-numbered so it stays correct if questions are
+   reordered or added — no need to bake the number into saved HTML. */
 .post-main-content .preva-faq-question::before,
 .single-post-luxury .post-main-content .preva-faq-question::before {
-  content: '▸' !important;
-  display: inline-block !important;
-  margin-right: 10px !important;
-  transition: transform 0.25s ease !important;
-  color: rgba(197, 160, 89, 0.7) !important;
-  font-size: 1.1em;
+  content: 'Q' counter(preva-faq) ' — ' !important;
+  color: #c5a059 !important;
+  font-weight: 800 !important;
 }
 
-.post-main-content .preva-faq-item[open] .preva-faq-question::before,
-.single-post-luxury .post-main-content .preva-faq-item[open] .preva-faq-question::before {
-  transform: rotate(90deg) !important;
+/* "+" that rotates into a "×" when its answer is open — replaces the old
+   ▸ triangle marker with the plus-button look that was asked for. */
+.post-main-content .preva-faq-question::after,
+.single-post-luxury .post-main-content .preva-faq-question::after {
+  content: '+' !important;
+  position: absolute !important;
+  right: 18px !important;
+  top: 50% !important;
+  width: 22px !important;
+  height: 22px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 1px solid rgba(197, 160, 89, 0.4) !important;
+  border-radius: 50% !important;
+  color: #c5a059 !important;
+  font-size: 1rem !important;
+  font-weight: 400 !important;
+  line-height: 1 !important;
+  transform: translateY(-50%) !important;
+  transition: transform 0.25s ease, background 0.2s ease !important;
+}
+
+.post-main-content .preva-faq-item[open] .preva-faq-question::after,
+.single-post-luxury .post-main-content .preva-faq-item[open] .preva-faq-question::after {
+  transform: translateY(-50%) rotate(135deg) !important;
+  background: rgba(197, 160, 89, 0.16) !important;
 }
 
 .post-main-content .preva-faq-question:hover,
@@ -689,7 +715,8 @@ body:has(.single-post-luxury) {
 .single-post-luxury .post-main-content .preva-faq-answer {
   padding: 12px 18px 18px !important;
   color: #c0bfb8 !important;
-  font-size: 0.95rem !important;
+  font-size: 0.92rem !important;
+  font-weight: 400 !important;
   line-height: 1.7 !important;
   border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
   background: rgba(0, 0, 0, 0.12) !important;
@@ -699,4 +726,11 @@ body:has(.single-post-luxury) {
 .single-post-luxury .post-main-content .preva-faq-answer p {
   margin: 0 !important;
   color: #c0bfb8 !important;
+}
+
+.post-main-content .preva-faq-answer p::before,
+.single-post-luxury .post-main-content .preva-faq-answer p::before {
+  content: 'Ans — ' !important;
+  color: #c5a059 !important;
+  font-weight: 700 !important;
 }

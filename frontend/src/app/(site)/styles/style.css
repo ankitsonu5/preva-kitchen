@@ -1718,6 +1718,11 @@ textarea:focus {
     display: block;
 }
 
+/* z-index is mirrored around the center card (3-2-1-2-3, not 1-2-3-4-5) so
+   the fan is symmetric — otherwise the rightmost card sits on top of every
+   other card while the leftmost sinks under its neighbor, which is exactly
+   why the two end cards used to look inconsistent with each other and with
+   the evenly-overlapping middle ones. */
 .stacked-card:nth-child(1) {
     transform: rotate(-8deg);
     z-index: 1;
@@ -1735,12 +1740,12 @@ textarea:focus {
 
 .stacked-card:nth-child(4) {
     transform: rotate(4deg);
-    z-index: 4;
+    z-index: 2;
 }
 
 .stacked-card:nth-child(5) {
     transform: rotate(8deg);
-    z-index: 5;
+    z-index: 1;
 }
 
 .stacked-card {
@@ -9891,6 +9896,39 @@ a.preva-order-trigger:hover {
   .stacked-card:nth-child(3) { transform: translateX(0) rotate(0) scale(1); }
   .stacked-card:nth-child(4) { transform: translateX(95px) rotate(9deg) scale(0.96); }
   .stacked-card:nth-child(5) { transform: translateX(190px) rotate(18deg) scale(0.92); }
+}
+
+/* Phone widths: the 900px fan above is still wider than the viewport itself
+   (translateX + card width overflows a ~390px screen even though the
+   container is visually scale()'d down — scale() doesn't shrink the actual
+   layout box, so it was causing real horizontal overflow/scroll on mobile).
+   Use much smaller real offsets instead of relying on scale. */
+@media (max-width: 640px) {
+  .stacked-cards-container { transform: none; height: 300px; }
+  .stacked-card { width: 148px; height: 216px; }
+  .stacked-card:nth-child(1) { transform: translateX(-98px) rotate(-14deg) scale(0.92); }
+  .stacked-card:nth-child(2) { transform: translateX(-49px) rotate(-7deg) scale(0.96); }
+  .stacked-card:nth-child(3) { transform: translateX(0) rotate(0) scale(1); }
+  .stacked-card:nth-child(4) { transform: translateX(49px) rotate(7deg) scale(0.96); }
+  .stacked-card:nth-child(5) { transform: translateX(98px) rotate(14deg) scale(0.92); }
+  .stacked-card:nth-child(1):hover { --fan-x: -98px; }
+  .stacked-card:nth-child(2):hover { --fan-x: -49px; }
+  .stacked-card:nth-child(4):hover { --fan-x: 49px; }
+  .stacked-card:nth-child(5):hover { --fan-x: 98px; }
+}
+
+/* Narrowest phones (SE-class, ~360px): even the 640px sizing above clips a
+   few px off both edges — shrink once more instead of trimming by feel. */
+@media (max-width: 400px) {
+  .stacked-card { width: 128px; height: 188px; }
+  .stacked-card:nth-child(1) { transform: translateX(-80px) rotate(-14deg) scale(0.92); }
+  .stacked-card:nth-child(2) { transform: translateX(-40px) rotate(-7deg) scale(0.96); }
+  .stacked-card:nth-child(4) { transform: translateX(40px) rotate(7deg) scale(0.96); }
+  .stacked-card:nth-child(5) { transform: translateX(80px) rotate(14deg) scale(0.92); }
+  .stacked-card:nth-child(1):hover { --fan-x: -80px; }
+  .stacked-card:nth-child(2):hover { --fan-x: -40px; }
+  .stacked-card:nth-child(4):hover { --fan-x: 40px; }
+  .stacked-card:nth-child(5):hover { --fan-x: 80px; }
 }
 
 /* Live Google Business reviews — matched to prevaclub.com */

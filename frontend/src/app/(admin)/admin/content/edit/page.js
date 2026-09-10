@@ -27,6 +27,12 @@ function editorSlug(value) {
     .slice(0, 180);
 }
 
+const MEDIA_PAGE_SIZE = 20;
+
+function uniqueIds(values = []) {
+  return [...new Set(values.map((value) => String(value || '')).filter(Boolean))];
+}
+
 /* ─── Section Block Template Registry ─────────────────────────────────────── */
 const SECTION_TEMPLATES = [
   /* ─ Layout ─ */
@@ -954,6 +960,7 @@ function EditContentForm() {
     excerpt: '',
     content: '',
     featuredImage: '',
+    featuredImageAlt: '',
     seoTitle: '',
     seoDescription: '',
     ogTitle: '',
@@ -979,7 +986,17 @@ function EditContentForm() {
   const [mediaModalOpen, setMediaModalOpen] = useState(false);
   const [mediaTarget, setMediaTarget] = useState('featuredImage'); // 'featuredImage' or 'ogImage'
   const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [mediaLoading, setMediaLoading] = useState(false);
+  const [mediaPage, setMediaPage] = useState(1);
+  const [mediaTotal, setMediaTotal] = useState(0);
+  const [mediaTotalPages, setMediaTotalPages] = useState(1);
+  const [mediaSearch, setMediaSearch] = useState('');
+  const [selectedMedia, setSelectedMedia] = useState(null);
+  const [savingMediaDetails, setSavingMediaDetails] = useState(false);
+  const [mediaMessage, setMediaMessage] = useState('');
   const [newTagInput, setNewTagInput] = useState('');
+  const [creatingTag, setCreatingTag] = useState(false);
+  const [tagMessage, setTagMessage] = useState('');
   const [catSearch, setCatSearch] = useState('');
   const [catCollapsed, setCatCollapsed] = useState(false);
   const [tagCollapsed, setTagCollapsed] = useState(false);
@@ -995,14 +1012,17 @@ function EditContentForm() {
   const [saving, setSaving] = useState(false);
   
   const richEditorRef = useRef(null);
+  // When save() swaps a brand-new post's URL to its real id, skip the
+  // id-triggered reload below — the form already holds what was just saved,
+  // so re-fetching would only flash the whole editor into a loading state.
+  const skipNextLoadRef = useRef(false);
 
   const fetchMetadata = async () => {
     try {
-      const [catsRes, tagsRes, pagesRes, mediaRes] = await Promise.all([
+      const [catsRes, tagsRes, pagesRes] = await Promise.all([
         api('/admin/categories'),
         api('/admin/tags'),
-        api('/admin/content?type=PAGE'),
-        api('/admin/media')
+        api('/admin/content?type=PAGE')
       ]);
 
       if (catsRes.ok) setCategories(await catsRes.json());
@@ -1011,7 +1031,6 @@ function EditContentForm() {
         const pagesData = await pagesRes.json();
         setPages(pagesData.filter(p => p.id !== id));
       }
-      if (mediaRes.ok) setMedia(await mediaRes.json());
     } catch (err) {
       console.error('Error fetching metadata:', err);
     }
@@ -1021,7 +1040,11 @@ function EditContentForm() {
     if (typeof window !== 'undefined') setSiteOrigin(window.location.origin);
     fetchMetadata();
     if (!id) return;
-    
+    if (skipNextLoadRef.current) {
+      skipNextLoadRef.current = false;
+      return;
+    }
+
     setLoading(true);
     api(`/admin/content/${id}`)
       .then(async (res) => {
@@ -1037,6 +1060,7 @@ function EditContentForm() {
           excerpt: row.excerpt || '',
           content: row.content || '',
           featuredImage: row.featuredImage || '',
+          featuredImageAlt: row.featuredImageAlt || '',
           seoTitle: row.seoTitle || '',
           seoDescription: row.seoDescription || '',
           ogTitle: row.ogTitle || '',
@@ -1050,8 +1074,14 @@ function EditContentForm() {
           parentPageId: row.parentPageId || '',
           sortOrder: row.sortOrder || 0,
           pageTemplate: row.pageTemplate || 'default',
-          categoryIds: (row.categories || []).map(c => c.category?.id).filter(Boolean),
-          tagIds: (row.tags || []).map(t => t.tag?.id).filter(Boolean),
+          categoryIds: uniqueIds([
+            ...(row.categoryIds || []),
+            ...(row.categories || []).map(c => c.category?.id || c.id || c.categoryId)
+          ]),
+          tagIds: uniqueIds([
+            ...(row.tagIds || []),
+            ...(row.tags || []).map(t => t.tag?.id || t.id || t.tagId)
+          ]),
           sections: row.sections || []
         });
         setLoading(false);
@@ -1082,28 +1112,136 @@ function EditContentForm() {
   };
 
   const handleTagToggle = (tagId, selected) => {
+    const normalizedId = String(tagId);
     setForm(prev => {
       const tagIds = selected
-        ? [...prev.tagIds, tagId]
-        : prev.tagIds.filter(id => id !== tagId);
+        ? uniqueIds([...prev.tagIds, normalizedId])
+        : prev.tagIds.filter(id => String(id) !== normalizedId);
       return { ...prev, tagIds };
     });
   };
 
-  const openMediaSelector = (targetField) => { setMediaTarget(targetField); setMediaModalOpen(true); };
-  const selectMediaItem = (url, alt = '') => {
+  const createAndSelectTag = async () => {
+    const name = newTagInput.trim();
+    if (!name || creatingTag) return;
+
+    const existing = tags.find((tag) => tag.name?.trim().toLowerCase() === name.toLowerCase());
+    if (existing) {
+      handleTagToggle(existing.id, true);
+      setNewTagInput('');
+      setTagMessage('Existing tag selected.');
+      return;
+    }
+
+    setCreatingTag(true);
+    setTagMessage('');
+    try {
+      const res = await api('/admin/tags', {
+        method: 'POST',
+        body: JSON.stringify({ name })
+      });
+      const created = await res.json().catch(() => null);
+      if (!res.ok || !created?.id) throw new Error(created?.message || 'Could not create tag.');
+      setTags(prev => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+      handleTagToggle(created.id, true);
+      setNewTagInput('');
+      setTagMessage('Tag created and selected.');
+    } catch (error) {
+      setTagMessage(error?.message || 'Could not create tag.');
+    } finally {
+      setCreatingTag(false);
+    }
+  };
+
+  const fetchMediaPage = async (requestedPage = 1, search = mediaSearch) => {
+    setMediaLoading(true);
+    setMediaMessage('');
+    try {
+      const params = new URLSearchParams({
+        page: String(requestedPage),
+        limit: String(MEDIA_PAGE_SIZE)
+      });
+      if (search.trim()) params.set('search', search.trim());
+      const res = await api(`/admin/media?${params.toString()}`);
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.message || 'Could not load media.');
+
+      const items = Array.isArray(data) ? data : (data?.items || []);
+      const pagination = data?.pagination || {
+        page: requestedPage,
+        total: items.length,
+        totalPages: 1
+      };
+      setMedia(items);
+      setMediaPage(pagination.page || requestedPage);
+      setMediaTotal(pagination.total || 0);
+      setMediaTotalPages(pagination.totalPages || 1);
+    } catch (error) {
+      setMedia([]);
+      setMediaMessage(error?.message || 'Could not load media.');
+    } finally {
+      setMediaLoading(false);
+    }
+  };
+
+  const openMediaSelector = (targetField) => {
+    setMediaTarget(targetField);
+    setMediaSearch('');
+    setSelectedMedia(null);
+    setMediaModalOpen(true);
+    fetchMediaPage(1, '');
+  };
+
+  const selectMediaItem = (item) => {
+    const url = item?.url || '';
+    const alt = item?.altText || '';
+    if (!url) return;
     if (mediaTarget === 'content') {
-      richEditorRef.current?.insertImage(url, alt);
+      richEditorRef.current?.insertImage(url, alt, item?.caption || '');
     } else if (mediaTarget === 'featuredImage') {
       setForm(prev => ({
         ...prev,
         featuredImage: url,
+        featuredImageAlt: alt,
         ogImage: url // Automatically set Social (OG) Image to match Featured Image
       }));
     } else {
       setForm(prev => ({ ...prev, [mediaTarget]: url }));
     }
     setMediaModalOpen(false);
+  };
+
+  const saveSelectedMediaDetails = async () => {
+    if (!selectedMedia?.id) return selectedMedia;
+    setSavingMediaDetails(true);
+    setMediaMessage('');
+    try {
+      const res = await api(`/admin/media/${selectedMedia.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          title: selectedMedia.title || '',
+          altText: selectedMedia.altText || '',
+          caption: selectedMedia.caption || '',
+          description: selectedMedia.description || ''
+        })
+      });
+      const updated = await res.json().catch(() => null);
+      if (!res.ok || !updated?.id) throw new Error(updated?.message || 'Could not save image details.');
+      setSelectedMedia(updated);
+      setMedia(prev => prev.map(item => item.id === updated.id ? updated : item));
+      setMediaMessage('Image details saved.');
+      return updated;
+    } catch (error) {
+      setMediaMessage(error?.message || 'Could not save image details.');
+      return null;
+    } finally {
+      setSavingMediaDetails(false);
+    }
+  };
+
+  const useSelectedMedia = async () => {
+    const saved = await saveSelectedMediaDetails();
+    if (saved) selectMediaItem(saved);
   };
 
   const handleFileUpload = async (e) => {
@@ -1121,10 +1259,13 @@ function EditContentForm() {
       });
       if (res.ok) {
         const uploaded = await res.json();
-        const uploadedUrl = Array.isArray(uploaded) ? uploaded[0]?.url : uploaded?.url;
-        if (uploadedUrl) {
-          setMedia(prev => [Array.isArray(uploaded) ? uploaded[0] : uploaded, ...prev]);
-          selectMediaItem(uploadedUrl);
+        const uploadedItem = Array.isArray(uploaded) ? uploaded[0] : uploaded;
+        if (uploadedItem?.url) {
+          setMediaSearch('');
+          setSelectedMedia(uploadedItem);
+          await fetchMediaPage(1, '');
+          setSelectedMedia(uploadedItem);
+          setMediaMessage('Upload complete. Add alt text, then use the image.');
         }
       } else {
         alert('Could not upload file.');
@@ -1163,6 +1304,12 @@ function EditContentForm() {
 
   const save = async (e) => {
     e.preventDefault();
+    // A "submit" event bubbles, so a submit fired by a dialog nested inside
+    // this form (link/table/CTA/FAQ insert in the rich text editor) would
+    // reach this handler too and wrongly save/create a post. Those dialogs
+    // stop propagation themselves, but bail out here as well in case a future
+    // one forgets to.
+    if (e.target !== e.currentTarget) return;
     setSaving(true);
     setMessage('');
     
@@ -1173,8 +1320,14 @@ function EditContentForm() {
     try {
       const res = await api(url, { method, body: JSON.stringify(payload) });
       if (res.ok) {
-        setMessage('Saved successfully. Redirecting…');
-        setTimeout(() => router.push(`/admin/content?type=${type}`), 600);
+        const savedItem = await res.json().catch(() => null);
+        // Stay on the editor after saving (like WordPress) instead of bouncing
+        // back to the list — only swap the URL to the new id for a first save.
+        if (!id && savedItem?.id) {
+          skipNextLoadRef.current = true;
+          router.replace(`/admin/content/edit?id=${savedItem.id}&type=${type}`);
+        }
+        setMessage(form.status === 'PUBLISHED' ? 'Published successfully.' : 'Saved successfully.');
       } else {
         const error = await res.json().catch(() => null);
         setMessage(error?.message || 'Could not save content.');
@@ -1203,6 +1356,7 @@ function EditContentForm() {
         const savedItem = await saveRes.json();
         if (!targetId && savedItem?.id) {
           targetId = savedItem.id;
+          skipNextLoadRef.current = true;
           router.replace(`/admin/content/edit?id=${savedItem.id}&type=${type}`);
         }
 
@@ -1993,33 +2147,26 @@ function EditContentForm() {
                           style={{ margin: 0, minHeight: 34, fontSize: 12, flex: 1 }}
                           placeholder="Add new tag…"
                           value={newTagInput}
+                          disabled={creatingTag}
                           onChange={e => setNewTagInput(e.target.value)}
                           onKeyDown={e => {
                             if (e.key === 'Enter') {
                               e.preventDefault();
-                              const name = newTagInput.trim();
-                              if (!name) return;
-                              const fakeId = 'new-' + Date.now();
-                              setTags(prev => [...prev, { id: fakeId, name }]);
-                              setForm(prev => ({ ...prev, tagIds: [...prev.tagIds, fakeId] }));
-                              setNewTagInput('');
+                              createAndSelectTag();
                             }
                           }}
                         />
                         <button
                           type="button"
                           className="btn btn-secondary"
+                          disabled={creatingTag || !newTagInput.trim()}
                           style={{ minHeight: 34, padding: '0 14px', fontSize: 12, flexShrink: 0 }}
-                          onClick={() => {
-                            const name = newTagInput.trim();
-                            if (!name) return;
-                            const fakeId = 'new-' + Date.now();
-                            setTags(prev => [...prev, { id: fakeId, name }]);
-                            setForm(prev => ({ ...prev, tagIds: [...prev.tagIds, fakeId] }));
-                            setNewTagInput('');
-                          }}
-                        >Add</button>
+                          onClick={createAndSelectTag}
+                        >{creatingTag ? 'Adding…' : 'Add'}</button>
                       </div>
+                      {tagMessage && (
+                        <p style={{ margin: '8px 0 0', fontSize: 11.5, color: tagMessage.includes('Could not') ? '#ff7a7a' : '#81c784' }}>{tagMessage}</p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -2116,14 +2263,21 @@ function EditContentForm() {
 
       {/* Media Selector Overlay Modal */}
       {mediaModalOpen && (
-        <div className="modal-overlay" onClick={() => setMediaModalOpen(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '820px', display: 'flex', flexDirection: 'column', height: '80vh' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px', marginBottom: '16px' }}>
+        <div className="modal-overlay media-picker-overlay" onClick={() => setMediaModalOpen(false)}>
+          <div className="modal-content media-picker-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <div className="media-picker-header">
               <div>
                 <h3 style={{ margin: 0, color: '#fff', fontSize: '1.2rem' }}>🖼 Media Library</h3>
                 <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#888' }}>Select an existing image or upload a new one from your computer</p>
               </div>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <input
+                  className="input media-picker-search"
+                  placeholder="Search media…"
+                  value={mediaSearch}
+                  onChange={e => setMediaSearch(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); setSelectedMedia(null); fetchMediaPage(1, mediaSearch); } }}
+                />
                 <label className="btn" style={{ background: 'linear-gradient(135deg, #c9a84c 0%, #a68432 100%)', color: '#000', fontWeight: 'bold', cursor: 'pointer', margin: 0, padding: '7px 16px', fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                   {uploadingMedia ? 'Uploading...' : '📁 Upload from Desktop'}
                   <input type="file" accept="image/*" onChange={handleFileUpload} disabled={uploadingMedia} style={{ display: 'none' }} />
@@ -2131,28 +2285,107 @@ function EditContentForm() {
                 <button onClick={() => setMediaModalOpen(false)} style={{ background: 'rgba(255,255,255,0.06)', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', borderRadius: '6px', width: '32px', height: '32px' }}>✕</button>
               </div>
             </div>
-            
-            <div style={{ flex: 1, overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '12px', paddingRight: '4px' }}>
-              {media.length > 0 ? (
-                media.map(item => (
-                  <div 
-                    key={item.id || item.url} 
-                    className="media-card" 
-                    onClick={() => selectMediaItem(item.url, item.altText || item.title || '')}
-                    style={{ cursor: 'pointer', aspectRatio: '1', borderRadius: '8px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', position: 'relative' }}
-                  >
-                    <img src={item.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+
+            <div className="media-picker-body">
+              <div className="media-picker-grid">
+                {mediaLoading ? (
+                  <div style={{ color: '#888', gridColumn: '1/-1', textAlign: 'center', padding: '60px 20px' }}>Loading media…</div>
+                ) : media.length > 0 ? (
+                  media.map(item => (
+                    <div
+                      key={item.id || item.url}
+                      className={`media-card media-picker-card${selectedMedia?.id === item.id ? ' selected' : ''}`}
+                      onClick={() => { setSelectedMedia(item); setMediaMessage(''); }}
+                      style={{ cursor: 'pointer', aspectRatio: '1', borderRadius: '8px', overflow: 'hidden', position: 'relative' }}
+                    >
+                      <img src={item.url} alt={item.altText || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      {!item.altText && (
+                        <span className="media-picker-no-alt" title="Missing alt text">No alt text</span>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div style={{ color: '#888', gridColumn: '1/-1', textAlign: 'center', padding: '60px 20px' }}>
+                    <p style={{ fontSize: '1rem', color: '#aaa', marginBottom: '12px' }}>{mediaSearch ? 'No media files match your search.' : 'No media files uploaded yet.'}</p>
+                    <label className="btn" style={{ background: 'linear-gradient(135deg, #c9a84c 0%, #a68432 100%)', color: '#000', fontWeight: 'bold', cursor: 'pointer', padding: '8px 20px' }}>
+                      📁 Upload First Image from Desktop
+                      <input type="file" accept="image/*" onChange={handleFileUpload} disabled={uploadingMedia} style={{ display: 'none' }} />
+                    </label>
                   </div>
-                ))
-              ) : (
-                <div style={{ color: '#888', gridColumn: '1/-1', textAlign: 'center', padding: '60px 20px' }}>
-                  <p style={{ fontSize: '1rem', color: '#aaa', marginBottom: '12px' }}>No media files uploaded yet.</p>
-                  <label className="btn" style={{ background: 'linear-gradient(135deg, #c9a84c 0%, #a68432 100%)', color: '#000', fontWeight: 'bold', cursor: 'pointer', padding: '8px 20px' }}>
-                    📁 Upload First Image from Desktop
-                    <input type="file" accept="image/*" onChange={handleFileUpload} disabled={uploadingMedia} style={{ display: 'none' }} />
-                  </label>
+                )}
+              </div>
+
+              {selectedMedia && (
+                <div className="media-picker-details">
+                  <div className="media-picker-details-preview">
+                    <img src={selectedMedia.url} alt={selectedMedia.altText || ''} />
+                  </div>
+
+                  <label>Alternative Text</label>
+                  <input
+                    className="input"
+                    style={{ margin: 0 }}
+                    placeholder="Describe this image for screen readers & SEO"
+                    value={selectedMedia.altText || ''}
+                    onChange={e => setSelectedMedia(prev => ({ ...prev, altText: e.target.value }))}
+                  />
+
+                  <label style={{ marginTop: 10 }}>Title</label>
+                  <input
+                    className="input"
+                    style={{ margin: 0 }}
+                    value={selectedMedia.title || ''}
+                    onChange={e => setSelectedMedia(prev => ({ ...prev, title: e.target.value }))}
+                  />
+
+                  <label style={{ marginTop: 10 }}>Caption</label>
+                  <textarea
+                    className="input"
+                    style={{ margin: 0 }}
+                    rows={2}
+                    value={selectedMedia.caption || ''}
+                    onChange={e => setSelectedMedia(prev => ({ ...prev, caption: e.target.value }))}
+                  />
+
+                  {mediaMessage && (
+                    <p style={{ margin: '10px 0 0', fontSize: 11.5, color: mediaMessage.includes('Could not') ? '#ff7a7a' : '#81c784' }}>{mediaMessage}</p>
+                  )}
+
+                  <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                    <button
+                      type="button"
+                      className="btn"
+                      disabled={savingMediaDetails}
+                      style={{ flex: 1, background: 'linear-gradient(135deg, #c9a84c 0%, #a68432 100%)', color: '#000', fontWeight: 600 }}
+                      onClick={useSelectedMedia}
+                    >{savingMediaDetails ? 'Saving…' : 'Use this image'}</button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setSelectedMedia(null)}
+                    >Cancel</button>
+                  </div>
                 </div>
               )}
+            </div>
+
+            <div className="media-picker-footer">
+              <span>{mediaTotal} {mediaTotal === 1 ? 'item' : 'items'}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={mediaLoading || mediaPage <= 1}
+                  onClick={() => { setSelectedMedia(null); fetchMediaPage(mediaPage - 1, mediaSearch); }}
+                >← Prev</button>
+                <span>Page {mediaPage} of {mediaTotalPages}</span>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={mediaLoading || mediaPage >= mediaTotalPages}
+                  onClick={() => { setSelectedMedia(null); fetchMediaPage(mediaPage + 1, mediaSearch); }}
+                >Next →</button>
+              </div>
             </div>
           </div>
         </div>

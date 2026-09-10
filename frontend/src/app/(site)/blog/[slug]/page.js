@@ -150,7 +150,7 @@ export default async function BlogPost({ params }) {
             {/* FEATURED IMAGE */}
             {post.featuredImage && (
               <div className="single-featured-image-wrap" style={{ marginBottom: '35px', borderRadius: '14px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}>
-                <img src={post.featuredImage} className="single-featured-image" alt={post.title} style={{ width: '100%', height: 'auto', display: 'block' }} />
+                <img src={post.featuredImage} className="single-featured-image" alt={post.featuredImageAlt || post.title} style={{ width: '100%', height: 'auto', display: 'block' }} />
               </div>
             )}
 
@@ -210,7 +210,7 @@ export default async function BlogPost({ params }) {
                     return (
                       <Link key={rp.id || rp.slug} href={`/blog/${rp.slug}`} className="recent-post-item">
                         {rp.featuredImage ? (
-                          <img src={rp.featuredImage} alt="" className="recent-post-thumb" />
+                          <img src={rp.featuredImage} alt={rp.featuredImageAlt || rp.title || ''} className="recent-post-thumb" />
                         ) : (
                           <div className="recent-post-thumb" style={{ display: 'grid', placeItems: 'center', color: '#666' }}>
                             <SvgIcon name="camera" size={18} />

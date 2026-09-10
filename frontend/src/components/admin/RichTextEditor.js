@@ -78,6 +78,9 @@ const RichTextEditor = forwardRef(function RichTextEditor(
 ) {
   const editorRef = useRef(null);
   const savedRangeRef = useRef(null);
+  // Set by openLink when the cursor was already inside an <a> — lets
+  // applyLink update that link in place and lets the dialog offer "Remove link".
+  const editingLinkRef = useRef(null);
   const [sourceMode, setSourceMode] = useState(false);
   const [source, setSource] = useState(value);
   const [blockType, setBlockType] = useState('p');
@@ -91,14 +94,17 @@ const RichTextEditor = forwardRef(function RichTextEditor(
   const [tableHeader, setTableHeader] = useState(true);
   const [tableCaption, setTableCaption] = useState('');
   const [ctaOpen, setCtaOpen] = useState(false);
-  const [ctaHeadline, setCtaHeadline] = useState('Plan Your Next Dining Experience');
-  const [ctaDescription, setCtaDescription] = useState('Reserve your table now or browse our handcrafted menu to explore Chef Preva’s latest culinary creations.');
-  const [ctaBtn1Text, setCtaBtn1Text] = useState('Reserve a Table');
-  const [ctaBtn1Url, setCtaBtn1Url] = useState('/#prv-reservations');
-  const [ctaBtn2Text, setCtaBtn2Text] = useState('View Menu');
-  const [ctaBtn2Url, setCtaBtn2Url] = useState('/menu');
-  const [ctaBtn3Text, setCtaBtn3Text] = useState('Contact Us');
-  const [ctaBtn3Url, setCtaBtn3Url] = useState('/contact');
+  // Starts blank — this is a "build your own CTA" form, not a pre-filled
+  // template. The Quick Presets pills (below) are the opt-in shortcut for
+  // canned copy; the fields themselves only carry example placeholder text.
+  const [ctaHeadline, setCtaHeadline] = useState('');
+  const [ctaDescription, setCtaDescription] = useState('');
+  const [ctaBtn1Text, setCtaBtn1Text] = useState('');
+  const [ctaBtn1Url, setCtaBtn1Url] = useState('');
+  const [ctaBtn2Text, setCtaBtn2Text] = useState('');
+  const [ctaBtn2Url, setCtaBtn2Url] = useState('');
+  const [ctaBtn3Text, setCtaBtn3Text] = useState('');
+  const [ctaBtn3Url, setCtaBtn3Url] = useState('');
   const [faqOpen, setFaqOpen] = useState(false);
   const [faqTitle, setFaqTitle] = useState('Frequently Asked Questions');
   const [faqItems, setFaqItems] = useState([
@@ -110,14 +116,31 @@ const RichTextEditor = forwardRef(function RichTextEditor(
     setSource(value || '');
     if (!sourceMode && editorRef.current && document.activeElement !== editorRef.current) {
       if (editorRef.current.innerHTML !== (value || '')) editorRef.current.innerHTML = value || '';
+      decorateDeletableBlocks();
     }
   }, [value, sourceMode]);
 
   const lastActiveBlockRef = useRef(null);
   const MARKER_ID = 'preva-editor-insert-marker';
 
+  // The hover "×" on CTA/FAQ/table blocks (see decorateDeletableBlocks) is
+  // editor-only chrome, injected as real DOM nodes — strip it from a clone
+  // rather than the live editor before reading HTML out for saving or for
+  // the Edit HTML view, so it never leaks into saved/published content.
+  const readCleanHtml = () => {
+    if (!editorRef.current) return '';
+    if (!editorRef.current.querySelector('.rich-editor-block-delete')) return editorRef.current.innerHTML || '';
+    const clone = editorRef.current.cloneNode(true);
+    clone.querySelectorAll('.rich-editor-block-delete').forEach((btn) => btn.remove());
+    clone.querySelectorAll('[data-block-controls]').forEach((el) => {
+      el.removeAttribute('data-block-controls');
+      el.classList.remove('rich-editor-removable-block');
+    });
+    return clone.innerHTML || '';
+  };
+
   const emit = () => {
-    const html = editorRef.current?.innerHTML || '';
+    const html = readCleanHtml();
     setSource(html);
     onChange(html);
   };
@@ -180,6 +203,37 @@ const RichTextEditor = forwardRef(function RichTextEditor(
   const removeMarker = () => {
     const marker = editorRef.current?.querySelector(`#${MARKER_ID}`);
     if (marker) marker.remove();
+  };
+
+  // CTA cards, FAQ accordions and tables are inserted as a few nested tags,
+  // not one draggable "block" — there's no obvious way to select and delete
+  // the whole thing by hand. Give each one a small hover "×" instead, wired
+  // with a real DOM listener (not an inline HTML attribute) so it works
+  // however the block got into the document — inserted just now, loaded
+  // from a saved post, or pasted in via Edit HTML.
+  const DELETABLE_BLOCK_SELECTOR = '.wp-block-group, .preva-faq-block, .blog-table-wrap';
+
+  const decorateDeletableBlocks = () => {
+    if (!editorRef.current) return;
+    editorRef.current.querySelectorAll(DELETABLE_BLOCK_SELECTOR).forEach((block) => {
+      if (block.dataset.blockControls) return;
+      block.dataset.blockControls = '1';
+      block.classList.add('rich-editor-removable-block');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'rich-editor-block-delete';
+      btn.setAttribute('aria-label', 'Remove this block');
+      btn.setAttribute('contenteditable', 'false');
+      btn.textContent = '×';
+      btn.addEventListener('mousedown', (evt) => evt.preventDefault());
+      btn.addEventListener('click', (evt) => {
+        evt.preventDefault();
+        evt.stopPropagation();
+        block.remove();
+        emit();
+      });
+      block.insertBefore(btn, block.firstChild);
+    });
   };
 
   const updateCurrentBlockType = () => {
@@ -414,14 +468,16 @@ const RichTextEditor = forwardRef(function RichTextEditor(
     selection?.addRange(newRange);
     savedRangeRef.current = newRange.cloneRange();
 
+    decorateDeletableBlocks();
     emit();
   };
 
   useImperativeHandle(forwardedRef, () => ({
-    insertImage(url, alt = '') {
+    insertImage(url, alt = '', caption = '') {
       const safeUrl = String(url || '').replace(/"/g, '&quot;');
       const safeAlt = String(alt || '').replace(/"/g, '&quot;');
-      if (safeUrl) insertHtml(`<figure><img src="${safeUrl}" alt="${safeAlt}" loading="lazy"><figcaption></figcaption></figure><p><br></p>`);
+      const safeCaption = String(caption || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      if (safeUrl) insertHtml(`<figure><img src="${safeUrl}" alt="${safeAlt}" loading="lazy"><figcaption>${safeCaption}</figcaption></figure><p><br></p>`);
     }
   }));
 
@@ -430,11 +486,14 @@ const RichTextEditor = forwardRef(function RichTextEditor(
       onChange(source);
       setSourceMode(false);
       requestAnimationFrame(() => {
-        if (editorRef.current) editorRef.current.innerHTML = source;
+        if (editorRef.current) {
+          editorRef.current.innerHTML = source;
+          decorateDeletableBlocks();
+        }
       });
       return;
     }
-    setSource(editorRef.current?.innerHTML || value || '');
+    setSource(readCleanHtml() || value || '');
     setSourceMode(true);
   };
 
@@ -444,26 +503,82 @@ const RichTextEditor = forwardRef(function RichTextEditor(
     setTableOpen(false);
     setCtaOpen(false);
     setFaqOpen(false);
-    setLinkUrl('https://');
-    setLinkNewTab(false);
-    setLinkNoFollow(false);
+
+    // If the cursor is already inside a link, edit that link instead of
+    // starting a blank one — pre-fill its URL/options and reveal "Remove link".
+    const selection = window.getSelection();
+    const anchorNode = selection?.anchorNode;
+    const nodeEl = anchorNode ? (anchorNode.nodeType === Node.TEXT_NODE ? anchorNode.parentElement : anchorNode) : null;
+    const existingAnchor = nodeEl?.closest?.('a');
+    const editingExisting = existingAnchor && editorRef.current?.contains(existingAnchor);
+    editingLinkRef.current = editingExisting ? existingAnchor : null;
+
+    if (editingExisting) {
+      setLinkUrl(existingAnchor.getAttribute('href') || 'https://');
+      setLinkNewTab(existingAnchor.getAttribute('target') === '_blank');
+      setLinkNoFollow((existingAnchor.getAttribute('rel') || '').includes('nofollow'));
+    } else {
+      setLinkUrl('https://');
+      setLinkNewTab(false);
+      setLinkNoFollow(false);
+    }
     setLinkOpen(true);
   };
 
+  const removeLink = () => {
+    const anchor = editingLinkRef.current;
+    editingLinkRef.current = null;
+    removeMarker();
+    if (anchor && editorRef.current?.contains(anchor)) {
+      const parent = anchor.parentNode;
+      while (anchor.firstChild) parent.insertBefore(anchor.firstChild, anchor);
+      parent.removeChild(anchor);
+      emit();
+    }
+    setLinkOpen(false);
+  };
+
   const closeLink = () => {
+    editingLinkRef.current = null;
     removeMarker();
     setLinkOpen(false);
   };
 
-  const applyLink = (event) => {
-    event.preventDefault();
+  const applyLink = () => {
     const url = linkUrl.trim();
     if (!isSafeEditorUrl(url)) return;
 
-    editorRef.current?.focus();
+    const rel = [linkNewTab ? 'noopener' : '', linkNewTab ? 'noreferrer' : '', linkNoFollow ? 'nofollow' : '']
+      .filter(Boolean)
+      .join(' ');
+
+    // Editing a link the cursor was already inside of (see openLink): update
+    // it in place rather than re-running selection-based createLink, which
+    // needs a live text selection that the dialog's own focus may have lost.
+    const existingAnchor = editingLinkRef.current;
+    if (existingAnchor && editorRef.current?.contains(existingAnchor)) {
+      removeMarker();
+      existingAnchor.setAttribute('href', url);
+      if (linkNewTab) existingAnchor.setAttribute('target', '_blank');
+      else existingAnchor.removeAttribute('target');
+      if (rel) existingAnchor.setAttribute('rel', rel);
+      else existingAnchor.removeAttribute('rel');
+      existingAnchor.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+      editingLinkRef.current = null;
+      emit();
+      setLinkOpen(false);
+      return;
+    }
+
+    // preventScroll: focusing the whole (often very tall) editor div would
+    // otherwise make the browser scroll to bring its top into view — losing
+    // the spot the link was just added at. We scroll to the actual link
+    // below instead, once we know exactly where it landed.
+    editorRef.current?.focus({ preventScroll: true });
     const restored = restoreSelection();
     const selection = window.getSelection();
     const selectedText = restored ? selection?.toString() : '';
+    let insertedAnchor = null;
 
     if (selectedText) {
       removeMarker();
@@ -471,25 +586,21 @@ const RichTextEditor = forwardRef(function RichTextEditor(
       const anchorNode = selection?.anchorNode?.nodeType === Node.TEXT_NODE
         ? selection.anchorNode.parentElement
         : selection?.anchorNode;
-      const anchor = anchorNode?.closest?.('a');
-      if (anchor) {
-        if (linkNewTab) anchor.setAttribute('target', '_blank');
-        else anchor.removeAttribute('target');
-        const rel = [linkNewTab ? 'noopener' : '', linkNewTab ? 'noreferrer' : '', linkNoFollow ? 'nofollow' : '']
-          .filter(Boolean)
-          .join(' ');
-        if (rel) anchor.setAttribute('rel', rel);
-        else anchor.removeAttribute('rel');
+      insertedAnchor = anchorNode?.closest?.('a');
+      if (insertedAnchor) {
+        if (linkNewTab) insertedAnchor.setAttribute('target', '_blank');
+        else insertedAnchor.removeAttribute('target');
+        if (rel) insertedAnchor.setAttribute('rel', rel);
+        else insertedAnchor.removeAttribute('rel');
       }
+      insertedAnchor?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+      emit();
     } else {
+      // insertHtml scrolls the newly-created <a> into view itself.
       const safeUrl = url.replace(/"/g, '&quot;');
-      const rel = [linkNewTab ? 'noopener' : '', linkNewTab ? 'noreferrer' : '', linkNoFollow ? 'nofollow' : '']
-        .filter(Boolean)
-        .join(' ');
       insertHtml(`<a href="${safeUrl}"${linkNewTab ? ' target="_blank"' : ''}${rel ? ` rel="${rel}"` : ''}>${safeUrl}</a>`);
     }
 
-    emit();
     setLinkOpen(false);
   };
 
@@ -511,8 +622,7 @@ const RichTextEditor = forwardRef(function RichTextEditor(
     setTableOpen(false);
   };
 
-  const insertTable = (event) => {
-    event.preventDefault();
+  const insertTable = () => {
     const rows = Math.min(20, Math.max(1, Number(tableRows) || 1));
     const columns = Math.min(10, Math.max(1, Number(tableColumns) || 1));
     const captionText = tableCaption.trim();
@@ -537,6 +647,16 @@ const RichTextEditor = forwardRef(function RichTextEditor(
     setLinkOpen(false);
     setTableOpen(false);
     setFaqOpen(false);
+    // Reset to a blank form every time, so a second CTA in the same session
+    // doesn't reopen with whatever was typed into the last one.
+    setCtaHeadline('');
+    setCtaDescription('');
+    setCtaBtn1Text('');
+    setCtaBtn1Url('');
+    setCtaBtn2Text('');
+    setCtaBtn2Url('');
+    setCtaBtn3Text('');
+    setCtaBtn3Url('');
     setCtaOpen(true);
   };
 
@@ -573,8 +693,7 @@ const RichTextEditor = forwardRef(function RichTextEditor(
     setFaqItems(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
   };
 
-  const insertFaq = (event) => {
-    event.preventDefault();
+  const insertFaq = () => {
     const title = (faqTitle || '').trim();
     const validItems = faqItems.filter(item => item.question.trim());
     if (!validItems.length) {
@@ -583,8 +702,12 @@ const RichTextEditor = forwardRef(function RichTextEditor(
     }
 
     const esc = (str) => String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    // Same `name` on every <details> in this block makes the browser open
+    // only one at a time natively (no JS needed) — unique per block so two
+    // FAQ sections on the same page don't accidentally close each other.
+    const groupName = `preva-faq-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const itemsHtml = validItems.map(item =>
-      `<details class="preva-faq-item" open><summary class="preva-faq-question">${esc(item.question.trim())}</summary><div class="preva-faq-answer"><p>${item.answer.trim() ? esc(item.answer.trim()) : 'Answer coming soon.'}</p></div></details>`
+      `<details class="preva-faq-item" name="${groupName}"><summary class="preva-faq-question">${esc(item.question.trim())}</summary><div class="preva-faq-answer"><p>${item.answer.trim() ? esc(item.answer.trim()) : 'Answer coming soon.'}</p></div></details>`
     ).join('');
 
     const html = `<div class="preva-faq-block">${title ? `<h3 class="preva-faq-title">${esc(title)}</h3>` : ''}${itemsHtml}</div>`;
@@ -623,10 +746,13 @@ const RichTextEditor = forwardRef(function RichTextEditor(
     }
   };
 
-  const insertCta = (event) => {
-    event.preventDefault();
+  const insertCta = () => {
     const headline = (ctaHeadline || '').trim();
     const desc = (ctaDescription || '').trim();
+    // Headline + primary button are the fields marked "required" in the
+    // dialog; without a real <form> there's no native validation stopping
+    // an empty submit, so re-check it here instead.
+    if (!headline || !ctaBtn1Text.trim() || !ctaBtn1Url.trim()) return;
 
     let buttonsHtml = '';
     if (ctaBtn1Text.trim() && ctaBtn1Url.trim()) {
@@ -643,6 +769,20 @@ const RichTextEditor = forwardRef(function RichTextEditor(
 
     insertHtml(html);
     setCtaOpen(false);
+  };
+
+  // The link/table/CTA/FAQ dialogs below are plain <div>s, not <form>s: they
+  // already sit inside the page's own outer <form> (the Save button's form),
+  // and a nested <form> there is invalid HTML — the browser's native
+  // "submit" handling on it could fire a real navigation that wipes the
+  // page's query string, which a preventDefault()/stopPropagation() pair
+  // inside React cannot reliably head off once React's own DOM-nesting
+  // recovery gets involved. This restores plain "Enter submits" behavior
+  // without an actual <form> element.
+  const submitOnEnter = (handler) => (event) => {
+    if (event.key !== 'Enter' || event.target.tagName === 'TEXTAREA' || event.target.tagName === 'SELECT') return;
+    event.preventDefault();
+    handler();
   };
 
   const text = plainTextFromHtml(sourceMode ? source : value).trim();
@@ -755,9 +895,9 @@ const RichTextEditor = forwardRef(function RichTextEditor(
       {linkOpen && (
         <div className="rich-editor-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) closeLink(); }}>
           <div className="rich-editor-link-popover rich-editor-modal-dialog" role="dialog" aria-modal="true" aria-label="Insert link">
-            <form onSubmit={applyLink}>
+            <div className="rich-editor-dialog-form" onKeyDown={submitOnEnter(applyLink)}>
               <div className="rich-editor-link-heading">
-                <strong>Insert link</strong>
+                <strong>{editingLinkRef.current ? 'Edit link' : 'Insert link'}</strong>
                 <button type="button" onClick={closeLink} aria-label="Close link dialog">×</button>
               </div>
               <label htmlFor="editor-link-url">URL</label>
@@ -780,10 +920,13 @@ const RichTextEditor = forwardRef(function RichTextEditor(
                 Mark as nofollow
               </label>
               <div className="rich-editor-link-actions">
+                {editingLinkRef.current && (
+                  <button type="button" className="btn btn-danger" onClick={removeLink}>Remove link</button>
+                )}
                 <button type="button" className="btn btn-secondary" onClick={closeLink}>Cancel</button>
-                <button type="submit" className="btn">Add link</button>
+                <button type="button" className="btn" onClick={applyLink}>{editingLinkRef.current ? 'Update link' : 'Add link'}</button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
@@ -791,7 +934,7 @@ const RichTextEditor = forwardRef(function RichTextEditor(
       {tableOpen && (
         <div className="rich-editor-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) closeTable(); }}>
           <div className="rich-editor-link-popover rich-editor-table-popover rich-editor-modal-dialog" role="dialog" aria-modal="true" aria-label="Insert table">
-            <form onSubmit={insertTable}>
+            <div className="rich-editor-dialog-form" onKeyDown={submitOnEnter(insertTable)}>
               <div className="rich-editor-link-heading">
                 <strong>Insert table</strong>
                 <button type="button" onClick={closeTable} aria-label="Close table dialog">×</button>
@@ -838,9 +981,9 @@ const RichTextEditor = forwardRef(function RichTextEditor(
               <p className="rich-editor-link-help">After inserting, click directly inside any cell to replace its text.</p>
               <div className="rich-editor-link-actions">
                 <button type="button" className="btn btn-secondary" onClick={closeTable}>Cancel</button>
-                <button type="submit" className="btn">Insert table</button>
+                <button type="button" className="btn" onClick={insertTable}>Insert table</button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
@@ -848,7 +991,7 @@ const RichTextEditor = forwardRef(function RichTextEditor(
       {ctaOpen && (
         <div className="rich-editor-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) closeCta(); }}>
           <div className="rich-editor-link-popover rich-editor-cta-popover rich-editor-modal-dialog" role="dialog" aria-modal="true" aria-label="Insert CTA Box">
-            <form onSubmit={insertCta}>
+            <div className="rich-editor-dialog-form" onKeyDown={submitOnEnter(insertCta)}>
               <div className="rich-editor-link-heading">
                 <strong style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Sparkles size={16} color="var(--gold)" /> Insert CTA Card
@@ -931,9 +1074,9 @@ const RichTextEditor = forwardRef(function RichTextEditor(
 
               <div className="rich-editor-link-actions">
                 <button type="button" className="btn btn-secondary" onClick={closeCta}>Cancel</button>
-                <button type="submit" className="btn">Insert CTA Box</button>
+                <button type="button" className="btn" onClick={insertCta}>Insert CTA Box</button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
@@ -941,7 +1084,7 @@ const RichTextEditor = forwardRef(function RichTextEditor(
       {faqOpen && (
         <div className="rich-editor-modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) closeFaq(); }}>
           <div className="rich-editor-link-popover rich-editor-faq-popover rich-editor-modal-dialog" role="dialog" aria-modal="true" aria-label="Insert FAQ">
-            <form onSubmit={insertFaq}>
+            <div className="rich-editor-dialog-form" onKeyDown={submitOnEnter(insertFaq)}>
               <div className="rich-editor-link-heading">
                 <strong style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <CircleHelp size={18} color="var(--gold)" /> Insert FAQ Section
@@ -997,9 +1140,9 @@ const RichTextEditor = forwardRef(function RichTextEditor(
 
               <div className="rich-editor-link-actions">
                 <button type="button" className="btn btn-secondary" onClick={closeFaq}>Cancel</button>
-                <button type="submit" className="btn btn-primary" style={{ background: 'var(--gold)', color: '#000', fontWeight: 600 }}>Insert FAQ</button>
+                <button type="button" className="btn btn-primary" style={{ background: 'var(--gold)', color: '#000', fontWeight: 600 }} onClick={insertFaq}>Insert FAQ</button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}

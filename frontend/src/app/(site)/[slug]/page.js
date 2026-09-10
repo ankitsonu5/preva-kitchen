@@ -90,7 +90,7 @@ export default async function DynamicPage({ params }) {
         {/* Page Banner Header */}
         <section className="blog-hero" style={{ position: 'relative' }}>
           {page.featuredImage ? (
-            <img src={page.featuredImage} className="blog-hero-image" alt={page.title || ''} />
+            <img src={page.featuredImage} className="blog-hero-image" alt={page.featuredImageAlt || page.title || ''} />
           ) : null}
           <div className="overlay" style={{ background: 'rgba(0,0,0,0.6)', position: 'absolute', inset: 0 }}></div>
           

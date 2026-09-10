@@ -190,23 +190,7 @@ export default function Shell({ children }) {
             <div className="bar">
               <span></span>
             </div>
-            <a
-              href="/admin/login"
-              style={{
-                marginTop: '8px',
-                padding: '8px 24px',
-                fontSize: '12px',
-                color: '#c5a059',
-                border: '1px solid rgba(197, 160, 89, 0.4)',
-                borderRadius: '20px',
-                textDecoration: 'none',
-                textTransform: 'uppercase',
-                letterSpacing: '1.5px',
-                fontWeight: 700,
-                background: 'rgba(197, 160, 89, 0.08)',
-                cursor: 'pointer'
-              }}
-            >
+            <a href="/admin/login" className="loader-login-btn">
               Go to Login
             </a>
           </div>

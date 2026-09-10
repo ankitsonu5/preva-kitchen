@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Swal from 'sweetalert2';
 import GoogleReviewsSection from '@/components/sections/GoogleReviewsSection';
@@ -23,35 +23,45 @@ import {
 } from 'lucide-react';
 
 const CANONICAL_ORIGIN = getCanonicalOrigin();
-const HERO_SLIDE_DELAY = 2000;
 
 const restaurantGalleryImages = [
   {
-    src: '/asset/prevaclub/wp-content/uploads/2026/06/hero-preva-kitchen-.jpeg',
-    caption: 'Preva Kitchen Atmosphere'
+    src: '/asset/gallery/DIAMOND01.jpg',
+    caption: 'Meet the Preva Team'
   },
   {
-    src: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80',
-    caption: 'Signature Steak Bites'
+    src: '/asset/gallery/STEAK02.jpg',
+    caption: 'Steak Bites'
   },
   {
     src: 'https://images.unsplash.com/photo-1551248429-40975aa4de74?auto=format&fit=crop&w=800&q=80',
     caption: 'Wild Lobster Bites'
   },
   {
-    src: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80',
-    caption: 'Warm Kitchen Dining Room'
+    src: '/asset/gallery/RASTA05.jpg',
+    caption: 'Rasta Pasta'
   },
   {
-    src: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80',
-    caption: 'Chef-Crafted Plates'
+    src: '/asset/gallery/CATFISH01.jpg',
+    caption: 'Catfish Bites'
   }
 ];
 
+const HERO_IMAGE_SLIDE_DELAY = 2000;
+
+// The hero background cycles through the intro video, then the three dish
+// photos, then back to the video — one rotation, one set of dots, all inside
+// the hero itself (not a separate section further down the page).
 const heroSlides = [
-  { image: '/asset/home-reference/preva-restaurant-hero.png?v=restaurant-slider', mobileImage: '/asset/home-reference/preva-restaurant-hero-mobile.jpg', name: 'Preva Lamb Chops' },
-  { image: '/asset/home-reference/preva-rasta-pasta-hero.png?v=dish-size-match-v2', mobileImage: '/asset/home-reference/preva-rasta-pasta-hero-mobile.jpg', name: 'Preva Rasta Pasta' },
-  { image: '/asset/home-reference/preva-burger-hero.png?v=dish-size-match-v2', mobileImage: '/asset/home-reference/preva-burger-hero-mobile.jpg', name: 'Preva Burger' }
+  { type: 'video', src: '/asset/Video/1080-PASTA.mp4', poster: '/asset/home-reference/preva-restaurant-hero.png', name: 'Preva Kitchen' },
+  { type: 'image', image: '/asset/home-reference/preva-restaurant-hero.png?v=restaurant-slider', mobileImage: '/asset/home-reference/preva-restaurant-hero-mobile.jpg', name: 'Preva Lamb Chops' },
+  { type: 'image', image: '/asset/home-reference/preva-rasta-pasta-hero.png?v=dish-size-match-v2', mobileImage: '/asset/home-reference/preva-rasta-pasta-hero-mobile.jpg', name: 'Preva Rasta Pasta' },
+  { type: 'image', image: '/asset/home-reference/preva-burger-hero.png?v=dish-size-match-v2', mobileImage: '/asset/home-reference/preva-burger-hero-mobile.jpg', name: 'Preva Burger' }
+];
+
+const BOOKING_PURPOSES = [
+  'Birthday', 'Anniversary', 'Date Night', 'Family Dinner',
+  'Business Meal', 'Celebration', 'Just Because', 'Other'
 ];
 
 const highlights = [
@@ -130,10 +140,27 @@ const signatureDishes = [
 ];
 
 export default function Home() {
-  const [activeHeroSlide, setActiveHeroSlide] = useState(0);
-  const [isMobile, setIsMobile] = useState(false);
   const [booking, setBooking] = useState({ name: '', phone: '', purpose: '', date: '', time: '', guests: '2' });
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
+  // "Other" in the purpose dropdown reveals this free-text field instead of
+  // replacing the dropdown outright — keeps a category for the common cases
+  // without losing the ability to type something specific.
+  const [purposeOther, setPurposeOther] = useState('');
+  // Autoplaying background video is exactly what prefers-reduced-motion
+  // asks sites to avoid — fall back to the poster image (a still frame) for
+  // anyone who has that on, instead of forcing the motion on them.
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const [activeHeroSlide, setActiveHeroSlide] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+  const heroVideoRef = useRef(null);
+
+  useEffect(() => {
+    const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const onChange = (e) => setReduceMotion(e.matches);
+    setReduceMotion(mql.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
 
   useEffect(() => {
     const mql = window.matchMedia('(max-width: 720px)');
@@ -143,13 +170,29 @@ export default function Home() {
     return () => mql.removeEventListener('change', onChange);
   }, []);
 
+  // Image slides advance on a fixed timer; the video slide advances itself
+  // (see the <video onEnded>  below) once it finishes playing, so it isn't
+  // cut short or dragged out relative to its own length.
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
-    const timer = window.setInterval(() => {
+    if (reduceMotion || heroSlides[activeHeroSlide].type !== 'image') return undefined;
+    const timer = window.setTimeout(() => {
       setActiveHeroSlide((current) => (current + 1) % heroSlides.length);
-    }, HERO_SLIDE_DELAY);
-    return () => window.clearInterval(timer);
-  }, []);
+    }, HERO_IMAGE_SLIDE_DELAY);
+    return () => window.clearTimeout(timer);
+  }, [activeHeroSlide, reduceMotion]);
+
+  // Play/pause the (always-mounted, so it never has to re-buffer) hero video
+  // to match whether its slide is actually the one showing right now.
+  useEffect(() => {
+    const videoEl = heroVideoRef.current;
+    if (!videoEl) return;
+    if (activeHeroSlide === 0 && !reduceMotion) {
+      videoEl.currentTime = 0;
+      videoEl.play().catch(() => {});
+    } else {
+      videoEl.pause();
+    }
+  }, [activeHeroSlide, reduceMotion]);
 
   const updateBooking = (field) => (event) => {
     setBooking((current) => ({ ...current, [field]: event.target.value }));
@@ -170,6 +213,7 @@ export default function Home() {
 
   const submitBooking = async (event) => {
     event.preventDefault();
+    const effectivePurpose = (booking.purpose === 'Other' ? purposeOther : booking.purpose).trim();
     if (!booking.name.trim()) {
       Swal.fire({ ...swalBase, icon: 'warning', title: 'Name required', text: 'Please enter your name.' });
       return;
@@ -178,7 +222,7 @@ export default function Home() {
       Swal.fire({ ...swalBase, icon: 'warning', title: 'Phone required', text: 'Please enter your phone number.' });
       return;
     }
-    if (!booking.purpose.trim()) {
+    if (!effectivePurpose) {
       Swal.fire({ ...swalBase, icon: 'warning', title: 'Booking purpose required', text: 'Please tell us the purpose of your reservation.' });
       return;
     }
@@ -195,7 +239,7 @@ export default function Home() {
         body: JSON.stringify({
           name: booking.name.trim(),
           phone: booking.phone.trim(),
-          occasion: booking.purpose.trim(),
+          occasion: effectivePurpose,
           date: booking.date,
           time: booking.time,
           guests: Number(booking.guests)
@@ -233,7 +277,7 @@ export default function Home() {
             <tr><td style="color:#d5a44f; font-weight:700; padding:5px 0; width:80px;">📅 Date</td><td>${dateFormatted}</td></tr>
             <tr><td style="color:#d5a44f; font-weight:700; padding:5px 0;">🕐 Time</td><td>${escapeHtml(booking.time)}</td></tr>
             <tr><td style="color:#d5a44f; font-weight:700; padding:5px 0;">👥 Guests</td><td>${escapeHtml(booking.guests)} ${Number(booking.guests) === 1 ? 'Person' : 'People'}</td></tr>
-            <tr><td style="color:#d5a44f; font-weight:700; padding:5px 0;">✨ Purpose</td><td>${escapeHtml(booking.purpose)}</td></tr>
+            <tr><td style="color:#d5a44f; font-weight:700; padding:5px 0;">✨ Purpose</td><td>${escapeHtml(effectivePurpose)}</td></tr>
             <tr><td style="color:#d5a44f; font-weight:700; padding:5px 0;">📞 Phone</td><td>${escapeHtml(booking.phone)}</td></tr>
           </table>
           <p style="margin:14px 0 0; font-size:0.84rem; color:#b0a8a2;">We'll call you to confirm. See you soon!</p>
@@ -243,6 +287,7 @@ export default function Home() {
       width: '460px',
     });
     setBooking({ name: '', phone: '', purpose: '', date: '', time: '', guests: '2' });
+    setPurposeOther('');
   };
 
 
@@ -252,16 +297,32 @@ export default function Home() {
 
       <section className="pk-ref-hero" aria-labelledby="pk-ref-hero-title">
         <div className="pk-ref-hero-slides" aria-live="polite">
-          {heroSlides.map((slide, index) => (
-            <div
-              className={`pk-ref-hero-slide ${index === activeHeroSlide ? 'is-active' : ''}`}
-              key={slide.name}
-              role="img"
-              aria-label={index === activeHeroSlide ? `${slide.name}, featured dish` : undefined}
-              aria-hidden={index !== activeHeroSlide}
-              style={{ backgroundImage: `url(${isMobile ? slide.mobileImage : slide.image})` }}
-            />
-          ))}
+          {heroSlides.map((slide, index) =>
+            slide.type === 'video' ? (
+              <video
+                key={slide.name}
+                ref={heroVideoRef}
+                className={`pk-ref-hero-slide pk-ref-hero-video ${index === activeHeroSlide ? 'is-active' : ''}`}
+                aria-hidden={index !== activeHeroSlide}
+                muted
+                playsInline
+                preload="auto"
+                poster={slide.poster}
+                onEnded={() => { if (!reduceMotion) setActiveHeroSlide((current) => (current + 1) % heroSlides.length); }}
+              >
+                <source src={slide.src} type="video/mp4" />
+              </video>
+            ) : (
+              <div
+                className={`pk-ref-hero-slide ${index === activeHeroSlide ? 'is-active' : ''}`}
+                key={slide.name}
+                role="img"
+                aria-label={index === activeHeroSlide ? `${slide.name}, featured dish` : undefined}
+                aria-hidden={index !== activeHeroSlide}
+                style={{ backgroundImage: `url(${isMobile ? slide.mobileImage : slide.image})` }}
+              />
+            )
+          )}
         </div>
         <div className="pk-ref-hero-shade" aria-hidden="true" />
         <div className="pk-ref-wrap pk-ref-hero-inner">
@@ -279,7 +340,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <div className="pk-ref-hero-dots" aria-label="Featured dish slider controls">
+        <div className="pk-ref-hero-dots" aria-label="Featured hero slider controls">
           {heroSlides.map((slide, index) => (
             <button
               type="button"
@@ -422,16 +483,29 @@ export default function Home() {
 
                 <div className="pk-ref-booking-group">
                   <span className="pk-ref-booking-label"><Sparkles size={12} /> Booking Purpose</span>
-                  <input
+                  <select
                     className="pk-ref-booking-input"
-                    type="text"
-                    placeholder="e.g. Birthday, anniversary or family dinner"
                     value={booking.purpose}
                     onChange={updateBooking('purpose')}
                     aria-label="Booking purpose"
-                    maxLength={80}
                     required
-                  />
+                  >
+                    <option value="">Select a purpose</option>
+                    {BOOKING_PURPOSES.map((p) => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                  {booking.purpose === 'Other' && (
+                    <input
+                      className="pk-ref-booking-input"
+                      type="text"
+                      style={{ marginTop: '8px' }}
+                      placeholder="Tell us the occasion"
+                      value={purposeOther}
+                      onChange={(event) => setPurposeOther(event.target.value)}
+                      aria-label="Describe booking purpose"
+                      maxLength={80}
+                      required
+                    />
+                  )}
                 </div>
 
                 <div className="pk-ref-booking-row-split">

@@ -199,7 +199,7 @@ export default async function PreviewPage({ searchParams }) {
           <main id="primary" className="site-main single-post-luxury dynamic-page-custom">
             <section className="blog-hero" style={{ position: 'relative' }}>
               {content.featuredImage ? (
-                <img src={content.featuredImage} className="blog-hero-image" alt={content.title || ''} />
+                <img src={content.featuredImage} className="blog-hero-image" alt={content.featuredImageAlt || content.title || ''} />
               ) : null}
               <div className="overlay" style={{ background: 'rgba(0,0,0,0.6)', position: 'absolute', inset: 0 }}></div>
               
@@ -280,7 +280,7 @@ export default async function PreviewPage({ searchParams }) {
               <article className="blog-main-content">
                 {content.featuredImage && (
                   <div className="single-featured-image-wrap" style={{ marginBottom: '35px', borderRadius: '14px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}>
-                    <img src={content.featuredImage} className="single-featured-image" alt={content.title || ''} style={{ width: '100%', height: 'auto', display: 'block' }} />
+                    <img src={content.featuredImage} className="single-featured-image" alt={content.featuredImageAlt || content.title || ''} style={{ width: '100%', height: 'auto', display: 'block' }} />
                   </div>
                 )}
 
@@ -332,7 +332,7 @@ export default async function PreviewPage({ searchParams }) {
                         return (
                           <Link key={rp.id || rp.slug} href={`/blog/${rp.slug}`} className="recent-post-item">
                             {rp.featuredImage ? (
-                              <img src={rp.featuredImage} alt="" className="recent-post-thumb" />
+                              <img src={rp.featuredImage} alt={rp.featuredImageAlt || rp.title || ''} className="recent-post-thumb" />
                             ) : (
                               <div className="recent-post-thumb" style={{ display: 'grid', placeItems: 'center', color: '#666' }}>
                                 <SvgIcon name="camera" size={18} />

@@ -17,36 +17,39 @@
 
 .pk-ref-hero {
   position: relative;
-  min-height: clamp(660px, 84vh, 880px);
+  min-height: 100vh;
+  min-height: 100svh;
   display: flex;
   align-items: center;
   background: #090705;
   isolation: isolate;
 }
 
-.pk-ref-hero-slides,
-.pk-ref-hero-slide {
+.pk-ref-hero-slides {
   position: absolute;
   inset: 0;
-}
-
-.pk-ref-hero-slides {
   z-index: -2;
   overflow: hidden;
 }
 
+/* Every slide — the video and the three dish photos alike — crossfades in
+   the same absolute-fill layer, so switching between them never shifts the
+   section's size or shape. */
 .pk-ref-hero-slide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   background-position: center right;
   background-size: auto 100%;
   background-repeat: no-repeat;
+  object-fit: cover;
+  object-position: center right;
   opacity: 0;
-  transform: none;
   transition: opacity .9s ease;
 }
 
-.pk-ref-hero-slide.is-active {
-  opacity: 1;
-}
+.pk-ref-hero-slide.is-active { opacity: 1; }
 
 .pk-ref-hero-shade {
   position: absolute;
@@ -91,6 +94,11 @@
 }
 
 .pk-ref-hero-actions { display: flex; flex-wrap: wrap; gap: 16px; }
+
+.pk-ref-hero-dots { position: absolute; bottom: 27px; left: 50%; z-index: 1; display: flex; gap: 13px; transform: translateX(-50%); }
+.pk-ref-hero-dots button { width: 11px; height: 11px; padding: 0; border: 2px solid rgba(255,255,255,.78); border-radius: 50%; background: transparent; cursor: pointer; transition: width .3s ease, background-color .3s ease, border-color .3s ease; }
+.pk-ref-hero-dots button.is-active { width: 23px; border-color: var(--pk-gold); border-radius: 10px; background: var(--pk-gold); }
+.pk-ref-hero-dots button:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
 
 .pk-ref-button {
   min-height: 54px;
@@ -282,11 +290,6 @@
   .pk-ref-menu-modal__toolbar h2 { font-size: .68rem; letter-spacing: .06em; }
   .pk-ref-menu-modal__zoom output { width: 42px; }
 }
-
-.pk-ref-hero-dots { position: absolute; bottom: 27px; left: 50%; display: flex; gap: 13px; transform: translateX(-50%); }
-.pk-ref-hero-dots button { width: 11px; height: 11px; padding: 0; border: 2px solid rgba(255,255,255,.78); border-radius: 50%; background: transparent; cursor: pointer; transition: width .3s ease, background-color .3s ease, border-color .3s ease; }
-.pk-ref-hero-dots button.is-active { width: 23px; border-color: var(--pk-gold); border-radius: 10px; background: var(--pk-gold); }
-.pk-ref-hero-dots button:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
 
 .pk-ref-highlights { position: relative; z-index: 2; border-block: 1px solid rgba(255,255,255,.055); background: #121011; }
 .pk-ref-highlight-grid { display: grid; grid-template-columns: repeat(4, 1fr); padding-block: 38px; }
@@ -714,7 +717,7 @@ select.pk-ref-booking-input:focus:hover {
 
   /* ── Hero Section ── */
   .pk-ref-hero { min-height: 100svh; min-height: 100dvh; align-items: flex-end; }
-  .pk-ref-hero-slide { background-position: center center; background-size: cover; }
+  .pk-ref-hero-slide { background-position: center center; background-size: cover; object-position: center center; }
   .pk-ref-hero-shade {
     background:
       linear-gradient(0deg, rgba(5,4,4,.96) 0%, rgba(5,4,4,.72) 35%, rgba(5,4,4,.18) 60%, rgba(5,4,4,.06) 100%);
@@ -823,5 +826,4 @@ select.pk-ref-booking-input:focus:hover {
 
 @media (prefers-reduced-motion: reduce) {
   .pk-ref-button, .pk-ref-category-image img, .pk-ref-category > i, .pk-ref-dish-card, .pk-ref-dish-media img, .pk-ref-dish-order { transition: none; }
-  .pk-ref-hero-slide { transition: opacity .2s ease; transform: none; }
 }
