@@ -18,7 +18,8 @@
     "ensure-admin": "node scripts/ensure-admin.js",
     "audit:production": "node scripts/audit-production.js",
     "routes": "node -e \"import('./src/index.js').then(m=>console.log(m.listRoutes().join('\\n')))\"",
-    "verify:payments:local": "node scripts/verify-payment-local.js"
+    "verify:payments:local": "node scripts/verify-payment-local.js",
+    "verify:email": "node scripts/verify-email.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
@@ -29,6 +30,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.12.0",
     "pdfkit": "^0.15.2",
+    "resend": "^6.27.0",
     "sanitize-html": "^2.17.0",
     "slugify": "^1.6.6",
     "stripe": "^17.5.0",

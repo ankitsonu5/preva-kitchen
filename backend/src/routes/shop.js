@@ -11,6 +11,7 @@ import {
   webhookSecret
 } from '../lib/stripe.js';
 import { get, post, badRequest, notFound } from '../router.js';
+import { notifyNewOrder, notifyCustomerOrder } from '../lib/email.js';
 
 /* ══════════════════════════════════════════════════════════════════════════
    Catalogue
@@ -145,6 +146,20 @@ post('/shop/checkout', async ({ body, ip }) => {
     throw badRequest('This checkout attempt is invalid. Refresh the page and try again.');
   }
 
+  // Parse and validate the optional scheduled time
+  let scheduledAt = null;
+  if (body?.scheduledAt) {
+    const parsed = new Date(body.scheduledAt);
+    const minTime = new Date(Date.now() + 25 * 60 * 1000);             // 25 min notice
+    const maxTime = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);   // 7 days ahead
+    if (isNaN(parsed.getTime())) throw badRequest('Invalid scheduled time.');
+    if (parsed < minTime) throw badRequest('Scheduled time must be at least 25 minutes from now.');
+    if (parsed > maxTime) throw badRequest('Cannot schedule more than 7 days in advance.');
+    const hour = parsed.getHours();
+    if (hour < 11 || hour >= 22) throw badRequest('Please schedule between 11:00 AM and 10:00 PM (kitchen hours).');
+    scheduledAt = parsed;
+  }
+
   const orders = await col('order');
   const existingAttempt = await orders.findOne({ checkoutAttemptId });
   if (existingAttempt) {
@@ -182,7 +197,9 @@ post('/shop/checkout', async ({ body, ip }) => {
       amountCents: priced.totalCents,
       currency: 'usd'
     },
-    readyAt: readyAt(priced.settings, priced.fulfilment),
+    readyAt: scheduledAt || readyAt(priced.settings, priced.fulfilment),
+    scheduledAt: scheduledAt || null,
+    isScheduled: !!scheduledAt,
     statusHistory: [{ status: 'PENDING', at: now, by: 'customer' }],
     createdAt: now,
     updatedAt: now
@@ -228,6 +245,11 @@ post('/shop/checkout', async ({ body, ip }) => {
       }
     );
     await logActivity({ ip }, 'CREATE', 'ORDER', `#${orderNumber} (no-card test mode)`);
+    const updatedOrder = await orders.findOne({ _id: inserted.insertedId });
+    if (updatedOrder) {
+      notifyNewOrder(updatedOrder).catch(err => console.error('[email] test order staff notify error:', err.message));
+      notifyCustomerOrder(updatedOrder).catch(err => console.error('[email] test order customer notify error:', err.message));
+    }
     return { url: `/order/${orderNumber}`, orderNumber, testMode: true };
   }
 
@@ -365,7 +387,9 @@ get('/shop/orders/:number', async ({ params }) => {
     createdAt: row.createdAt,
     orderStatus: row.status,
     paymentStatus: row.payment?.status || 'UNPAID',
-    paymentMode: row.payment?.mode || null
+    paymentMode: row.payment?.mode || null,
+    isScheduled: row.isScheduled || false,
+    scheduledAt: row.scheduledAt || null
   };
 });
 

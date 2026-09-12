@@ -92,10 +92,30 @@ export default function CheckoutForm({ settings, cancelledOrderNumber = '' }) {
   const [quote, setQuote] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [activeModal, setActiveModal] = useState(null); // 'PICKUP' | 'DELIVERY' | null
+
+  // Schedule state
+  const [scheduling, setScheduling] = useState('ASAP'); // 'ASAP' | 'SCHEDULED'
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [scheduleTime, setScheduleTime] = useState('');
+
+  // Date bounds: today → +7 days (local time, not UTC)
+  const todayStr = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }, []);
+  const maxDateStr = useMemo(() => {
+    const d = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }, []);
 
   const payload = useMemo(
     () => ({
       fulfilment,
+      scheduledAt:
+        fulfilment === 'PICKUP' && scheduling === 'SCHEDULED' && scheduleDate && scheduleTime
+          ? `${scheduleDate}T${scheduleTime}:00`
+          : null,
       lines: cart.lines.map((line) => ({
         itemId: line.itemId,
         qty: line.qty,
@@ -103,7 +123,7 @@ export default function CheckoutForm({ settings, cancelledOrderNumber = '' }) {
         note: line.note
       }))
     }),
-    [cart.lines, cart.subtotalCents, fulfilment]
+    [cart.lines, cart.subtotalCents, fulfilment, scheduling, scheduleDate, scheduleTime]
   );
 
   // Re-quote whenever the order changes — including every stepper tap.
@@ -150,27 +170,47 @@ export default function CheckoutForm({ settings, cancelledOrderNumber = '' }) {
     if (event) event.preventDefault();
     if (busy) return;
 
-    if (!customer.name || !customer.phone) {
+    if (fulfilment === 'DELIVERY' && (!customer.address || !customer.address.trim())) {
+      setActiveModal('DELIVERY');
+      const message = 'Please add your delivery address.';
+      setError(message);
+      showWarning('Delivery address required', message);
+      return;
+    }
+
+    if (!customer.name?.trim() || !customer.phone?.trim()) {
+      setActiveModal(fulfilment);
       const message = 'Please add your name and phone number so the kitchen can reach you.';
       setError(message);
       showWarning('Contact details required', message);
-      const nameEl = document.getElementById('ck-name');
-      if (nameEl) {
-        nameEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        nameEl.focus();
-      }
       return;
     }
-    if (fulfilment === 'DELIVERY' && !customer.address) {
-      const message = 'Please add a delivery address.';
-      setError(message);
-      showWarning('Delivery address required', message);
-      const addrEl = document.getElementById('ck-address');
-      if (addrEl) {
-        addrEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        addrEl.focus();
+
+    if (fulfilment === 'PICKUP' && scheduling === 'SCHEDULED') {
+      if (!scheduleDate || !scheduleTime) {
+        setActiveModal('PICKUP');
+        const message = 'Please select a date and time for your scheduled order.';
+        setError(message);
+        showWarning('Schedule required', message);
+        return;
       }
-      return;
+      const scheduledAt = new Date(`${scheduleDate}T${scheduleTime}:00`);
+      const minAllowed = new Date(Date.now() + 25 * 60 * 1000);
+      if (isNaN(scheduledAt.getTime()) || scheduledAt < minAllowed) {
+        setActiveModal(fulfilment);
+        const message = 'Please schedule at least 25 minutes from now.';
+        setError(message);
+        showWarning('Too soon to schedule', message);
+        return;
+      }
+      const hour = scheduledAt.getHours();
+      if (hour < 11 || hour >= 22) {
+        setActiveModal(fulfilment);
+        const message = 'Please pick a time between 11:00 AM and 10:00 PM (kitchen hours).';
+        setError(message);
+        showWarning('Outside kitchen hours', message);
+        return;
+      }
     }
 
     setBusy(true);
@@ -400,59 +440,489 @@ export default function CheckoutForm({ settings, cancelledOrderNumber = '' }) {
         />
       </Card>
 
-      {/* ── pickup / delivery ──────────────────────────────────────────── */}
+      {/* ── fulfillment method summary card ─────────────────────────────── */}
       <Card>
-        <b style={{ display: 'block', fontSize: 12, color: '#8a8a8a', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 10 }}>
-          How would you like it
-        </b>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          {[
-            { key: 'PICKUP', label: 'Pickup', sub: `~${settings.pickupMinutes} min`, enabled: settings.pickupEnabled },
-            { key: 'DELIVERY', label: 'Delivery', sub: `~${settings.deliveryMinutes} min`, enabled: settings.deliveryEnabled }
-          ].map((mode) => (
-            <button
-              key={mode.key}
-              type="button"
-              disabled={!mode.enabled}
-              aria-pressed={fulfilment === mode.key}
-              onClick={() => setFulfilment(mode.key)}
-              style={{
-                padding: '12px 10px',
-                borderRadius: 12,
-                cursor: mode.enabled ? 'pointer' : 'not-allowed',
-                border: fulfilment === mode.key ? '1.5px solid #C9A84C' : '1px solid rgba(255,255,255,0.12)',
-                background: fulfilment === mode.key ? 'rgba(201,168,76,0.1)' : 'transparent',
-                color: '#fff',
-                opacity: mode.enabled ? 1 : 0.4,
-                textAlign: 'left'
-              }}
-            >
-              <b style={{ display: 'block', fontSize: 13.5 }}>{mode.label}</b>
-              <span style={{ fontSize: 11.5, color: '#8a8a8a' }}>{mode.sub}</span>
-            </button>
-          ))}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <b style={{ fontSize: 11, color: '#8a8a8a', letterSpacing: '1.5px', textTransform: 'uppercase' }}>
+            Fulfillment Method
+          </b>
+          <span style={{ fontSize: 11, color: '#C9A84C', fontWeight: 600 }}>
+            Click to configure
+          </span>
         </div>
-      </Card>
 
-      {/* ── contact & address ──────────────────────────────────────────── */}
-      <Card>
-        <b style={{ display: 'block', fontSize: 12, color: '#8a8a8a', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 10 }}>
-          Your details
-        </b>
-        <div style={{ display: 'grid', gap: 10 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <input id="ck-name" required maxLength={120} placeholder="Name" {...field('name')} style={inputStyle} />
-            <input id="ck-phone" required type="tel" maxLength={40} placeholder="Phone" {...field('phone')} style={inputStyle} />
-          </div>
-          <input id="ck-email" type="email" maxLength={180} placeholder="Email — for the receipt (optional)" {...field('email')} style={inputStyle} />
-          {fulfilment === 'DELIVERY' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10 }}>
-              <input id="ck-address" required maxLength={240} placeholder="Delivery address" {...field('address')} style={inputStyle} />
-              <input id="ck-postcode" inputMode="numeric" maxLength={12} placeholder="ZIP" {...field('postcode')} style={inputStyle} />
+        {/* 2 Primary Mode Buttons */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+          <button
+            type="button"
+            disabled={!settings.pickupEnabled}
+            onClick={() => {
+              setFulfilment('PICKUP');
+              setActiveModal('PICKUP');
+            }}
+            style={{
+              padding: '13px 14px',
+              borderRadius: 12,
+              cursor: settings.pickupEnabled ? 'pointer' : 'not-allowed',
+              border: fulfilment === 'PICKUP' ? '1.5px solid #C9A84C' : '1px solid rgba(255,255,255,0.12)',
+              background: fulfilment === 'PICKUP' ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.03)',
+              color: '#fff',
+              textAlign: 'left',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <span style={{ color: '#C9A84C', display: 'inline-flex', alignItems: 'center' }}>
+                <SvgIcon name="pickup" size={18} strokeWidth={2} />
+              </span>
+              <b style={{ fontSize: 14 }}>Pickup</b>
+            </div>
+            <span style={{ fontSize: 12, color: '#8a8a8a', display: 'block', paddingLeft: 26 }}>
+              ~{settings.pickupMinutes} min · Preva Kitchen
+            </span>
+          </button>
+
+          <button
+            type="button"
+            disabled={!settings.deliveryEnabled}
+            onClick={() => {
+              setFulfilment('DELIVERY');
+              setScheduling('ASAP');
+              setActiveModal('DELIVERY');
+            }}
+            style={{
+              padding: '13px 14px',
+              borderRadius: 12,
+              cursor: settings.deliveryEnabled ? 'pointer' : 'not-allowed',
+              border: fulfilment === 'DELIVERY' ? '1.5px solid #C9A84C' : '1px solid rgba(255,255,255,0.12)',
+              background: fulfilment === 'DELIVERY' ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.03)',
+              color: '#fff',
+              textAlign: 'left',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <span style={{ color: '#C9A84C', display: 'inline-flex', alignItems: 'center' }}>
+                <SvgIcon name="delivery" size={18} strokeWidth={2} />
+              </span>
+              <b style={{ fontSize: 14 }}>Delivery</b>
+            </div>
+            <span style={{ fontSize: 12, color: '#8a8a8a', display: 'block', paddingLeft: 26 }}>
+              ~{settings.deliveryMinutes} min · To doorstep
+            </span>
+          </button>
+        </div>
+
+        {/* Selected Mode Summary / Edit Box */}
+        <div
+          onClick={() => setActiveModal(fulfilment)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter') setActiveModal(fulfilment); }}
+          style={{
+            background: 'rgba(201,168,76,0.04)',
+            border: '1px solid rgba(201,168,76,0.22)',
+            borderRadius: 12,
+            padding: '12px 14px',
+            cursor: 'pointer',
+            transition: 'background 0.2s ease'
+          }}
+        >
+          {fulfilment === 'DELIVERY' ? (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <span style={{ color: '#C9A84C' }}><SvgIcon name="location" size={15} /></span>
+                  <b style={{ fontSize: 13, color: '#fff' }}>Delivering to:</b>
+                </div>
+                <span style={{ fontSize: 12, color: '#C9A84C', fontWeight: 600, textDecoration: 'underline' }}>
+                  {customer.address ? 'Edit address & details ✏️' : '+ Enter delivery address'}
+                </span>
+              </div>
+              <p style={{ fontSize: 13, color: customer.address ? '#eee' : '#888', margin: '0 0 8px 22px', lineHeight: 1.4 }}>
+                {customer.address ? `${customer.address}${customer.postcode ? `, ${customer.postcode}` : ''}` : 'No address set yet — click to add'}
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginLeft: 22, fontSize: 12, color: '#8a8a8a' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <SvgIcon name="zap" size={13} style={{ color: '#C9A84C' }} />
+                  Arrives in ~{settings.deliveryMinutes} min
+                </span>
+                {customer.name && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <SvgIcon name="phone" size={13} style={{ color: '#C9A84C' }} />
+                    {customer.name} {customer.phone ? `(${customer.phone})` : ''}
+                  </span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <span style={{ color: '#C9A84C' }}><SvgIcon name="pickup" size={15} /></span>
+                  <b style={{ fontSize: 13, color: '#fff' }}>Pickup Order:</b>
+                </div>
+                <span style={{ fontSize: 12, color: '#C9A84C', fontWeight: 600, textDecoration: 'underline' }}>
+                  {customer.name ? 'Edit details ✏️' : '+ Set timing & contact'}
+                </span>
+              </div>
+              <p style={{ fontSize: 13, color: '#ddd', margin: '0 0 8px 22px', lineHeight: 1.4 }}>
+                Preva Kitchen · 13090 Inkster Rd, Redford Township, MI
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginLeft: 22, fontSize: 12, color: '#8a8a8a' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <SvgIcon name={scheduling === 'SCHEDULED' ? 'calendar' : 'zap'} size={13} style={{ color: '#C9A84C' }} />
+                  {scheduling === 'SCHEDULED' && scheduleDate && scheduleTime
+                    ? `Scheduled: ${scheduleDate} @ ${scheduleTime}`
+                    : `Right Away (~${settings.pickupMinutes} min)`}
+                </span>
+                {customer.name ? (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <SvgIcon name="phone" size={13} style={{ color: '#C9A84C' }} />
+                    {customer.name} {customer.phone ? `(${customer.phone})` : ''}
+                  </span>
+                ) : (
+                  <span style={{ color: '#C9A84C' }}>⚠️ Contact name &amp; phone required</span>
+                )}
+              </div>
             </div>
           )}
         </div>
       </Card>
+
+      {/* ── POPUP MODAL FOR PICKUP / DELIVERY DETAILS ────────────────────── */}
+      {activeModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setActiveModal(null);
+          }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1200,
+            background: 'rgba(0, 0, 0, 0.82)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px'
+          }}
+        >
+          <div
+            style={{
+              background: '#161616',
+              border: '1px solid rgba(201, 168, 76, 0.35)',
+              borderRadius: 20,
+              width: '100%',
+              maxWidth: 500,
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.9)',
+              padding: '22px 20px 20px',
+              position: 'relative'
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span
+                  style={{
+                    width: 42,
+                    height: 42,
+                    borderRadius: 12,
+                    background: 'rgba(201,168,76,0.12)',
+                    border: '1px solid rgba(201,168,76,0.3)',
+                    display: 'grid',
+                    placeItems: 'center',
+                    color: '#C9A84C',
+                    flexShrink: 0
+                  }}
+                >
+                  <SvgIcon name={activeModal === 'DELIVERY' ? 'delivery' : 'pickup'} size={22} strokeWidth={2} />
+                </span>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#fff' }}>
+                    {activeModal === 'DELIVERY' ? 'Delivery Details' : 'Pickup Details'}
+                  </h3>
+                  <p style={{ margin: '2px 0 0', fontSize: 12, color: '#8a8a8a' }}>
+                    {activeModal === 'DELIVERY'
+                      ? 'Where and when would you like your food delivered?'
+                      : 'When will you collect your order at Preva Kitchen?'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveModal(null)}
+                aria-label="Close"
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  color: '#aaa',
+                  display: 'grid',
+                  placeItems: 'center',
+                  cursor: 'pointer',
+                  fontSize: 16,
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ display: 'grid', gap: 16 }}>
+              {/* SECTION 1: Address for Delivery, or Store info for Pickup */}
+              {activeModal === 'DELIVERY' ? (
+                <div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#C9A84C', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8, fontWeight: 700 }}>
+                    <SvgIcon name="location" size={13} strokeWidth={2} />
+                    Delivery Address
+                  </label>
+                  <div style={{ display: 'grid', gap: 8 }}>
+                    <input
+                      id="modal-address"
+                      required
+                      maxLength={240}
+                      placeholder="Street address, apartment, suite *"
+                      value={customer.address}
+                      onChange={(e) => setCustomer((prev) => ({ ...prev, address: e.target.value }))}
+                      style={inputStyle}
+                    />
+                    <input
+                      id="modal-postcode"
+                      inputMode="numeric"
+                      maxLength={12}
+                      placeholder="ZIP Code (optional)"
+                      value={customer.postcode}
+                      onChange={(e) => setCustomer((prev) => ({ ...prev, postcode: e.target.value }))}
+                      style={inputStyle}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    background: 'rgba(201,168,76,0.06)',
+                    border: '1px solid rgba(201,168,76,0.2)',
+                    borderRadius: 12,
+                    padding: '12px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12
+                  }}
+                >
+                  <span style={{ color: '#C9A84C' }}><SvgIcon name="location" size={20} /></span>
+                  <div>
+                    <b style={{ display: 'block', fontSize: 13, color: '#fff' }}>Preva Kitchen Counter Pickup</b>
+                    <span style={{ fontSize: 12, color: '#aaa' }}>13090 Inkster Rd, Redford Township, MI</span>
+                  </div>
+                </div>
+              )}
+
+              {/* SECTION 2: Timing — ONLY for Pickup. Delivery is always ASAP */}
+              {activeModal === 'PICKUP' ? (
+                <div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#C9A84C', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8, fontWeight: 700 }}>
+                    <SvgIcon name="clock" size={13} strokeWidth={2} />
+                    Pickup Timing
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => setScheduling('ASAP')}
+                      style={{
+                        padding: '11px 12px',
+                        borderRadius: 12,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        border: scheduling === 'ASAP' ? '1.5px solid #C9A84C' : '1px solid rgba(255,255,255,0.12)',
+                        background: scheduling === 'ASAP' ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.03)',
+                        color: '#fff',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
+                        <span style={{ color: '#C9A84C' }}><SvgIcon name="zap" size={16} strokeWidth={2} /></span>
+                        <b style={{ fontSize: 13 }}>Right Away</b>
+                      </div>
+                      <span style={{ fontSize: 11.5, color: '#8a8a8a', display: 'block', paddingLeft: 23 }}>
+                        Ready in ~{settings.pickupMinutes} min
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setScheduling('SCHEDULED')}
+                      style={{
+                        padding: '11px 12px',
+                        borderRadius: 12,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        border: scheduling === 'SCHEDULED' ? '1.5px solid #C9A84C' : '1px solid rgba(255,255,255,0.12)',
+                        background: scheduling === 'SCHEDULED' ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.03)',
+                        color: '#fff',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
+                        <span style={{ color: '#C9A84C' }}><SvgIcon name="calendar" size={16} strokeWidth={2} /></span>
+                        <b style={{ fontSize: 13 }}>Schedule</b>
+                      </div>
+                      <span style={{ fontSize: 11.5, color: '#8a8a8a', display: 'block', paddingLeft: 23 }}>
+                        Pick date &amp; time
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Sub-inputs for Schedule (Only for Pickup) */}
+                  {scheduling === 'SCHEDULED' && (
+                    <div style={{ marginTop: 10, padding: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 12 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 6 }}>
+                        <div>
+                          <label htmlFor="modal-date" style={{ display: 'block', fontSize: 11, color: '#8a8a8a', textTransform: 'uppercase', marginBottom: 4 }}>
+                            Date
+                          </label>
+                          <input
+                            id="modal-date"
+                            type="date"
+                            min={todayStr}
+                            max={maxDateStr}
+                            value={scheduleDate}
+                            onChange={(e) => setScheduleDate(e.target.value)}
+                            style={{ ...inputStyle, height: 40, colorScheme: 'dark' }}
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="modal-time" style={{ display: 'block', fontSize: 11, color: '#8a8a8a', textTransform: 'uppercase', marginBottom: 4 }}>
+                            Time
+                          </label>
+                          <input
+                            id="modal-time"
+                            type="time"
+                            min="11:00"
+                            max="22:00"
+                            step="1800"
+                            value={scheduleTime}
+                            onChange={(e) => setScheduleTime(e.target.value)}
+                            style={{ ...inputStyle, height: 40, colorScheme: 'dark' }}
+                          />
+                        </div>
+                      </div>
+                      <p style={{ fontSize: 11, color: '#7a7a7a', margin: 0 }}>
+                        💡 Min 25m advance notice · Kitchen hours: 11:00 AM – 10:00 PM
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 12,
+                    padding: '11px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10
+                  }}
+                >
+                  <span style={{ color: '#C9A84C' }}><SvgIcon name="zap" size={17} strokeWidth={2} /></span>
+                  <div>
+                    <b style={{ display: 'block', fontSize: 12.5, color: '#fff' }}>Instant Delivery</b>
+                    <span style={{ fontSize: 11.5, color: '#8a8a8a' }}>
+                      Dispatched as soon as ready · Arrives in ~{settings.deliveryMinutes} mins
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* SECTION 3: Contact Info */}
+              <div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#C9A84C', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8, fontWeight: 700 }}>
+                  <SvgIcon name="phone" size={13} strokeWidth={2} />
+                  Your Contact Details
+                </label>
+                <div style={{ display: 'grid', gap: 8 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    <input
+                      id="modal-name"
+                      required
+                      maxLength={120}
+                      placeholder="Your Name *"
+                      value={customer.name}
+                      onChange={(e) => setCustomer((prev) => ({ ...prev, name: e.target.value }))}
+                      style={inputStyle}
+                    />
+                    <input
+                      id="modal-phone"
+                      required
+                      type="tel"
+                      maxLength={40}
+                      placeholder="Phone Number *"
+                      value={customer.phone}
+                      onChange={(e) => setCustomer((prev) => ({ ...prev, phone: e.target.value }))}
+                      style={inputStyle}
+                    />
+                  </div>
+                  <input
+                    id="modal-email"
+                    type="email"
+                    maxLength={180}
+                    placeholder="Email — for receipt (optional)"
+                    value={customer.email}
+                    onChange={(e) => setCustomer((prev) => ({ ...prev, email: e.target.value }))}
+                    style={inputStyle}
+                  />
+                </div>
+              </div>
+
+              {/* Confirm / Save button */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (activeModal === 'DELIVERY' && (!customer.address || !customer.address.trim())) {
+                    showWarning('Address needed', 'Please enter your delivery address.');
+                    return;
+                  }
+                  if (!customer.name?.trim() || !customer.phone?.trim()) {
+                    showWarning('Contact needed', 'Please enter your name and phone number.');
+                    return;
+                  }
+                  if (activeModal === 'PICKUP' && scheduling === 'SCHEDULED') {
+                    if (!scheduleDate || !scheduleTime) {
+                      showWarning('Time needed', 'Please pick a date and time for your schedule.');
+                      return;
+                    }
+                  }
+                  setActiveModal(null);
+                }}
+                style={{
+                  marginTop: 6,
+                  height: 48,
+                  borderRadius: 12,
+                  border: 'none',
+                  background: GOLD,
+                  color: '#000',
+                  fontWeight: 900,
+                  fontSize: 13,
+                  letterSpacing: '0.5px',
+                  cursor: 'pointer',
+                  boxShadow: '0 6px 20px rgba(201,168,76,0.3)'
+                }}
+              >
+                CONFIRM {activeModal === 'DELIVERY' ? 'DELIVERY' : 'PICKUP'} DETAILS ✓
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── bill details ───────────────────────────────────────────────── */}
       <Card>

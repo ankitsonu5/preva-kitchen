@@ -15,6 +15,7 @@ import './styles/reference-home.css';
 import './styles/preva-selection-modal.css';
 import '@/styles/typography.css';
 import Shell from '@/components/Shell';
+import GoogleAnalytics from '@/components/GoogleAnalytics';
 import { cmsFetch } from '@/lib/cms';
 import { roboto } from '@/lib/fonts';
 import { DEFAULT_OG_IMAGE } from '@/lib/seo';
@@ -138,6 +139,7 @@ export default function RootLayout({ children }) {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        <GoogleAnalytics />
       </head>
       <body id="preva-app" className={roboto.className} suppressHydrationWarning>
         <Shell>{children}</Shell>

@@ -8,6 +8,9 @@ import {
 import { get, post, result, badRequest, notFound, unauthorized } from '../router.js';
 import { logActivity } from '../lib/activity.js';
 import { careerJobsCollection } from '../lib/career-jobs.js';
+import {
+  notifyReservation, notifyVipRequest, notifyContactEnquiry, notifyCareerApplication
+} from '../lib/email.js';
 
 /* ══════════════════════════════════════════════════════════════════════════
    Helpers
@@ -720,10 +723,12 @@ get('/preview/:token', async ({ params }) => {
    plain acknowledgement — no ids, no internal state.
    ══════════════════════════════════════════════════════════════════════════ */
 
-async function storeEnquiry(collectionName, document, { action, entity, name, ip }) {
+async function storeEnquiry(collectionName, document, { action, entity, name, ip }, notifyFn = null) {
   const target = await col(collectionName);
   await target.insertOne({ ...document, status: 'NEW', createdAt: new Date() });
   await logActivity({ user: null, ip }, action, entity, name);
+  // Fire-and-forget: email failure must never reject a customer submission
+  if (notifyFn) notifyFn(document).catch(err => console.error('[email] notify failed:', err.message));
   return { ok: true };
 }
 
@@ -732,20 +737,17 @@ post('/reservations', async ({ body, ip }) => {
   const phone = cleanText(body?.phone, 40);
   if (!name || !phone) throw badRequest('Name and phone number are required.');
 
-  return storeEnquiry(
-    'reservation',
-    {
-      name,
-      phone,
-      email: cleanEmail(body?.email),
-      guests: Math.min(Math.max(Number(body?.guests) || 2, 1), 20),
-      date: cleanText(body?.date, 40),
-      time: cleanText(body?.time, 40),
-      occasion: cleanText(body?.occasion, 80),
-      notes: cleanText(body?.notes, 1000)
-    },
-    { action: 'CREATE', entity: 'RESERVATION', name, ip }
-  );
+  const doc = {
+    name,
+    phone,
+    email: cleanEmail(body?.email),
+    guests: Math.min(Math.max(Number(body?.guests) || 2, 1), 20),
+    date: cleanText(body?.date, 40),
+    time: cleanText(body?.time, 40),
+    occasion: cleanText(body?.occasion, 80),
+    notes: cleanText(body?.notes, 1000)
+  };
+  return storeEnquiry('reservation', doc, { action: 'CREATE', entity: 'RESERVATION', name, ip }, notifyReservation);
 });
 
 post('/vip-requests', async ({ body, ip }) => {
@@ -753,19 +755,16 @@ post('/vip-requests', async ({ body, ip }) => {
   const phone = cleanText(body?.phone, 40);
   if (!name || !phone) throw badRequest('Name and phone number are required.');
 
-  return storeEnquiry(
-    'vipRequest',
-    {
-      name,
-      phone,
-      email: cleanEmail(body?.email),
-      guests: Math.min(Math.max(Number(body?.guests) || 2, 2), 20),
-      date: cleanText(body?.date, 40),
-      occasion: cleanText(body?.occasion, 80),
-      notes: cleanText(body?.notes, 1000)
-    },
-    { action: 'CREATE', entity: 'VIP_REQUEST', name, ip }
-  );
+  const doc = {
+    name,
+    phone,
+    email: cleanEmail(body?.email),
+    guests: Math.min(Math.max(Number(body?.guests) || 2, 2), 20),
+    date: cleanText(body?.date, 40),
+    occasion: cleanText(body?.occasion, 80),
+    notes: cleanText(body?.notes, 1000)
+  };
+  return storeEnquiry('vipRequest', doc, { action: 'CREATE', entity: 'VIP_REQUEST', name, ip }, notifyVipRequest);
 });
 
 post('/contact', async ({ body, ip }) => {
@@ -773,19 +772,17 @@ post('/contact', async ({ body, ip }) => {
   const email = cleanEmail(body?.email);
   const message = cleanText(body?.message, 4000);
   if (!name || !email || !message) throw badRequest('Name, email and message are required.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw badRequest('Enter a valid email address.');
 
-  return storeEnquiry(
-    'contactEnquiry',
-    {
-      name,
-      email,
-      phone: cleanText(body?.phone, 40),
-      subject: cleanText(body?.subject, 200),
-      message,
-      formSource: cleanText(body?.formSource, 60) || 'CONTACT'
-    },
-    { action: 'CREATE', entity: 'CONTACT', name, ip }
-  );
+  const doc = {
+    name,
+    email,
+    phone: cleanText(body?.phone, 40),
+    subject: cleanText(body?.subject, 200),
+    message,
+    formSource: cleanText(body?.formSource, 60) || 'CONTACT'
+  };
+  return storeEnquiry('contactEnquiry', doc, { action: 'CREATE', entity: 'CONTACT', name, ip }, notifyContactEnquiry);
 });
 
 post('/guest-list', async ({ body, ip }) => {
@@ -881,6 +878,9 @@ post('/career-applications', async ({ body, ip }) => {
   await applications.insertOne(document);
 
   await logActivity({ user: null, ip }, 'CREATE', 'CAREER_APPLICATION', `${firstName} ${lastName} — ${role}`);
+  // Fire-and-forget staff alert — email failure must not block 201
+  notifyCareerApplication({ ...document, resume: resume ? { name: resume.name } : null })
+    .catch(err => console.error('[email] career application notify failed:', err.message));
   return result({ ok: true }, { status: 201 });
 });
 

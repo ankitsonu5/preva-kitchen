@@ -1748,9 +1748,8 @@ textarea:focus {
     z-index: 1;
 }
 
-.stacked-card {
-    /* Hover effect intentionally removed */
-}
+/* Hover effect intentionally removed */
+
 
 @media(max-width: 900px) {
     .gallery-scroll-section {
@@ -5908,6 +5907,7 @@ iframe {
     margin-bottom: 1.5rem;
     display: -webkit-box;
     -webkit-line-clamp: 3;
+    line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
     flex-grow: 1;
@@ -5971,10 +5971,12 @@ iframe {
 .blog-grid .post-card:first-child .post-card-title {
     font-size: 2rem;
     -webkit-line-clamp: unset;
+    line-clamp: unset;
 }
 
 .blog-grid .post-card:first-child .post-excerpt {
     -webkit-line-clamp: 4;
+    line-clamp: 4;
 }
 
 @media (max-width: 900px) {
@@ -9972,7 +9974,7 @@ a.preva-order-trigger:hover {
 .real-google-author small { margin-top:2px; color:rgba(255,255,255,.48); font-size:.68rem; }
 .real-google-rating { display:flex; align-items:center; justify-content:flex-start; gap:7px; margin:11px 0 10px; }
 .real-google-verified { display:grid; width:13px; height:13px; place-items:center; color:#fff!important; background:#2f80ed; border-radius:50%; font-size:.55rem!important; font-weight:800; }
-.real-google-card > p { display:-webkit-box; overflow:hidden; margin:0; color:#fff; font-size:.8rem; font-weight:500; line-height:1.5; -webkit-box-orient:vertical; -webkit-line-clamp:4; }
+.real-google-card > p { display:-webkit-box; overflow:hidden; margin:0; color:#fff; font-size:.8rem; font-weight:500; line-height:1.5; -webkit-box-orient:vertical; -webkit-line-clamp:4; line-clamp:4; }
 .real-google-card > footer { display:flex!important; min-height:0!important; align-items:flex-end; justify-content:space-between; margin-top:auto!important; padding:5px 0 0!important; background:transparent!important; border:0!important; }
 .real-google-card > footer::before,.real-google-card > footer::after { display:none!important; }
 .real-google-card > footer a { color:rgba(255,255,255,.44); font-size:.69rem; }

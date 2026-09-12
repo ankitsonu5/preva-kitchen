@@ -1,6 +1,7 @@
 import { col, asObjectId } from './lib/db.js';
 import { stripe, stripeConfigured, webhookSecret } from './lib/stripe.js';
 import { logActivity } from './lib/activity.js';
+import { notifyNewOrder, notifyCustomerOrder } from './lib/email.js';
 
 /**
  * Stripe webhook.
@@ -242,7 +243,7 @@ export async function handleStripeWebhook(req, res) {
           break;
         }
 
-        await markPaid(orders, order, {
+        const paid = await markPaid(orders, order, {
           amountCents: session.amount_total,
           currency: session.currency,
           livemode: session.livemode,
@@ -250,6 +251,16 @@ export async function handleStripeWebhook(req, res) {
           paymentIntentId: session.payment_intent || null,
           email: session.customer_details?.email || order.customer?.email || ''
         });
+        // Staff alert — fire-and-forget, email failure must not block webhook 200
+        if (paid) {
+          const updatedOrder = await orders.findOne({ _id: order._id });
+          if (updatedOrder) {
+            notifyNewOrder(updatedOrder)
+              .catch(err => console.error('[email] staff order notify failed:', err.message));
+            notifyCustomerOrder(updatedOrder)
+              .catch(err => console.error('[email] customer order notify failed:', err.message));
+          }
+        }
         break;
       }
 

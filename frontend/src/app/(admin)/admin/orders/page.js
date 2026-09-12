@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  AlertTriangle, CheckCircle2, ChefHat, Clock3, DollarSign, Download, ExternalLink,
+  AlertTriangle, Calendar, CheckCircle2, ChefHat, Clock3, DollarSign, Download, ExternalLink,
   FileSpreadsheet, FileText, MapPin, PackageCheck, RefreshCw, Search,
   Settings2, ShoppingBag, Truck, Undo2, X
 } from 'lucide-react';
@@ -306,7 +306,11 @@ export default function OrdersPage() {
               <td><strong>#{order.orderNumber}</strong><small>{dateTime(order.createdAt)}</small></td>
               <td><strong>{order.customer?.name || 'Guest'}</strong><small>{order.customer?.phone || 'No phone'}</small></td>
               <td><strong>{itemCount} item{itemCount === 1 ? '' : 's'}</strong><small>{(order.lines || []).map((line) => `${line.qty}× ${line.name}`).join(', ')}</small></td>
-              <td>{clock(order.readyAt)}</td><td><StatusBadge status={order.status} /><small>{order.fulfilment}</small></td>
+              <td>
+                {clock(order.readyAt)}
+                {order.isScheduled && <small style={{ color: '#C9A84C', display: 'block', fontWeight: 600 }}>📅 Scheduled</small>}
+              </td>
+              <td><StatusBadge status={order.status} /><small>{order.fulfilment}</small></td>
               <td><StatusBadge status={order.payment?.status || 'UNPAID'} />{order.payment?.mode === 'test' && <small>test mode</small>}</td>
               <td><strong>{money(order.totalCents)}</strong></td>
               <td onClick={(event) => event.stopPropagation()}>{step ? <button className={`btn ${step.danger ? 'btn-danger' : ''}`} disabled={processing === order.id} onClick={() => advance(order)}>{step.label}</button> : <button className="btn ghost" onClick={() => openOrder(order)}>View</button>}</td>
@@ -345,7 +349,24 @@ function OrderDetails({ order, processing, canRefund, onClose, onAdvance, onRefu
       )}
       <strong>{money(order.totalCents)}</strong>
     </div>
-    <div className="order-detail-grid"><section><h3>Customer</h3><b>{order.customer?.name || 'Guest'}</b><a href={`tel:${order.customer?.phone || ''}`}>{order.customer?.phone || 'No phone'}</a>{order.customer?.email && <a href={`mailto:${order.customer.email}`}>{order.customer.email}</a>}</section><section><h3>Fulfilment</h3><b>{order.fulfilment}</b><span><Clock3 size={14} /> Ready by {clock(order.readyAt)}</span>{order.fulfilment === 'DELIVERY' && <span><MapPin size={14} /> {order.customer?.address}{order.customer?.postcode ? `, ${order.customer.postcode}` : ''}</span>}</section></div>
+    <div className="order-detail-grid">
+      <section>
+        <h3>Customer</h3>
+        <b>{order.customer?.name || 'Guest'}</b>
+        <a href={`tel:${order.customer?.phone || ''}`}>{order.customer?.phone || 'No phone'}</a>
+        {order.customer?.email && <a href={`mailto:${order.customer.email}`}>{order.customer.email}</a>}
+      </section>
+      <section>
+        <h3>Fulfilment</h3>
+        <b>{order.fulfilment}</b>
+        {order.isScheduled && order.scheduledAt ? (
+          <span style={{ color: '#C9A84C', fontWeight: 600 }}><Calendar size={14} /> Scheduled for {dateTime(order.scheduledAt)}</span>
+        ) : (
+          <span><Clock3 size={14} /> Ready by {clock(order.readyAt)}</span>
+        )}
+        {order.fulfilment === 'DELIVERY' && <span><MapPin size={14} /> {order.customer?.address}{order.customer?.postcode ? `, ${order.customer.postcode}` : ''}</span>}
+      </section>
+    </div>
     {(order.customer?.note || (order.lines || []).some((line) => line.note)) && <div className="order-note"><strong>Kitchen note</strong>{order.customer?.note && <p>{order.customer.note}</p>}{(order.lines || []).filter((line) => line.note).map((line) => <p key={line.itemId}><b>{line.name}:</b> {line.note}</p>)}</div>}
     <section className="order-items"><h3>Items</h3>{(order.lines || []).map((line, index) => <div key={`${line.itemId}-${index}`}><span><b>{line.qty}×</b> {line.name}{line.options && <small>{line.options}</small>}</span><strong>{money(line.unitCents * line.qty)}</strong></div>)}</section>
     <div className="order-totals"><span>Subtotal <b>{money(order.subtotalCents)}</b></span><span>Delivery <b>{order.deliveryCents ? money(order.deliveryCents) : 'Free'}</b></span><span>Tax <b>{money(order.taxCents)}</b></span><span>Tip <b>{money(order.tipCents)}</b></span><strong>Total <b>{money(order.totalCents)}</b></strong></div>

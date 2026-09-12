@@ -120,8 +120,24 @@ export default function SvgIcon({ name, size = 18, className = '', strokeWidth =
       return <svg {...commonProps}><path d="M4 13 6 5h12l2 8v6H4v-6Z" /><path d="M4 13h5l1.5 2h3L15 13h5" /></svg>;
     case 'package':
       return <svg {...commonProps}><path d="m4 7 8-4 8 4-8 4-8-4Z" /><path d="M4 7v10l8 4 8-4V7M12 11v10" /></svg>;
+    case 'pickup':
+    case 'bag':
+      return (
+        <svg {...commonProps}>
+          <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+          <path d="M3 6h18" />
+          <path d="M16 10a4 4 0 0 1-8 0" />
+        </svg>
+      );
     case 'delivery':
       return <svg {...commonProps}><circle cx="6" cy="18" r="2" /><circle cx="18" cy="18" r="2" /><path d="M8 18h6l-3-7H7l-1 4M11 11l3-3h3M14 8l4 10M9 7h3" /></svg>;
+    case 'zap':
+    case 'bolt':
+      return (
+        <svg {...commonProps}>
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+      );
     case 'party':
       return <svg {...commonProps}><path d="m4 20 5-13 8 8-13 5Z" /><path d="m9 7 6 8M15 4l1-2M19 8l3-1M17 12l3 2M11 3l-1-2" /></svg>;
     case 'copy':

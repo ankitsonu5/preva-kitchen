@@ -150,6 +150,7 @@
   text-transform: none !important;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
 }
 
 .blog-content-layout .post-card-title a {
@@ -172,6 +173,7 @@
   line-height: 1.72;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 4;
+  line-clamp: 4;
 }
 
 .blog-content-layout .post-card-footer {

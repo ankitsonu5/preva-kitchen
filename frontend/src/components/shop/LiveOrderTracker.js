@@ -76,6 +76,7 @@ export default function LiveOrderTracker({ initialOrder }) {
       /* private browsing */
     }
   }, [order?.orderNumber, order?.status]);
+
   const [lastUpdated, setLastUpdated] = useState(new Date());
 
   // Keep the customer view current while the order is active.
@@ -132,7 +133,7 @@ export default function LiveOrderTracker({ initialOrder }) {
 
   return (
     <div className="ps-live-tracker" style={{ maxWidth: '780px', margin: '0 auto', paddingBottom: '80px' }}>
-      
+
       {/* Top Live Tracker Header Banner */}
       <div
         style={{
@@ -162,19 +163,23 @@ export default function LiveOrderTracker({ initialOrder }) {
         <h1 style={{ color: '#ffffff', fontSize: 'clamp(26px, 4vw, 38px)', fontWeight: 900, margin: '0 0 8px 0' }}>
           Order #{order.orderNumber}
         </h1>
-        
+
         <p style={{ color: '#aaaaaa', fontSize: '15px', margin: 0, lineHeight: 1.5 }}>
           {isDelivery
             ? `Delivery order for ${order.customerName || 'our guest'}`
             : 'Pickup at: 13090 Inkster Rd, Redford Township, MI'}
         </p>
 
-        {/* Estimated Arrival Box */}
+        {/* Estimated Arrival / Scheduled For Box */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginTop: '20px', background: 'rgba(255,255,255,0.03)', padding: '14px 18px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.06)' }}>
           <div>
-            <span style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '1px', display: 'block' }}>ESTIMATED ARRIVAL</span>
+            <span style={{ fontSize: '11px', color: '#888', textTransform: 'uppercase', letterSpacing: '1px', display: 'block' }}>
+              {order?.isScheduled ? 'SCHEDULED FOR' : 'ESTIMATED ARRIVAL'}
+            </span>
             <strong style={{ fontSize: '18px', color: '#C9A84C', fontWeight: 900 }}>
-              {readyDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+              {order?.isScheduled && order?.scheduledAt
+                ? new Date(order.scheduledAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+                : readyDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
             </strong>
           </div>
           <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '16px' }}>

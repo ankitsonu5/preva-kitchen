@@ -10,6 +10,7 @@ import { loadContentInclude } from './public.js';
 import { stripe, stripeConfigured, paymentStatusSummary } from '../lib/stripe.js';
 import { careerJobsCollection } from '../lib/career-jobs.js';
 import { get, post, put, patch, del, badRequest, forbidden, notFound, result } from '../router.js';
+import { notifyCustomerOrderStatus } from '../lib/email.js';
 
 const WRITE = ['SUPER_ADMIN', 'ADMIN', 'EDITOR'];
 const AUTHOR = ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'AUTHOR'];
@@ -994,6 +995,8 @@ patch('/admin/orders/:id/status', { auth: true }, async (ctx) => {
   ].slice(-30);
   await orders.updateOne({ _id: id }, { $set: { status, statusHistory, updatedAt: now } });
   await logActivity(ctx, 'UPDATE', 'ORDER', `#${current.orderNumber} → ${status}`);
+  notifyCustomerOrderStatus({ ...current, status }, status)
+    .catch(err => console.error('[email] customer status notify error:', err.message));
   return serialize({ ...current, status, statusHistory, updatedAt: now });
 });
 
