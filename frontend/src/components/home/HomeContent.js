@@ -424,7 +424,7 @@ export default function Home() {
             {categories.map((category) => (
               <Link className="pk-ref-category" href="/menu" key={category.name}>
                 <span className="pk-ref-category-image">
-                  <img src={category.image} alt="" loading="lazy" style={{ objectPosition: category.position }} />
+                  <img src={category.image} alt={`${category.name} at Preva Kitchen`} loading="lazy" style={{ objectPosition: category.position }} />
                 </span>
                 <strong>{category.name}</strong>
                 <small>{category.count}</small>

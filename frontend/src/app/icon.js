@@ -1,8 +1,9 @@
 import { ImageResponse } from 'next/og';
 
-export const dynamic = 'force-static';
+export const size = { width: 48, height: 48 };
+export const contentType = 'image/png';
 
-export function GET() {
+export default function Icon() {
   return new ImageResponse(
     (
       <div
@@ -35,12 +36,6 @@ export function GET() {
         </div>
       </div>
     ),
-    {
-      width: 48,
-      height: 48,
-      headers: {
-        'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800'
-      }
-    }
+    { ...size }
   );
 }

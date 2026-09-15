@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from 'react';
-import { Utensils, Building2, PartyPopper, MapPinned, Clock3, Sparkles, Phone, Check, ArrowRight } from 'lucide-react';
+import { Utensils, Building2, PartyPopper, MapPinned, Clock3, Sparkles, Phone, Check, ArrowRight, UtensilsCrossed } from 'lucide-react';
 import { showError, showSuccess, showWarning } from '@/lib/swal';
+import Link from 'next/link';
 import {
   PageShell,
   PageHero,
@@ -39,6 +40,16 @@ const trays = [
 ];
 
 const deliveryAreas = ['Redford Township', 'Old Redford', 'Livonia', 'Dearborn Heights', 'Garden City'];
+
+/* Same dishes featured as homepage favorites — good tray/pan candidates for catering. */
+const popularDishes = [
+  { name: 'Preva Mac & Cheese', slug: 'preva-mac-and-cheese', description: 'Baked macaroni in a rich five-cheese sauce, finished with a golden crust.' },
+  { name: 'Preva Lamb Chops', slug: 'preva-lamb-chops', description: 'Grilled lamb chops seasoned with Preva house spices.' },
+  { name: 'Preva Steak Bites', slug: 'preva-steak-bites', description: 'Tender steak bites finished with savory garlic herb butter.' },
+  { name: 'Sweet Chilli Wings', slug: 'preva-wings-chilli', description: 'Crispy jumbo wings coated in a bright sweet chilli glaze with a gentle kick.' },
+  { name: 'Shrimp Tacos', slug: 'shrimp-tacos', description: 'Seasoned shrimp tucked into warm tortillas with fresh slaw and house sauce.' },
+  { name: 'Preva Quesadillas', slug: 'preva-quesadillas', description: 'Golden grilled tortilla layered with melted cheese and house seasoning.' }
+];
 
 const faqs = [
   {
@@ -216,6 +227,37 @@ export default function CateringContent() {
             prep, staffing and delivery properly. Need something sooner? Call us — we&apos;ll always try to help.
           </p>
         </Card>
+      </Section>
+
+      {/* Popular dishes — cross-link into the full dish pages for tray inspiration */}
+      <Section bg={COLORS.bgAlt}>
+        <SectionHeading
+          eyebrow="Tray inspiration"
+          eyebrowIcon={UtensilsCrossed}
+          title="Popular Dishes"
+          titleAccent="for Your Event"
+          description="Not sure what to put on the tray? These are guest favorites from the full menu — click through for details, or mix and match when you enquire."
+        />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '20px', marginBottom: '28px' }}>
+          {popularDishes.map((dish) => (
+            <Link
+              key={dish.slug}
+              href={`/menu/${dish.slug}`}
+              style={{
+                display: 'block',
+                padding: '22px',
+                borderRadius: '12px',
+                border: `1px solid ${COLORS.goldBorder}`,
+                background: 'rgba(255,255,255,0.02)',
+                textDecoration: 'none'
+              }}
+            >
+              <span style={{ fontFamily, fontSize: '1.05rem', fontWeight: 700, color: '#fff', display: 'block', marginBottom: '8px' }}>{dish.name}</span>
+              <span style={{ color: COLORS.textMuted, fontSize: '0.88rem', lineHeight: 1.6, display: 'block' }}>{dish.description}</span>
+            </Link>
+          ))}
+        </div>
+        <SecondaryButton href="/menu" icon={Utensils}>View Full Menu</SecondaryButton>
       </Section>
 
       {/* Enquiry form */}

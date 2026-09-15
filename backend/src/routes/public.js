@@ -900,6 +900,19 @@ post('/subscribe', async ({ body }) => {
   return { ok: true };
 });
 
+/*
+ * The 404 page reports every URL it renders for so broken links and bad
+ * bookmarks are visible somewhere other than server logs. Reuses the
+ * existing activity log — it already has an admin screen — rather than a
+ * new collection and a new page just for this.
+ */
+post('/track-404', async ({ body, ip }) => {
+  const path = cleanText(body?.path, 300) || '(unknown path)';
+  const referrer = cleanText(body?.referrer, 300);
+  await logActivity({ ip }, '404_NOT_FOUND', 'PAGE', referrer ? `${path} (from ${referrer})` : path);
+  return { ok: true };
+});
+
 /* Kept so an old bookmark to the WordPress sitemap still resolves. */
 get('/sitemap-data', async () => {
   const [content, services, galleries] = await Promise.all([col('content'), col('services'), col('galleries')]);

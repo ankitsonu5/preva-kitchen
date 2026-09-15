@@ -15,7 +15,7 @@ export const metadata = {
   robots: { index: false, follow: false },
   icons: {
     icon: [
-      { url: '/favicon.ico', type: 'image/svg+xml' },
+      { url: '/favicon.ico', type: 'image/png' },
       { url: '/favicon.svg', type: 'image/svg+xml' }
     ],
     shortcut: '/favicon.ico',

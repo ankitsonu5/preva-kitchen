@@ -27,6 +27,14 @@ import { generateSiteWideSchema } from '@/lib/seo-schema';
  * before React commits an update. React then asks the old parent to remove
  * that node and the browser throws NotFoundError. Install this tiny guard in
  * <head>, before hydration, so reconciliation follows the node's real parent.
+ *
+ * PRODUCTION ONLY. This exists solely for real visitors with browser
+ * extensions active on the live site — it has no purpose in local
+ * development, and dev mode is exactly where Next's Fast Refresh does the
+ * most aggressive live removeChild/insertBefore work on <style>/<link> tags.
+ * Rather than trying to out-guess every way Fast Refresh might touch the
+ * DOM, the patch is simply never installed outside a production build, so
+ * it can never again be the cause of a dev-mode styling break.
  */
 const domReconciliationGuard = `
 (() => {
@@ -37,7 +45,16 @@ const domReconciliationGuard = `
   const nativeRemoveChild = Node.prototype.removeChild;
   const nativeInsertBefore = Node.prototype.insertBefore;
 
+  // Translation/accessibility extensions move TEXT NODES around in the
+  // rendered page BODY — that is the only case this guard exists for. Never
+  // touch <head>, where the framework manages its own <style>/<link> tags.
+  function inHead(node) {
+    var doc = node && node.ownerDocument;
+    return !!(doc && doc.head && doc.head.contains(node));
+  }
+
   Node.prototype.removeChild = function (child) {
+    if (inHead(this) || inHead(child)) return nativeRemoveChild.call(this, child);
     if (!child || !child.parentNode) return child;
     if (child.parentNode !== this) {
       return nativeRemoveChild.call(child.parentNode, child);
@@ -46,6 +63,7 @@ const domReconciliationGuard = `
   };
 
   Node.prototype.insertBefore = function (newNode, referenceNode) {
+    if (inHead(this) || inHead(referenceNode)) return nativeInsertBefore.call(this, newNode, referenceNode);
     if (!referenceNode || referenceNode.parentNode !== this) {
       return this.appendChild(newNode);
     }
@@ -120,7 +138,7 @@ export async function generateMetadata() {
       }
     },
     icons: {
-      icon: [{ url: '/favicon.ico', type: 'image/svg+xml' }],
+      icon: [{ url: '/favicon.ico', type: 'image/png' }],
       shortcut: '/favicon.ico',
       apple: '/asset/preva-real-logo.png'
     }
@@ -134,7 +152,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={roboto.variable} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: domReconciliationGuard }} />
+        {process.env.NODE_ENV === 'production' && (
+          <script dangerouslySetInnerHTML={{ __html: domReconciliationGuard }} />
+        )}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
