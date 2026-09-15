@@ -2,16 +2,15 @@ import { col, serialize, asObjectId, nextOrderNumber } from '../lib/db.js';
 import { cleanText, cleanEmail, formatMoney } from '../lib/sanitize.js';
 import { priceOrder, shopSettings, itemPriceCents, readyAt } from '../lib/pricing.js';
 import { logActivity } from '../lib/activity.js';
-import {
-  stripe,
-  stripeConfigured,
-  allowUnpaidTestOrders,
-  paymentStatusSummary,
-  storefrontUrl,
-  webhookSecret
-} from '../lib/stripe.js';
-import { get, post, badRequest, notFound } from '../router.js';
+import { stripe, stripeConfigured, allowUnpaidTestOrders, paymentStatusSummary, storefrontUrl, webhookSecret } from '../lib/stripe.js';
+import { get, post, patch, badRequest, notFound, unauthorized } from '../router.js';
 import { notifyNewOrder, notifyCustomerOrder } from '../lib/email.js';
+import { getKitchenOperatingStatus } from '../lib/operatingHours.js';
+import jwt from 'jsonwebtoken';
+
+get('/shop/kitchen-status', async () => {
+  return getKitchenOperatingStatus();
+});
 
 /* ══════════════════════════════════════════════════════════════════════════
    Catalogue
@@ -97,6 +96,220 @@ get('/shop/products/:slug', async ({ params }) => {
   return { product: toProduct(row), related: related.map(toProduct) };
 });
 
+/* ── Public Restaurant TV Display Board ─────────────────────────────────── */
+
+get('/shop/display-board', async () => {
+  const orders = await col('order');
+  const now = new Date();
+  const recentCutoff = new Date(now.getTime() - 4 * 60 * 1000);
+
+  const rows = await orders.find({
+    $or: [
+      { status: { $in: ['RECEIVED', 'PAID', 'PREPARING', 'READY'] } },
+      { status: { $in: ['COMPLETED', 'DELIVERED'] }, updatedAt: { $gte: recentCutoff } }
+    ]
+  }).sort({ createdAt: -1 }).limit(60).toArray();
+
+  return rows.map((order) => {
+    const rawName = String(order.customer?.name || 'Guest').trim();
+    const parts = rawName.split(/\s+/);
+    const firstName = parts[0] || 'Guest';
+    const lastInitial = parts.length > 1 ? ` ${parts[1][0]}.` : '';
+    const displayName = `${firstName}${lastInitial}`;
+
+    let stage = 'PREPARING';
+    if (order.status === 'READY') stage = 'READY';
+    else if (['COMPLETED', 'DELIVERED'].includes(order.status)) stage = 'COMPLETED';
+
+    return {
+      orderNumber: order.orderNumber,
+      customerName: displayName,
+      fulfilment: order.fulfilment === 'DELIVERY' ? 'DELIVERY' : 'PICKUP',
+      stage,
+      status: order.status,
+      isScheduled: Boolean(order.isScheduled),
+      scheduledAt: order.scheduledAt || null,
+      readyAt: order.readyAt || null,
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt || order.createdAt
+    };
+  });
+});
+
+/* ── Kitchen Display Security & Protected Tickets ───────────────────────── */
+
+function verifyKitchenAuth(ctx) {
+  if (ctx?.user) return true; // Logged in admin/staff has access
+
+  const req = ctx?.request;
+  const headers = req?.headers || {};
+  let authHeader = headers['authorization'] || headers['x-kitchen-token'] || '';
+  if (!authHeader && ctx?.query?.token) {
+    authHeader = ctx.query.token;
+  }
+  const token = String(authHeader).replace(/^Bearer\s+/i, '').trim();
+  if (!token) return false;
+
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET || 'preva-secret-key');
+    return payload && (payload.role === 'kitchen' || payload.role === 'admin');
+  } catch {
+    return false;
+  }
+}
+
+post('/shop/kitchen-login', async ({ body, ip }) => {
+  const username = cleanText(body?.username || body?.id || 'chef', 50).trim();
+  const password = String(body?.password || '').trim();
+
+  const configuredUser = String(process.env.KITCHEN_ID || 'chef').trim();
+  const configuredPass = String(process.env.KITCHEN_PASSWORD || 'Prevakds@2026').trim();
+
+  let isValid = (
+    username.toLowerCase() === configuredUser.toLowerCase() &&
+    password === configuredPass
+  );
+
+  // Also check if matches an admin in users table
+  if (!isValid) {
+    const users = await col('users');
+    const adminUser = await users.findOne({ email: username.toLowerCase() });
+    if (adminUser && adminUser.status !== 'DISABLED') {
+      const { verifyPassword } = await import('../lib/auth.js');
+      if (await verifyPassword(password, adminUser.passwordHash)) {
+        isValid = true;
+      }
+    }
+  }
+
+  if (!isValid) {
+    throw unauthorized('Invalid Kitchen ID or Password. Please try again.');
+  }
+
+  const token = jwt.sign(
+    { role: 'kitchen', username: username || 'chef' },
+    process.env.JWT_SECRET || 'preva-secret-key',
+    { expiresIn: '60d' }
+  );
+
+  await logActivity({ ip }, 'LOGIN', 'KITCHEN', `Kitchen terminal unlocked by ${username}`);
+  return { ok: true, token, username: username || 'chef' };
+});
+
+get('/shop/kitchen-tickets', async (ctx) => {
+  if (!verifyKitchenAuth(ctx)) {
+    throw unauthorized('Kitchen access required. Please enter ID and Password.');
+  }
+
+  const orders = await col('order');
+  const rows = await orders.find({
+    status: { $in: ['RECEIVED', 'PAID', 'PREPARING', 'READY'] }
+  }).sort({ createdAt: 1 }).limit(100).toArray();
+
+  return rows.map((order) => {
+    const safe = serialize(order);
+    return {
+      id: safe.id,
+      orderNumber: safe.orderNumber,
+      status: safe.status,
+      fulfilment: safe.fulfilment,
+      customer: {
+        name: safe.customer?.name || 'Walk-in Guest',
+        phone: safe.customer?.phone || '',
+        note: safe.customer?.note || ''
+      },
+      lines: safe.lines || [],
+      subtotalCents: safe.subtotalCents,
+      totalCents: safe.totalCents,
+      isScheduled: safe.isScheduled,
+      scheduledAt: safe.scheduledAt,
+      readyAt: safe.readyAt,
+      createdAt: safe.createdAt,
+      updatedAt: safe.updatedAt
+    };
+  });
+});
+
+patch('/shop/kitchen-tickets/:id/status', async (ctx) => {
+  if (!verifyKitchenAuth(ctx)) {
+    throw unauthorized('Kitchen access required.');
+  }
+
+  const { params, body, ip } = ctx;
+  const orders = await col('order');
+  const id = asObjectId(params.id);
+  if (!id) throw badRequest('Invalid order ID.');
+
+  const order = await orders.findOne({ _id: id });
+  if (!order) throw notFound('Order not found.');
+
+  const targetStatus = cleanText(body?.status, 30).toUpperCase();
+  const ALLOWED_KITCHEN_STATUSES = ['RECEIVED', 'PREPARING', 'READY', 'COMPLETED', 'DELIVERED', 'CANCELLED'];
+  if (!ALLOWED_KITCHEN_STATUSES.includes(targetStatus)) {
+    throw badRequest(`Cannot change status to ${targetStatus}`);
+  }
+
+  const now = new Date();
+  const updateFields = {
+    status: targetStatus,
+    updatedAt: now
+  };
+
+  if (targetStatus === 'READY' && !order.readyAt) {
+    updateFields.readyAt = now;
+  }
+
+  await orders.updateOne(
+    { _id: id },
+    {
+      $set: updateFields,
+      $push: {
+        statusHistory: {
+          status: targetStatus,
+          at: now,
+          by: 'kitchen-display'
+        }
+      }
+    }
+  );
+
+  await logActivity({ ip }, 'UPDATE', 'ORDER', `#${order.orderNumber} -> ${targetStatus} (Kitchen KDS)`);
+  return { ok: true, status: targetStatus, orderNumber: order.orderNumber };
+});
+
+get('/shop/kitchen-recalls', async (ctx) => {
+  if (!verifyKitchenAuth(ctx)) {
+    throw unauthorized('Kitchen access required.');
+  }
+
+  const orders = await col('order');
+  const rows = await orders.find({
+    status: { $in: ['COMPLETED', 'DELIVERED'] }
+  }).sort({ updatedAt: -1 }).limit(20).toArray();
+
+  return rows.map((order) => {
+    const safe = serialize(order);
+    const lines = safe.lines || [];
+    const itemsCount = lines.reduce((sum, l) => sum + (Number(l.quantity) || 1), 0);
+    const itemsSummary = lines.map(l => `${l.quantity || 1}x ${l.name || 'Item'}`).slice(0, 2).join(', ');
+
+    return {
+      id: safe.id,
+      orderNumber: safe.orderNumber,
+      status: safe.status,
+      fulfilment: safe.fulfilment,
+      customer: {
+        name: safe.customer?.name || 'Walk-in Guest'
+      },
+      lines,
+      itemsCount,
+      itemsSummary: lines.length > 2 ? `${itemsSummary} +${lines.length - 2} more` : itemsSummary,
+      totalCents: safe.totalCents || 0,
+      updatedAt: safe.updatedAt
+    };
+  });
+});
+
 /* ══════════════════════════════════════════════════════════════════════════
    Checkout
    ══════════════════════════════════════════════════════════════════════════ */
@@ -104,13 +317,15 @@ get('/shop/products/:slug', async ({ params }) => {
 post('/shop/quote', async ({ body }) => {
   // Used by the cart to show tax and delivery before the customer commits.
   const priced = await priceOrder(body);
+  const kitchenStatus = getKitchenOperatingStatus();
   return {
     lines: priced.lines,
     subtotalCents: priced.subtotalCents,
     deliveryCents: priced.deliveryCents,
     taxCents: priced.taxCents,
     tipCents: priced.tipCents,
-    totalCents: priced.totalCents
+    totalCents: priced.totalCents,
+    kitchenStatus
   };
 });
 
@@ -146,8 +361,10 @@ post('/shop/checkout', async ({ body, ip }) => {
     throw badRequest('This checkout attempt is invalid. Refresh the page and try again.');
   }
 
-  // Parse and validate the optional scheduled time
+  // Enforce kitchen operating hours (Mon-Fri 11:00 AM - 3:30 PM America/Detroit)
+  const enforceHours = process.env.ENFORCE_KITCHEN_HOURS !== 'false';
   let scheduledAt = null;
+
   if (body?.scheduledAt) {
     const parsed = new Date(body.scheduledAt);
     const minTime = new Date(Date.now() + 25 * 60 * 1000);             // 25 min notice
@@ -155,9 +372,20 @@ post('/shop/checkout', async ({ body, ip }) => {
     if (isNaN(parsed.getTime())) throw badRequest('Invalid scheduled time.');
     if (parsed < minTime) throw badRequest('Scheduled time must be at least 25 minutes from now.');
     if (parsed > maxTime) throw badRequest('Cannot schedule more than 7 days in advance.');
-    const hour = parsed.getHours();
-    if (hour < 11 || hour >= 22) throw badRequest('Please schedule between 11:00 AM and 10:00 PM (kitchen hours).');
+
+    if (enforceHours) {
+      const scheduleStatus = getKitchenOperatingStatus(parsed);
+      if (!scheduleStatus.isOpen) {
+        throw badRequest(scheduleStatus.reason || 'Scheduled orders must be set between 11:00 AM and 3:30 PM, Monday through Friday.');
+      }
+    }
     scheduledAt = parsed;
+  } else if (enforceHours) {
+    // Immediate order check against current restaurant time
+    const currentStatus = getKitchenOperatingStatus(new Date());
+    if (!currentStatus.isOpen) {
+      throw badRequest(`${currentStatus.reason} Please select "Schedule" at checkout to place an advance order during our operating hours.`);
+    }
   }
 
   const orders = await col('order');

@@ -49,7 +49,7 @@ export function webhookSecret() {
 /** Canonical public storefront origin used for Stripe success/cancel URLs. */
 export function storefrontUrl() {
   const configured = String(
-    process.env.NEXT_PUBLIC_SITE_URL || String(process.env.FRONTEND_ORIGIN || '').split(',')[0] || ''
+    process.env.STOREFRONT_URL || process.env.NEXT_PUBLIC_SITE_URL || String(process.env.FRONTEND_ORIGIN || '').split(',')[0] || ''
   ).trim();
   const raw = configured || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000');
 

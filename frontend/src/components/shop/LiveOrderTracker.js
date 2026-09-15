@@ -300,6 +300,28 @@ export default function LiveOrderTracker({ initialOrder }) {
           >
             <SvgIcon name="smartphone" size={15} /> SMS
           </a>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== 'undefined') window.print();
+            }}
+            style={{
+              background: 'rgba(201, 168, 76, 0.15)',
+              color: '#f0d080',
+              border: '1px solid rgba(201, 168, 76, 0.4)',
+              padding: '8px 14px',
+              borderRadius: '12px',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <SvgIcon name="receipt" size={15} /> Print Receipt
+          </button>
         </div>
       </div>
 

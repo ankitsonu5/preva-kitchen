@@ -6,6 +6,7 @@ import {
   BookOpen,
   BriefcaseBusiness,
   ChartNoAxesCombined,
+  ChefHat,
   ChevronLeft,
   ChevronRight,
   CircleUserRound,
@@ -55,7 +56,8 @@ const groups = [
   {
     label: 'Online ordering',
     items: [
-      { label: 'Orders', href: '/admin/orders', icon: ShoppingCart, permission: 'orders' }
+      { label: 'Orders', href: '/admin/orders', icon: ShoppingCart, permission: 'orders' },
+      { label: 'Kitchen Display (KDS)', href: '/admin/kds', icon: ChefHat, permission: 'orders' }
     ]
   },
   {

@@ -888,7 +888,9 @@ function orderFilter(query = {}) {
   const fulfilment = cleanText(query.fulfilment, 20).toUpperCase();
   const search = cleanText(query.search, 100);
 
-  if (status === 'OPEN' || query.open === 'true') {
+  if (status === 'KDS' || status === 'ACTIVE') {
+    filter.status = { $in: ['PAID', 'RECEIVED', 'PREPARING', 'READY'] };
+  } else if (status === 'OPEN' || query.open === 'true') {
     filter.status = { $in: ['PENDING', 'PAID', 'RECEIVED', 'PREPARING', 'READY', 'ON_THE_WAY'] };
   } else if (status === 'PAID' || status === 'RECEIVED') {
     filter.status = { $in: ['PAID', 'RECEIVED'] };
@@ -923,7 +925,8 @@ function orderFilter(query = {}) {
 get('/admin/orders', { auth: true }, async ({ query }) => {
   const orders = await col('order');
   const limit = Math.min(Math.max(cleanInt(query.limit, 200), 1), 500);
-  const rows = await orders.find(orderFilter(query)).sort({ createdAt: -1 }).limit(limit).toArray();
+  const sortDirection = query.sort === 'asc' || query.sort === 'fifo' ? 1 : -1;
+  const rows = await orders.find(orderFilter(query)).sort({ createdAt: sortDirection }).limit(limit).toArray();
   return rows.map(serialize);
 });
 
@@ -977,12 +980,13 @@ patch('/admin/orders/:id/status', { auth: true }, async (ctx) => {
 
   const allowed = {
     PENDING: ['CANCELLED'],
-    PAID: ['PREPARING'],
-    RECEIVED: ['PREPARING'],
-    PREPARING: ['READY'],
-    READY: current.fulfilment === 'DELIVERY' ? ['ON_THE_WAY'] : ['COMPLETED'],
-    ON_THE_WAY: ['DELIVERED'],
-    DELIVERED: ['COMPLETED']
+    PAID: ['PREPARING', 'CANCELLED'],
+    RECEIVED: ['PREPARING', 'CANCELLED'],
+    PREPARING: ['READY', 'RECEIVED'],
+    READY: current.fulfilment === 'DELIVERY' ? ['ON_THE_WAY', 'PREPARING'] : ['COMPLETED', 'PREPARING'],
+    ON_THE_WAY: ['DELIVERED', 'READY'],
+    DELIVERED: ['COMPLETED', 'ON_THE_WAY'],
+    COMPLETED: ['READY']
   };
   if (!(allowed[current.status] || []).includes(status)) {
     throw badRequest(`Order #${current.orderNumber} cannot move from ${current.status} to ${status}.`);

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import {
   AlertTriangle, Calendar, CheckCircle2, ChefHat, Clock3, DollarSign, Download, ExternalLink,
   FileSpreadsheet, FileText, MapPin, PackageCheck, RefreshCw, Search,
@@ -272,7 +273,26 @@ export default function OrdersPage() {
   return (
     <Shell>
       <PageHeader icon={ChefHat} eyebrow="Online ordering" title="Orders" description="Live kitchen queue, fulfilment tracking, payments and ordering controls."
-        actions={<>{canManagePayments && <button className="btn ghost" onClick={() => setSettingsOpen(true)}><Settings2 size={15} /> Settings</button>}<button className="btn ghost" onClick={() => exportOrders('csv')}><Download size={15} /> CSV</button><button className="btn ghost" onClick={() => exportOrders('xlsx')}><FileSpreadsheet size={15} /> Excel</button><button className="btn ghost" onClick={() => exportOrders('pdf')}><FileText size={15} /> PDF</button><button className="btn ghost" onClick={() => load({ silent: true })} disabled={refreshing}><RefreshCw size={15} className={refreshing ? 'spin' : ''} /> Refresh</button></>}
+        actions={<>
+          <Link
+            href="/admin/kds"
+            className="btn"
+            style={{
+              background: 'linear-gradient(135deg, #f0d080 0%, #c9a96e 100%)',
+              color: '#000',
+              fontWeight: 800,
+              textDecoration: 'none',
+              boxShadow: '0 2px 10px rgba(201, 169, 110, 0.3)'
+            }}
+          >
+            <ChefHat size={16} /> Kitchen Display (KDS)
+          </Link>
+          {canManagePayments && <button className="btn ghost" onClick={() => setSettingsOpen(true)}><Settings2 size={15} /> Settings</button>}
+          <button className="btn ghost" onClick={() => exportOrders('csv')}><Download size={15} /> CSV</button>
+          <button className="btn ghost" onClick={() => exportOrders('xlsx')}><FileSpreadsheet size={15} /> Excel</button>
+          <button className="btn ghost" onClick={() => exportOrders('pdf')}><FileText size={15} /> PDF</button>
+          <button className="btn ghost" onClick={() => load({ silent: true })} disabled={refreshing}><RefreshCw size={15} className={refreshing ? 'spin' : ''} /> Refresh</button>
+        </>}
       />
 
       <div className="order-stats">

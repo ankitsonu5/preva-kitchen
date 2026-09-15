@@ -93,11 +93,47 @@ export default function CheckoutForm({ settings, cancelledOrderNumber = '' }) {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [activeModal, setActiveModal] = useState(null); // 'PICKUP' | 'DELIVERY' | null
+  const [kitchenStatus, setKitchenStatus] = useState(null);
 
   // Schedule state
   const [scheduling, setScheduling] = useState('ASAP'); // 'ASAP' | 'SCHEDULED'
   const [scheduleDate, setScheduleDate] = useState('');
   const [scheduleTime, setScheduleTime] = useState('');
+
+  // Fetch kitchen operating status (Mon-Fri 11:00 AM - 3:30 PM America/Detroit)
+  useEffect(() => {
+    fetch('/api/shop/kitchen-status')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) {
+          setKitchenStatus(data);
+          if (!data.isOpen) {
+            setScheduling('SCHEDULED');
+            const now = new Date();
+            const day = now.getDay();
+            let daysUntilNextOpen = 1;
+            if (day === 5 && (now.getHours() > 15 || (now.getHours() === 15 && now.getMinutes() > 30))) {
+              daysUntilNextOpen = 3; // Fri after 3:30pm -> Mon
+            } else if (day === 6) {
+              daysUntilNextOpen = 2; // Sat -> Mon
+            } else if (day === 0) {
+              daysUntilNextOpen = 1; // Sun -> Mon
+            } else if (now.getHours() > 15 || (now.getHours() === 15 && now.getMinutes() > 30)) {
+              daysUntilNextOpen = 1; // Mon-Thu after 3:30pm -> next day
+            } else if (day >= 1 && day <= 5 && now.getHours() < 11) {
+              daysUntilNextOpen = 0; // Mon-Fri morning -> today at 11:30 AM
+            }
+            const nextOpenDate = new Date(Date.now() + daysUntilNextOpen * 24 * 60 * 60 * 1000);
+            const y = nextOpenDate.getFullYear();
+            const m = String(nextOpenDate.getMonth() + 1).padStart(2, '0');
+            const d = String(nextOpenDate.getDate()).padStart(2, '0');
+            setScheduleDate(`${y}-${m}-${d}`);
+            setScheduleTime('11:30');
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Date bounds: today → +7 days (local time, not UTC)
   const todayStr = useMemo(() => {
@@ -113,7 +149,7 @@ export default function CheckoutForm({ settings, cancelledOrderNumber = '' }) {
     () => ({
       fulfilment,
       scheduledAt:
-        fulfilment === 'PICKUP' && scheduling === 'SCHEDULED' && scheduleDate && scheduleTime
+        scheduling === 'SCHEDULED' && scheduleDate && scheduleTime
           ? `${scheduleDate}T${scheduleTime}:00`
           : null,
       lines: cart.lines.map((line) => ({
@@ -186,9 +222,18 @@ export default function CheckoutForm({ settings, cancelledOrderNumber = '' }) {
       return;
     }
 
-    if (fulfilment === 'PICKUP' && scheduling === 'SCHEDULED') {
+    // Kitchen operating hours check (Mon-Fri 11:00 AM - 3:30 PM America/Detroit)
+    if (scheduling === 'ASAP') {
+      if (kitchenStatus && !kitchenStatus.isOpen) {
+        setActiveModal(fulfilment);
+        const message = kitchenStatus.reason || 'Preva Kitchen is currently closed. Online orders are accepted Monday through Friday from 11:00 AM to 3:30 PM.';
+        setError(message);
+        showWarning('Kitchen Currently Closed', `${message} Please select "Schedule" to choose an order time during our open hours.`);
+        return;
+      }
+    } else if (scheduling === 'SCHEDULED') {
       if (!scheduleDate || !scheduleTime) {
-        setActiveModal('PICKUP');
+        setActiveModal(fulfilment);
         const message = 'Please select a date and time for your scheduled order.';
         setError(message);
         showWarning('Schedule required', message);
@@ -203,12 +248,26 @@ export default function CheckoutForm({ settings, cancelledOrderNumber = '' }) {
         showWarning('Too soon to schedule', message);
         return;
       }
-      const hour = scheduledAt.getHours();
-      if (hour < 11 || hour >= 22) {
+
+      // Check weekends
+      const dayOfWeek = scheduledAt.getDay();
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
         setActiveModal(fulfilment);
-        const message = 'Please pick a time between 11:00 AM and 10:00 PM (kitchen hours).';
+        const message = 'Preva Kitchen is closed on weekends. Please pick a Monday through Friday.';
         setError(message);
-        showWarning('Outside kitchen hours', message);
+        showWarning('Closed on Weekends', message);
+        return;
+      }
+
+      // Check operating hours: 11:00 AM to 3:30 PM (11:00 to 15:30)
+      const hour = scheduledAt.getHours();
+      const minute = scheduledAt.getMinutes();
+      const totalMinutes = hour * 60 + minute;
+      if (totalMinutes < 11 * 60 || totalMinutes > 15 * 60 + 30) {
+        setActiveModal(fulfilment);
+        const message = 'Please pick a time between 11:00 AM and 3:30 PM (kitchen operating hours).';
+        setError(message);
+        showWarning('Outside Kitchen Hours', message);
         return;
       }
     }
@@ -341,12 +400,52 @@ export default function CheckoutForm({ settings, cancelledOrderNumber = '' }) {
         </div>
       )}
 
+      {/* ── Kitchen Operating Hours Banner (when closed) ────────────────── */}
+      {kitchenStatus && !kitchenStatus.isOpen && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(180, 83, 9, 0.08) 100%)',
+          border: '1px solid rgba(245, 158, 11, 0.35)',
+          borderRadius: 14,
+          padding: '14px 18px',
+          marginBottom: 12,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12
+        }}>
+          <span style={{ fontSize: 22 }}>⏰</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <strong style={{ color: '#fbbf24', fontSize: 13.5 }}>
+                Kitchen Currently Closed
+              </strong>
+              <span style={{
+                background: 'rgba(245, 158, 11, 0.2)',
+                color: '#fde68a',
+                fontSize: 11,
+                fontWeight: 800,
+                padding: '2px 8px',
+                borderRadius: 6,
+                textTransform: 'uppercase'
+              }}>
+                Mon–Fri 11:00 AM – 3:30 PM
+              </span>
+            </div>
+            <p style={{ color: '#ccc', fontSize: 12.5, margin: '4px 0 0 0', lineHeight: 1.4 }}>
+              {kitchenStatus.reason} You can still place a <strong>Scheduled Order</strong> for our next open hours!
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ── restaurant strip ───────────────────────────────────────────── */}
       <Card style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <span style={{ width: 46, height: 46, borderRadius: 10, background: 'rgba(201,168,76,0.12)', display: 'grid', placeItems: 'center', color: '#C9A84C' }}><SvgIcon name="utensils" size={22} /></span>
         <div style={{ flex: 1, minWidth: 0 }}>
           <b style={{ display: 'block', color: '#fff', fontSize: 14 }}>Preva Kitchen</b>
-          <span style={{ fontSize: 11.5, color: '#8a8a8a' }}>13090 Inkster Rd, Redford Township, MI</span>
+          <span style={{ fontSize: 11.5, color: '#8a8a8a', display: 'block' }}>13090 Inkster Rd, Redford Township, MI</span>
+          <span style={{ fontSize: 11, color: kitchenStatus?.isOpen ? '#34d399' : '#fbbf24', fontWeight: 600 }}>
+            {kitchenStatus?.isOpen ? '● Open Now · Closes at 3:30 PM' : '● Closed Right Now · Hours: Mon–Fri 11:00 AM – 3:30 PM'}
+          </span>
         </div>
       </Card>
 
@@ -678,6 +777,68 @@ export default function CheckoutForm({ settings, cancelledOrderNumber = '' }) {
 
             {/* Modal Body */}
             <div style={{ display: 'grid', gap: 16 }}>
+              {/* Fulfilment Mode Switcher (Pickup vs Delivery) */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 8,
+                background: 'rgba(255,255,255,0.04)',
+                padding: 4,
+                borderRadius: 12,
+                border: '1px solid rgba(255,255,255,0.08)'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFulfilment('PICKUP');
+                    setActiveModal('PICKUP');
+                  }}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 9,
+                    border: 'none',
+                    background: activeModal === 'PICKUP' ? '#C9A84C' : 'transparent',
+                    color: activeModal === 'PICKUP' ? '#000' : '#aaa',
+                    fontWeight: 800,
+                    fontSize: 12.5,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <SvgIcon name="pickup" size={15} strokeWidth={2} />
+                  <span>Store Pickup</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFulfilment('DELIVERY');
+                    setActiveModal('DELIVERY');
+                  }}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 9,
+                    border: 'none',
+                    background: activeModal === 'DELIVERY' ? '#C9A84C' : 'transparent',
+                    color: activeModal === 'DELIVERY' ? '#000' : '#aaa',
+                    fontWeight: 800,
+                    fontSize: 12.5,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <SvgIcon name="delivery" size={15} strokeWidth={2} />
+                  <span>Doorstep Delivery</span>
+                </button>
+              </div>
               {/* SECTION 1: Address for Delivery, or Store info for Pickup */}
               {activeModal === 'DELIVERY' ? (
                 <div>
@@ -726,122 +887,114 @@ export default function CheckoutForm({ settings, cancelledOrderNumber = '' }) {
                 </div>
               )}
 
-              {/* SECTION 2: Timing — ONLY for Pickup. Delivery is always ASAP */}
-              {activeModal === 'PICKUP' ? (
-                <div>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#C9A84C', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8, fontWeight: 700 }}>
-                    <SvgIcon name="clock" size={13} strokeWidth={2} />
-                    Pickup Timing
-                  </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                    <button
-                      type="button"
-                      onClick={() => setScheduling('ASAP')}
-                      style={{
-                        padding: '11px 12px',
-                        borderRadius: 12,
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        border: scheduling === 'ASAP' ? '1.5px solid #C9A84C' : '1px solid rgba(255,255,255,0.12)',
-                        background: scheduling === 'ASAP' ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.03)',
-                        color: '#fff',
-                        transition: 'all 0.2s ease'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
-                        <span style={{ color: '#C9A84C' }}><SvgIcon name="zap" size={16} strokeWidth={2} /></span>
-                        <b style={{ fontSize: 13 }}>Right Away</b>
-                      </div>
-                      <span style={{ fontSize: 11.5, color: '#8a8a8a', display: 'block', paddingLeft: 23 }}>
-                        Ready in ~{settings.pickupMinutes} min
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setScheduling('SCHEDULED')}
-                      style={{
-                        padding: '11px 12px',
-                        borderRadius: 12,
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        border: scheduling === 'SCHEDULED' ? '1.5px solid #C9A84C' : '1px solid rgba(255,255,255,0.12)',
-                        background: scheduling === 'SCHEDULED' ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.03)',
-                        color: '#fff',
-                        transition: 'all 0.2s ease'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
-                        <span style={{ color: '#C9A84C' }}><SvgIcon name="calendar" size={16} strokeWidth={2} /></span>
-                        <b style={{ fontSize: 13 }}>Schedule</b>
-                      </div>
-                      <span style={{ fontSize: 11.5, color: '#8a8a8a', display: 'block', paddingLeft: 23 }}>
-                        Pick date &amp; time
-                      </span>
-                    </button>
-                  </div>
-
-                  {/* Sub-inputs for Schedule (Only for Pickup) */}
-                  {scheduling === 'SCHEDULED' && (
-                    <div style={{ marginTop: 10, padding: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 12 }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 6 }}>
-                        <div>
-                          <label htmlFor="modal-date" style={{ display: 'block', fontSize: 11, color: '#8a8a8a', textTransform: 'uppercase', marginBottom: 4 }}>
-                            Date
-                          </label>
-                          <input
-                            id="modal-date"
-                            type="date"
-                            min={todayStr}
-                            max={maxDateStr}
-                            value={scheduleDate}
-                            onChange={(e) => setScheduleDate(e.target.value)}
-                            style={{ ...inputStyle, height: 40, colorScheme: 'dark' }}
-                          />
-                        </div>
-                        <div>
-                          <label htmlFor="modal-time" style={{ display: 'block', fontSize: 11, color: '#8a8a8a', textTransform: 'uppercase', marginBottom: 4 }}>
-                            Time
-                          </label>
-                          <input
-                            id="modal-time"
-                            type="time"
-                            min="11:00"
-                            max="22:00"
-                            step="1800"
-                            value={scheduleTime}
-                            onChange={(e) => setScheduleTime(e.target.value)}
-                            style={{ ...inputStyle, height: 40, colorScheme: 'dark' }}
-                          />
-                        </div>
-                      </div>
-                      <p style={{ fontSize: 11, color: '#7a7a7a', margin: 0 }}>
-                        💡 Min 25m advance notice · Kitchen hours: 11:00 AM – 10:00 PM
-                      </p>
+              {/* SECTION 2: Timing (Pickup or Delivery) */}
+              <div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#C9A84C', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8, fontWeight: 700 }}>
+                  <SvgIcon name="clock" size={13} strokeWidth={2} />
+                  {activeModal === 'PICKUP' ? 'Pickup Timing' : 'Delivery Timing'}
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (kitchenStatus && !kitchenStatus.isOpen) {
+                        showWarning('Kitchen Currently Closed', `${kitchenStatus.reason} Please select "Schedule" to choose an order time during our open hours.`);
+                        setScheduling('SCHEDULED');
+                      } else {
+                        setScheduling('ASAP');
+                      }
+                    }}
+                    style={{
+                      padding: '11px 12px',
+                      borderRadius: 12,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      border: scheduling === 'ASAP' ? '1.5px solid #C9A84C' : '1px solid rgba(255,255,255,0.12)',
+                      background: scheduling === 'ASAP' ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.03)',
+                      color: '#fff',
+                      opacity: kitchenStatus && !kitchenStatus.isOpen ? 0.6 : 1,
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
+                      <span style={{ color: '#C9A84C' }}><SvgIcon name="zap" size={16} strokeWidth={2} /></span>
+                      <b style={{ fontSize: 13 }}>
+                        Right Away {kitchenStatus && !kitchenStatus.isOpen ? '(Closed)' : ''}
+                      </b>
                     </div>
-                  )}
-                </div>
-              ) : (
-                <div
-                  style={{
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 12,
-                    padding: '11px 14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10
-                  }}
-                >
-                  <span style={{ color: '#C9A84C' }}><SvgIcon name="zap" size={17} strokeWidth={2} /></span>
-                  <div>
-                    <b style={{ display: 'block', fontSize: 12.5, color: '#fff' }}>Instant Delivery</b>
-                    <span style={{ fontSize: 11.5, color: '#8a8a8a' }}>
-                      Dispatched as soon as ready · Arrives in ~{settings.deliveryMinutes} mins
+                    <span style={{ fontSize: 11.5, color: kitchenStatus && !kitchenStatus.isOpen ? '#f87171' : '#8a8a8a', display: 'block', paddingLeft: 23 }}>
+                      {kitchenStatus && !kitchenStatus.isOpen
+                        ? 'Kitchen closed now'
+                        : activeModal === 'PICKUP'
+                        ? `Ready in ~${settings.pickupMinutes} min`
+                        : `Arrives in ~${settings.deliveryMinutes} min`}
                     </span>
-                  </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setScheduling('SCHEDULED')}
+                    style={{
+                      padding: '11px 12px',
+                      borderRadius: 12,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      border: scheduling === 'SCHEDULED' ? '1.5px solid #C9A84C' : '1px solid rgba(255,255,255,0.12)',
+                      background: scheduling === 'SCHEDULED' ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.03)',
+                      color: '#fff',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
+                      <span style={{ color: '#C9A84C' }}><SvgIcon name="calendar" size={16} strokeWidth={2} /></span>
+                      <b style={{ fontSize: 13 }}>Schedule</b>
+                    </div>
+                    <span style={{ fontSize: 11.5, color: '#8a8a8a', display: 'block', paddingLeft: 23 }}>
+                      Mon–Fri, 11:00 AM – 3:30 PM
+                    </span>
+                  </button>
                 </div>
-              )}
+
+                {/* Sub-inputs for Schedule */}
+                {scheduling === 'SCHEDULED' && (
+                  <div style={{ marginTop: 10, padding: '12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 12 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 6 }}>
+                      <div>
+                        <label htmlFor="modal-date" style={{ display: 'block', fontSize: 11, color: '#8a8a8a', textTransform: 'uppercase', marginBottom: 4 }}>
+                          Date (Mon–Fri)
+                        </label>
+                        <input
+                          id="modal-date"
+                          type="date"
+                          min={todayStr}
+                          max={maxDateStr}
+                          value={scheduleDate}
+                          onChange={(e) => setScheduleDate(e.target.value)}
+                          style={{ ...inputStyle, height: 40, colorScheme: 'dark' }}
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="modal-time" style={{ display: 'block', fontSize: 11, color: '#8a8a8a', textTransform: 'uppercase', marginBottom: 4 }}>
+                          Time (11:00 AM – 3:30 PM)
+                        </label>
+                        <input
+                          id="modal-time"
+                          type="time"
+                          min="11:00"
+                          max="15:30"
+                          step="900"
+                          value={scheduleTime}
+                          onChange={(e) => setScheduleTime(e.target.value)}
+                          style={{ ...inputStyle, height: 40, colorScheme: 'dark' }}
+                        />
+                      </div>
+                    </div>
+                    <p style={{ fontSize: 11, color: '#f0d080', margin: 0 }}>
+                      💡 Kitchen operating hours: Monday–Friday, 11:00 AM – 3:30 PM (Min 25m advance notice)
+                    </p>
+                  </div>
+                )}
+              </div>
 
               {/* SECTION 3: Contact Info */}
               <div>

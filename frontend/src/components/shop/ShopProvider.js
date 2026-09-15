@@ -222,6 +222,20 @@ function CartDrawer() {
               <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#fff' }}>Subtotal</span>
               <b style={{ fontSize: '22px', fontWeight: 'bold', color: '#C9A84C' }}>{money(cart.subtotalCents)}</b>
             </div>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '11.5px',
+              color: '#f0d080',
+              background: 'rgba(201, 168, 76, 0.1)',
+              padding: '6px 10px',
+              borderRadius: '8px',
+              border: '1px solid rgba(201, 168, 76, 0.2)'
+            }}>
+              <span>⏰</span>
+              <span>Kitchen hours: Mon–Fri, 11:00 AM – 3:30 PM</span>
+            </div>
             <span style={{ fontSize: '11px', color: '#777' }}>
               Delivery, tax and tip are calculated at checkout.
             </span>
