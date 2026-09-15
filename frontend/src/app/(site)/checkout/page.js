@@ -4,7 +4,7 @@ import CheckoutForm from '@/components/shop/CheckoutForm';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'Your Cart — Preva Kitchen', robots: 'noindex' };
+export const metadata = { title: 'Your Cart', robots: { index: false, follow: false } };
 
 export default async function CheckoutPage({ searchParams }) {
   const query = await searchParams;

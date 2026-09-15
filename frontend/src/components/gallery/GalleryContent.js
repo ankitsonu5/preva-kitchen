@@ -451,6 +451,7 @@ export default function GalleryPage() {
           {/* Close button */}
           <button
             onClick={closeLightbox}
+            aria-label="Close image"
             style={{
               position: 'absolute',
               top: '24px',
@@ -473,6 +474,7 @@ export default function GalleryPage() {
           {/* Prev Button */}
           <button
             onClick={(e) => { e.stopPropagation(); prevLightbox(); }}
+            aria-label="Previous image"
             style={{
               position: 'absolute',
               left: '24px',
@@ -496,6 +498,7 @@ export default function GalleryPage() {
           {/* Next Button */}
           <button
             onClick={(e) => { e.stopPropagation(); nextLightbox(); }}
+            aria-label="Next image"
             style={{
               position: 'absolute',
               right: '24px',

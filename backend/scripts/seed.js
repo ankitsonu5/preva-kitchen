@@ -28,7 +28,7 @@ const SETTINGS = {
 
 const MENU = [
   {
-    name: 'Preva Wings', slug: 'preva-wings', category: 'Wings', priceCents: 1500,
+    name: 'Preva Wings', slug: 'preva-wings', category: 'Wings', priceCents: 1650,
     description: 'Crispy wings tossed to order in your choice of house flavour.',
     servings: '12 pieces', featured: true, badge: 'Most ordered',
     optionGroups: [{

@@ -59,14 +59,26 @@ const nextConfig = {
         destination: 'https://prevakitchen.com/:path*',
         permanent: true
       },
-      { source: '/preva-kitchen', destination: '/menu', permanent: true },
+      { source: '/preva-kitchen', destination: '/about', permanent: true },
       { source: '/preva-kitchen-menu', destination: '/menu', permanent: true },
       { source: '/contact-us', destination: '/contact', permanent: true },
       { source: '/shop/:path*', destination: '/menu/:path*', permanent: true },
       { source: '/order-online', destination: '/menu', permanent: true },
       { source: '/online-order-platform', destination: '/menu', permanent: true },
       { source: '/cart', destination: '/checkout', permanent: true },
-      { source: '/my-account', destination: '/menu', permanent: true }
+      { source: '/my-account', destination: '/menu', permanent: true },
+      // Duplicate dish-page slugs consolidated onto one canonical slug per dish
+      // (Batch 3 SEO audit, Sheet 03). Both sides confirmed live in production
+      // Mongo (GET /api/shop/products) and rendering 200 at /menu/<slug> before
+      // adding these. /shop/<slug> equivalents already fall through the
+      // '/shop/:path*' rule above into these '/menu/...' rules, so no separate
+      // '/shop/...' entries are needed here.
+      { source: '/menu/preva-lamb-chops', destination: '/menu/lamb-chops', permanent: true },
+      { source: '/menu/preva-steak-bites', destination: '/menu/steak-bites', permanent: true },
+      { source: '/menu/preva-lobster', destination: '/menu/lobster-bites', permanent: true },
+      { source: '/menu/preva-mac-and-cheese', destination: '/menu/mac-and-cheese', permanent: true },
+      { source: '/menu/preva-yams', destination: '/menu/yams', permanent: true },
+      { source: '/menu/collard-greens-with-turkey-meat', destination: '/menu/collard-greens-turkey', permanent: true }
     ];
   },
 

@@ -36,7 +36,7 @@ export default async function ShopContent() {
           <div className="ps-hero-minimal__content">
             <span className="ps-hero-minimal__kicker">PREVA KITCHEN</span>
             <h1 className="ps-hero-minimal__title">Explore Our Dishes</h1>
-            <p className="ps-hero-minimal__sub">Crafted with passion, served with pride.</p>
+            <p className="ps-hero-minimal__sub">Crafted with passion, served with pride in Redford Township, MI.</p>
           </div>
         </section>
 

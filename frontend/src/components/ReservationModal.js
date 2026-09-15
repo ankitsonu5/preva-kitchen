@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Check, Calendar, Users, Clock, Sparkles } from 'lucide-react';
 import { showToast, showError } from '@/lib/swal';
 
@@ -35,6 +35,15 @@ export default function ReservationModal({ isOpen, onClose, initialOccasion = 'P
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -100,6 +109,9 @@ export default function ReservationModal({ isOpen, onClose, initialOccasion = 'P
       }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="reservationModalTitle"
         style={{
           background: 'linear-gradient(180deg, #181412 0%, #0E0C0B 100%)',
           border: '1px solid rgba(201, 168, 76, 0.35)',
@@ -152,7 +164,7 @@ export default function ReservationModal({ isOpen, onClose, initialOccasion = 'P
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#C9A84C', fontSize: '11px', fontWeight: 800, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 6 }}>
                 <Sparkles size={14} /> Preva Kitchen & Lounge
               </div>
-              <h2 style={{ fontSize: 'clamp(22px, 3vw, 28px)', fontWeight: 800, color: '#fff', margin: '0 0 6px' }}>
+              <h2 id="reservationModalTitle" style={{ fontSize: 'clamp(22px, 3vw, 28px)', fontWeight: 800, color: '#fff', margin: '0 0 6px' }}>
                 Table & Suite Reservation
               </h2>
               <p style={{ fontSize: '13px', color: '#999', margin: 0, lineHeight: 1.5 }}>
@@ -164,10 +176,11 @@ export default function ReservationModal({ isOpen, onClose, initialOccasion = 'P
               {/* Name & Phone */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '11.5px', color: '#C9A84C', fontWeight: 700, marginBottom: 5 }}>
+                  <label htmlFor="rm-name" style={{ display: 'block', fontSize: '11.5px', color: '#C9A84C', fontWeight: 700, marginBottom: 5 }}>
                     FULL NAME *
                   </label>
                   <input
+                    id="rm-name"
                     type="text"
                     required
                     placeholder="e.g. John Doe"
@@ -177,10 +190,11 @@ export default function ReservationModal({ isOpen, onClose, initialOccasion = 'P
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '11.5px', color: '#C9A84C', fontWeight: 700, marginBottom: 5 }}>
+                  <label htmlFor="rm-phone" style={{ display: 'block', fontSize: '11.5px', color: '#C9A84C', fontWeight: 700, marginBottom: 5 }}>
                     PHONE NUMBER *
                   </label>
                   <input
+                    id="rm-phone"
                     type="tel"
                     required
                     placeholder="e.g. (313) 286-3586"
@@ -193,10 +207,11 @@ export default function ReservationModal({ isOpen, onClose, initialOccasion = 'P
 
               {/* Email */}
               <div>
-                <label style={{ display: 'block', fontSize: '11.5px', color: '#C9A84C', fontWeight: 700, marginBottom: 5 }}>
+                <label htmlFor="rm-email" style={{ display: 'block', fontSize: '11.5px', color: '#C9A84C', fontWeight: 700, marginBottom: 5 }}>
                   EMAIL ADDRESS (OPTIONAL)
                 </label>
                 <input
+                  id="rm-email"
                   type="email"
                   placeholder="e.g. contact@example.com"
                   value={email}
@@ -208,10 +223,11 @@ export default function ReservationModal({ isOpen, onClose, initialOccasion = 'P
               {/* Date, Time & Guests */}
               <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: 10 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '11.5px', color: '#C9A84C', fontWeight: 700, marginBottom: 5 }}>
+                  <label htmlFor="rm-date" style={{ display: 'block', fontSize: '11.5px', color: '#C9A84C', fontWeight: 700, marginBottom: 5 }}>
                     DATE *
                   </label>
                   <input
+                    id="rm-date"
                     type="date"
                     required
                     min={new Date().toISOString().split('T')[0]}
@@ -222,10 +238,11 @@ export default function ReservationModal({ isOpen, onClose, initialOccasion = 'P
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '11.5px', color: '#C9A84C', fontWeight: 700, marginBottom: 5 }}>
+                  <label htmlFor="rm-time" style={{ display: 'block', fontSize: '11.5px', color: '#C9A84C', fontWeight: 700, marginBottom: 5 }}>
                     TIME
                   </label>
                   <select
+                    id="rm-time"
                     value={time}
                     onChange={(e) => setTime(e.target.value)}
                     style={{ ...inputStyle, colorScheme: 'dark' }}
@@ -239,10 +256,11 @@ export default function ReservationModal({ isOpen, onClose, initialOccasion = 'P
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '11.5px', color: '#C9A84C', fontWeight: 700, marginBottom: 5 }}>
+                  <label htmlFor="rm-guests" style={{ display: 'block', fontSize: '11.5px', color: '#C9A84C', fontWeight: 700, marginBottom: 5 }}>
                     GUESTS
                   </label>
                   <select
+                    id="rm-guests"
                     value={guests}
                     onChange={(e) => setGuests(Number(e.target.value))}
                     style={{ ...inputStyle, colorScheme: 'dark' }}
@@ -258,10 +276,11 @@ export default function ReservationModal({ isOpen, onClose, initialOccasion = 'P
 
               {/* Occasion / Experience */}
               <div>
-                <label style={{ display: 'block', fontSize: '11.5px', color: '#C9A84C', fontWeight: 700, marginBottom: 5 }}>
+                <label htmlFor="rm-occasion" style={{ display: 'block', fontSize: '11.5px', color: '#C9A84C', fontWeight: 700, marginBottom: 5 }}>
                   EXPERIENCE / OCCASION
                 </label>
                 <select
+                  id="rm-occasion"
                   value={occasion}
                   onChange={(e) => setOccasion(e.target.value)}
                   style={{ ...inputStyle, colorScheme: 'dark' }}
@@ -276,10 +295,11 @@ export default function ReservationModal({ isOpen, onClose, initialOccasion = 'P
 
               {/* Special Notes */}
               <div>
-                <label style={{ display: 'block', fontSize: '11.5px', color: '#C9A84C', fontWeight: 700, marginBottom: 5 }}>
+                <label htmlFor="rm-notes" style={{ display: 'block', fontSize: '11.5px', color: '#C9A84C', fontWeight: 700, marginBottom: 5 }}>
                   SPECIAL REQUESTS OR DIETARY PREFERENCES
                 </label>
                 <textarea
+                  id="rm-notes"
                   rows={2}
                   placeholder="Tell us any special requests, suite seating preference, or celebration details..."
                   value={notes}
@@ -367,6 +387,5 @@ const inputStyle = {
   color: '#fff',
   fontSize: '13px',
   padding: '0 12px',
-  outline: 'none',
   boxSizing: 'border-box'
 };

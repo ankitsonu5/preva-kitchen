@@ -37,6 +37,7 @@ export async function generateMetadata({ params }) {
       description: post.ogDescription || cleanDesc,
       url: canonical,
       siteName: 'Preva Kitchen',
+      locale: 'en_US',
       type: 'article',
       publishedTime: post.publishedAt || post.createdAt,
       modifiedTime: post.updatedAt || post.publishedAt || post.createdAt,

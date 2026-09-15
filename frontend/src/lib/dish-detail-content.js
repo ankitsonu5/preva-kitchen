@@ -1,4 +1,4 @@
-const LOCATION = 'Preva Kitchen & Lounge, 13090 Inkster Rd, Redford Township, MI 48239';
+const LOCATION = 'Preva Kitchen, 13090 Inkster Rd, Redford Township, MI 48239';
 const HOURS = 'Monday through Friday from 11:00 AM to 3:30 PM';
 
 /* Item-specific facts derived from the live Preva Kitchen menu. */
@@ -401,14 +401,73 @@ export function getDefaultFaqs(dish) {
   const pairings = pairingsFor(dish, content);
   const pairingText = pairings.length ? pairings.slice(0, 3).join(', ') : 'Preva’s signature sides and menu favorites';
   return [
-    { q: `What is the ${name} at Preva Kitchen & Lounge?`, a: `${description} ${content.preparation}` },
-    { q: `How much does the ${name} cost?`, a: `The ${name} costs ${price} at Preva Kitchen & Lounge in Redford Township, MI. Prices on delivery apps may vary slightly.` },
+    { q: `What is the ${name} at Preva Kitchen?`, a: `${description} ${content.preparation}` },
+    { q: `How much does the ${name} cost?`, a: `The ${name} costs ${price} at Preva Kitchen in Redford Township, MI. Prices on delivery apps may vary slightly.` },
     content.question && content.answer
       ? { q: content.question, a: content.answer }
       : { q: `Where can I order the ${name} near me?`, a: `The ${name} is served at ${LOCATION}. Dine in, call +1 313-286-3586 for pickup, or order online for delivery.` },
     { q: `Can I get the ${name} delivered in Redford Township?`, a: `Yes — order the ${name} for delivery from the Preva online shop during kitchen hours, or call +1 313-286-3586 to arrange pickup from 13090 Inkster Rd.` },
     { q: `What goes well with the ${name}?`, a: `Recommended pairings are ${pairingText}. They can be added to the same pickup or delivery order.` }
   ];
+}
+
+/*
+ * Curated cross-links for the storefront's "Goes well with" / "full lineup"
+ * callouts (Sheet 09 internal-linking pass — I12/I13/I14). These are real
+ * <Link> destinations, not prose — kept separate from DISH_DETAIL_PROFILES'
+ * `pairings` (which only feed generated paragraph/FAQ text) so the linking
+ * logic stays a small, explicit slug -> slug map rather than parsing names
+ * back out of that copy.
+ */
+export const WING_FLAVOR_LINKS = [
+  { slug: 'honey-hot', name: 'Honey Hot Wings' },
+  { slug: 'buffalo', name: 'Buffalo Wings' },
+  { slug: 'bbq', name: 'BBQ Wings' },
+  { slug: 'preva-wings-chilli', name: 'Sweet Chilli Wings' },
+  { slug: 'garlic-parmesan', name: 'Garlic Parmesan Wings' },
+  { slug: 'lemon-pepper', name: 'Lemon Pepper Wings' },
+  { slug: 'jerk', name: 'Jerk Wings' }
+];
+
+// The wings hub dish (/menu/preva-wings) links out to all 7 flavor pages.
+export function getWingFlavorLinks(dish) {
+  return dish?.slug === 'preva-wings' ? WING_FLAVOR_LINKS : [];
+}
+
+// Each of the 7 flavor pages links back to the hub.
+export function isWingFlavorPage(dish) {
+  return WING_FLAVOR_LINKS.some((flavor) => flavor.slug === dish?.slug);
+}
+
+// "Caribbean cluster": Rasta Pasta, Jerk Wings, Rice & Peas and Fried
+// Plantains cross-link to one another regardless of their different menu
+// categories (Pasta / Preva Wings / Sides), since the same-category
+// "related" list the API returns would never surface them together.
+const CROSS_CATEGORY_PAIRINGS = {
+  'rasta-pasta': [
+    { slug: 'jerk', name: 'Jerk Wings' },
+    { slug: 'rice-peas', name: 'Rice & Peas' },
+    { slug: 'fried-plantains', name: 'Fried Plantains' }
+  ],
+  jerk: [
+    { slug: 'rasta-pasta', name: 'Rasta Pasta' },
+    { slug: 'rice-peas', name: 'Rice & Peas' },
+    { slug: 'fried-plantains', name: 'Fried Plantains' }
+  ],
+  'rice-peas': [
+    { slug: 'rasta-pasta', name: 'Rasta Pasta' },
+    { slug: 'jerk', name: 'Jerk Wings' },
+    { slug: 'fried-plantains', name: 'Fried Plantains' }
+  ],
+  'fried-plantains': [
+    { slug: 'rasta-pasta', name: 'Rasta Pasta' },
+    { slug: 'jerk', name: 'Jerk Wings' },
+    { slug: 'rice-peas', name: 'Rice & Peas' }
+  ]
+};
+
+export function getCrossCategoryPairings(dish) {
+  return CROSS_CATEGORY_PAIRINGS[dish?.slug] || [];
 }
 
 export function getDishFaqs(dish) {

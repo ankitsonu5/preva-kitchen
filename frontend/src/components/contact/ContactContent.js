@@ -18,7 +18,7 @@ const contactOptions = [
     icon: Calendar,
     title: 'Table Reservations',
     body: 'Planning dinner, a date night, or celebrating a milestone? Send a request and our team will confirm your table.',
-    href: '/preva-kitchen#reservations',
+    href: '/reservations',
     cta: 'Reserve a table'
   },
   {
@@ -226,7 +226,7 @@ export default function ContactContent() {
               {/* Meta info */}
               <div style={{ display: 'flex', gap: '24px', alignItems: 'center', flexWrap: 'wrap', color: '#999', fontSize: '0.86rem' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Clock size={16} color="#c5a059" /> Tue–Sun · 5pm–10pm
+                  <Clock size={16} color="#c5a059" /> Dine-In Tue–Sun 5–10pm · Pickup Mon–Fri 11–3:30pm
                 </span>
                 <a
                   href="https://www.google.com/maps/search/?api=1&query=Preva+Kitchen,+13090+Inkster+Rd,+Redford+Township,+MI+48239,+United+States"
@@ -441,8 +441,9 @@ export default function ContactContent() {
                       SERVICE HOURS
                     </span>
                     <p style={{ margin: 0, color: '#d5d0c8', fontSize: '0.94rem', lineHeight: 1.6 }}>
-                      Tuesday – Sunday: <strong>5:00 PM – 10:00 PM</strong><br />
-                      <small style={{ color: '#888' }}>Monday: Closed for private prep</small>
+                      Dine-In: Tuesday – Sunday, <strong>5:00 PM – 10:00 PM</strong><br />
+                      Pickup &amp; Delivery: Monday – Friday, <strong>11:00 AM – 3:30 PM</strong><br />
+                      <small style={{ color: '#888' }}>Monday: No dine-in service (pickup/delivery only)</small>
                     </p>
                   </div>
                 </div>
@@ -530,10 +531,11 @@ export default function ContactContent() {
                   {/* Name Row */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '14px' }}>
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800, color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>
+                      <label htmlFor="contact-firstName" style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800, color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>
                         First Name <span style={{ color: '#c5a059' }}>*</span>
                       </label>
                       <input
+                        id="contact-firstName"
                         name="firstName"
                         value={form.firstName}
                         onChange={update}
@@ -554,10 +556,11 @@ export default function ContactContent() {
                       />
                     </div>
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800, color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>
+                      <label htmlFor="contact-lastName" style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800, color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>
                         Last Name
                       </label>
                       <input
+                        id="contact-lastName"
                         name="lastName"
                         value={form.lastName}
                         onChange={update}
@@ -581,10 +584,11 @@ export default function ContactContent() {
                   {/* Email & Phone */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '14px' }}>
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800, color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>
+                      <label htmlFor="contact-email" style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800, color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>
                         Email Address <span style={{ color: '#c5a059' }}>*</span>
                       </label>
                       <input
+                        id="contact-email"
                         type="email"
                         name="email"
                         value={form.email}
@@ -606,10 +610,11 @@ export default function ContactContent() {
                       />
                     </div>
                     <div>
-                      <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800, color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>
+                      <label htmlFor="contact-phone" style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800, color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>
                         Phone Number
                       </label>
                       <input
+                        id="contact-phone"
                         type="tel"
                         name="phone"
                         value={form.phone}
@@ -633,10 +638,11 @@ export default function ContactContent() {
 
                   {/* Inquiry Type */}
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800, color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>
+                    <label htmlFor="contact-inquiry" style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800, color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>
                       Inquiry Topic <span style={{ color: '#c5a059' }}>*</span>
                     </label>
                     <select
+                      id="contact-inquiry"
                       name="inquiry"
                       value={form.inquiry}
                       onChange={update}
@@ -666,10 +672,11 @@ export default function ContactContent() {
 
                   {/* Message */}
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800, color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>
+                    <label htmlFor="contact-message" style={{ display: 'block', fontSize: '0.72rem', fontWeight: 800, color: '#bbb', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>
                       Your Message <span style={{ color: '#c5a059' }}>*</span>
                     </label>
                     <textarea
+                      id="contact-message"
                       name="message"
                       rows={4}
                       placeholder="Tell us how we can assist you..."

@@ -71,6 +71,24 @@ function plainText(value = '') {
     .trim();
 }
 
+/**
+ * The source site (prevaclub.com) is Preva's former nightclub domain and its
+ * WordPress content still carries that identity in places — the restaurant's
+ * current brand is "Preva Kitchen" only, with no in-page delivery-app links
+ * for Uber Eats/DoorDash/Grubhub. Strip those leftovers out of otherwise-good
+ * source copy instead of carrying them onto the live menu.
+ */
+function sanitizeSourceText(value = '') {
+  return String(value)
+    .replace(/Preva\s+Kitchen\s*&\s*Lounge/gi, 'Preva Kitchen')
+    .replace(/Preva\s+NightClub/gi, 'Preva Kitchen')
+    .replace(
+      /for delivery through Uber Eats,\s*DoorDash\s*or\s*Grubhub straight from this page/gi,
+      'for delivery from the Preva online shop'
+    )
+    .replace(/Preva\s+event\s+nights?/gi, 'any night');
+}
+
 async function fetchWithRetry(url, attempts = 3) {
   let lastError;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
@@ -122,14 +140,50 @@ function extractAbout(html) {
   return title && paragraphs.length ? { title, paragraphs } : null;
 }
 
+/**
+ * The Product/Offer JSON-LD block on the source page carries the same price
+ * shown in its own About copy and FAQs, so it is a reliable single source for
+ * the numeric price too — reading it here lets this sync also correct any
+ * priceCents drift instead of only touching text.
+ */
+function extractPriceCents(html) {
+  const scripts = [...html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
+  for (const match of scripts) {
+    try {
+      const schema = JSON.parse(match[1]);
+      const graph = Array.isArray(schema?.['@graph']) ? schema['@graph'] : [schema];
+      const product = graph.find((node) => {
+        const types = Array.isArray(node?.['@type']) ? node['@type'] : [node?.['@type']];
+        return types.includes('Product') && node?.offers?.price;
+      });
+      const price = Number.parseFloat(product?.offers?.price);
+      if (Number.isFinite(price) && price > 0) return Math.round(price * 100);
+    } catch {
+      // Some WordPress plugins emit non-JSON script tags; inspect the next one.
+    }
+  }
+  return null;
+}
+
 async function readSource([sourceSlug, shopSlug]) {
   const sourceUrl = `${SOURCE_ROOT}/${sourceSlug}/`;
   const html = await fetchWithRetry(sourceUrl);
-  const faqs = extractFaqs(html);
-  if (faqs.length !== 0 && faqs.length !== 5) {
-    throw new Error(`${sourceSlug} returned an incomplete set of ${faqs.length} FAQs.`);
+  const rawFaqs = extractFaqs(html);
+  if (rawFaqs.length !== 0 && rawFaqs.length !== 5) {
+    throw new Error(`${sourceSlug} returned an incomplete set of ${rawFaqs.length} FAQs.`);
   }
-  return { sourceSlug, shopSlug, sourceUrl, faqs, about: extractAbout(html) };
+  const faqs = rawFaqs.map((faq) => ({ q: sanitizeSourceText(faq.q), a: sanitizeSourceText(faq.a) }));
+  const rawAbout = extractAbout(html);
+  const about = rawAbout
+    ? { title: sanitizeSourceText(rawAbout.title), paragraphs: rawAbout.paragraphs.map(sanitizeSourceText) }
+    : null;
+  return { sourceSlug, shopSlug, sourceUrl, faqs, about, priceCents: extractPriceCents(html) };
+}
+
+const DRY_RUN = process.argv.includes('--dry-run');
+
+function formatDollars(cents) {
+  return `$${(cents / 100).toFixed(2)}`;
 }
 
 const snapshots = [];
@@ -143,8 +197,15 @@ const now = new Date();
 let aboutCount = 0;
 let faqCount = 0;
 let faqFallbackCount = 0;
+let priceChangedCount = 0;
 
 for (const snapshot of snapshots) {
+  const existing = await menuItems.findOne(
+    { slug: snapshot.shopSlug },
+    { projection: { priceCents: 1, aboutContent: 1 } }
+  );
+  if (!existing) throw new Error(`Shop product not found for slug: ${snapshot.shopSlug}`);
+
   const update = {
     detailContentSource: snapshot.sourceUrl,
     detailContentSyncedAt: now,
@@ -164,9 +225,27 @@ for (const snapshot of snapshots) {
     update.aboutContent = snapshot.about.paragraphs.join('\n\n');
     aboutCount += 1;
   }
+  const priceChanged = snapshot.priceCents != null && snapshot.priceCents !== existing.priceCents;
+  if (priceChanged) {
+    update.priceCents = snapshot.priceCents;
+    update.price = formatDollars(snapshot.priceCents);
+    priceChangedCount += 1;
+    console.log(
+      `[price] ${snapshot.shopSlug}: ${existing.priceCents != null ? formatDollars(existing.priceCents) : '(none)'} -> ${formatDollars(snapshot.priceCents)}`
+    );
+  }
+
+  if (DRY_RUN) {
+    const aboutChanged = snapshot.about && snapshot.about.paragraphs.join('\n\n') !== existing.aboutContent;
+    console.log(`[dry-run] ${snapshot.shopSlug}: faqs=${snapshot.faqs.length === 5 ? 'sync' : 'skip'} about=${aboutChanged ? 'CHANGE' : 'same'} price=${priceChanged ? 'CHANGE' : 'same'}`);
+    continue;
+  }
+
   const result = await menuItems.updateOne({ slug: snapshot.shopSlug }, { $set: update });
   if (!result.matchedCount) throw new Error(`Shop product not found for slug: ${snapshot.shopSlug}`);
 }
 
-console.log(`Synced exact source FAQs for ${faqCount} products and source About copy for ${aboutCount} products; preserved ${faqFallbackCount} validated FAQ fallback.`);
+console.log(
+  `${DRY_RUN ? '[DRY RUN] Would sync' : 'Synced'} exact source FAQs for ${faqCount} products, source About copy for ${aboutCount} products (brand/claim text sanitized), ${priceChangedCount} price corrections; preserved ${faqFallbackCount} validated FAQ fallback.`
+);
 process.exit(0);

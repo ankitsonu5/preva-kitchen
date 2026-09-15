@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import ReservationModal from '@/components/ReservationModal';
 
 export default function PrivateDiningBanner() {
@@ -20,14 +21,19 @@ export default function PrivateDiningBanner() {
             Host family celebrations, corporate lunches and memorable group meals with Preva Kitchen.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setIsOpen(true)}
-          className="ps-btn ps-btn--gold"
-          style={{ padding: '0 32px', cursor: 'pointer', border: 'none' }}
-        >
-          Reserve Private Suite
-        </button>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={() => setIsOpen(true)}
+            className="ps-btn ps-btn--gold"
+            style={{ padding: '0 32px', cursor: 'pointer', border: 'none' }}
+          >
+            Reserve Private Suite
+          </button>
+          <Link href="/catering" className="ps-btn ps-btn--ghost" style={{ padding: '0 24px' }}>
+            View Catering Menu
+          </Link>
+        </div>
       </div>
 
       <ReservationModal

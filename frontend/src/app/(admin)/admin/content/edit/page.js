@@ -70,7 +70,7 @@ const SECTION_TEMPLATES = [
   /* ─ Interactive ─ */
   { type: 'accordion', title: 'Accordion / FAQ', icon: '➕', desc: 'Collapsible question & answer panels (FAQ style)', category: 'Interactive',
     defaultData: { heading: 'Frequently Asked Questions', items: [
-      { question: 'What are your hours?', answer: 'We are open Tuesday-Sunday from 11am to 2am.' },
+      { question: 'What are your hours?', answer: 'Dine-In: Tuesday-Sunday, 5:00 PM-10:00 PM. Pickup & Delivery: Monday-Friday, 11:00 AM-3:30 PM.' },
       { question: 'Do you accept reservations?', answer: 'Yes, we accept reservations for dining and VIP tables.' },
       { question: 'Is there a dress code?', answer: 'Smart casual to upscale attire is required for evening hours.' }
     ] } },

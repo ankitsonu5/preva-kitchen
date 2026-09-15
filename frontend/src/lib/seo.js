@@ -13,10 +13,18 @@ export function pageMetadata({
     ? [{ url: image, width: 1200, height: 630, alt: title }]
     : undefined;
 
+  // Callers (dish pages, category pages, etc.) build this array from several
+  // sources — the item name, its category, its tags — which commonly repeat
+  // the same term (e.g. a "Preva Wings" dish in the "Preva Wings" category).
+  // Dedupe here once, centrally, rather than asking every caller to do it.
+  const dedupedKeywords = Array.isArray(keywords)
+    ? [...new Set(keywords.map((k) => (typeof k === 'string' ? k.trim() : k)).filter(Boolean))]
+    : keywords;
+
   return {
     title,
     description,
-    keywords,
+    keywords: dedupedKeywords,
     alternates: { canonical: path },
     openGraph: {
       title,

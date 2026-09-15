@@ -33,6 +33,7 @@ export async function generateMetadata({ params }) {
       description: page.ogDescription || description,
       url: canonical,
       siteName: 'Preva Kitchen',
+      locale: 'en_US',
       images: [{ url: ogImage.startsWith('http') ? ogImage : `${siteOrigin}${ogImage}` }]
     },
     twitter: {

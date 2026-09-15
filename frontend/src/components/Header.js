@@ -23,6 +23,15 @@ const ORIGINAL_HEADER_SETTINGS = {
   headerCtaUrl: '#preva-order'
 };
 
+function toTelHref(phone) {
+  const digits = (phone || '').replace(/\D/g, '');
+  if (!digits) return 'tel:+13132863586';
+  // 10-digit US number -> prepend country code; 11-digit already starting with 1 -> just add "+"
+  if (digits.length === 10) return `tel:+1${digits}`;
+  if (digits.length === 11 && digits.startsWith('1')) return `tel:+${digits}`;
+  return `tel:+${digits}`;
+}
+
 function includeOrderNavigation(items) {
   // Always enforce the user's exact preferred header navigation items
   return [
@@ -215,7 +224,7 @@ export default function Header() {
               ))}
               <li className="nav-call-cta">
                 <a
-                  href={`tel:${(settings.phone || '').replace(/\D/g, '')}`}
+                  href={toTelHref(settings.phone)}
                   className="nav-call-link"
                   aria-label={`Call Preva Kitchen at ${settings.phone || '(313) 286-3586'}`}
                   title={`Call ${settings.phone || '(313) 286-3586'}`}

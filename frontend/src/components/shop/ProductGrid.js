@@ -94,7 +94,7 @@ export function ProductCard({ product }) {
       <Link className="ps-card__shot" href={`/menu/${product.slug}`}>
         <img
           src={imageSrc}
-          alt={product.name}
+          alt={`${product.name}${product.price ? ` — ${product.price}` : ''} at Preva Kitchen, Redford Township MI`}
           loading="lazy"
           onError={(e) => {
             if (product.slug?.includes('pasta')) {

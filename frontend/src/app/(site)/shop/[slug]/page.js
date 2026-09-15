@@ -7,10 +7,14 @@ import ProductBuy from '@/components/shop/ProductBuy';
 import {
   getDefaultAboutTitle,
   getDishFaqs,
-  parseAboutContent
+  parseAboutContent,
+  getWingFlavorLinks,
+  isWingFlavorPage,
+  getCrossCategoryPairings
 } from '@/lib/dish-detail-content';
 import { pageMetadata } from '@/lib/seo';
 import { getCanonicalOrigin } from '@/lib/site-url';
+import { generateBreadcrumbSchema } from '@/lib/seo-schema';
 import { getFallbackProduct, getFallbackRelated } from '@/data/fallbackMenu';
 
 export const dynamic = 'force-dynamic';
@@ -50,6 +54,9 @@ export default async function ProductPage({ params }) {
   const aboutTitle = product.aboutTitle || getDefaultAboutTitle(product);
   const aboutParagraphs = parseAboutContent(product.aboutContent, product);
   const faqs = getDishFaqs(product);
+  const wingFlavorLinks = getWingFlavorLinks(product);
+  const linksBackToWingsHub = isWingFlavorPage(product);
+  const crossCategoryPairings = getCrossCategoryPairings(product);
   const siteOrigin = getCanonicalOrigin();
   const productUrl = `${siteOrigin}/menu/${encodeURIComponent(slug)}`;
 
@@ -80,7 +87,13 @@ export default async function ProductPage({ params }) {
           name: faq.q,
           acceptedAnswer: { '@type': 'Answer', text: faq.a }
         }))
-      }
+      },
+      generateBreadcrumbSchema([
+        { name: 'Home', url: '/' },
+        { name: 'Menu', url: '/menu' },
+        ...(product.category ? [{ name: product.category, url: '/menu' }] : []),
+        { name: product.name, url: `/menu/${encodeURIComponent(slug)}` }
+      ], siteOrigin)
     ]
   };
   const detailSchemaJson = JSON.stringify(detailSchema).replace(/</g, '\\u003c');
@@ -101,8 +114,13 @@ export default async function ProductPage({ params }) {
         />
         <div className="ps-wrap">
           <nav className="ps-crumbs">
-            <Link href="/menu">Order online</Link> <span>/</span>
-            <Link href="/menu">{product.category}</Link> <span>/</span>
+            <Link href="/">Home</Link> <span>/</span>
+            <Link href="/menu">Menu</Link> <span>/</span>
+            {product.category && (
+              <>
+                <Link href="/menu">{product.category}</Link> <span>/</span>
+              </>
+            )}
             <span>{product.name}</span>
           </nav>
 
@@ -110,7 +128,7 @@ export default async function ProductPage({ params }) {
             <div className="ps-pdp__shot">
               <img
                 src={product.slug === 'rasta-pasta' ? '/asset/home-reference/signature-dishes/Rasta-Pasta.webp' : (product.image || '/asset/home-reference/signature-dishes/Rasta-Pasta.webp')}
-                alt={product.name}
+                alt={`${product.name}${product.price ? ` — ${product.price}` : ''} at Preva Kitchen, Redford Township MI`}
               />
             </div>
 
@@ -146,6 +164,16 @@ export default async function ProductPage({ params }) {
                   </div>
                 </details>
                 <details>
+                  <summary>Dine in or order for a group</summary>
+                  <div className="ps-acc__body">
+                    <p>
+                      Prefer to eat the {product.name} at the table? <Link href="/reservations">Book a table</Link> at
+                      Preva Kitchen. Feeding a crowd? <Link href="/catering">Order it by the tray</Link> for your
+                      next event.
+                    </p>
+                  </div>
+                </details>
+                <details>
                   <summary>Allergens</summary>
                   <div className="ps-acc__body">
                     <p>
@@ -166,8 +194,45 @@ export default async function ProductPage({ params }) {
               {aboutParagraphs.map((paragraph, index) => (
                 <p key={`${index}-${paragraph.slice(0, 24)}`}>{paragraph}</p>
               ))}
+              {linksBackToWingsHub && (
+                <p>
+                  The {product.name} is part of our{' '}
+                  <Link href="/menu/preva-wings">full wings lineup</Link> — seven house sauces, all made to
+                  order in Redford, MI.
+                </p>
+              )}
             </div>
           </section>
+
+          {wingFlavorLinks.length > 0 && (
+            <section className="ps-dish-about" aria-labelledby="wings-sauces-title">
+              <span className="ps-detail-kicker">7 House Sauces</span>
+              <h2 id="wings-sauces-title" className="ps-detail-title">Choose Your Sauce</h2>
+              <div className="ps-detail-rule" aria-hidden="true" />
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                {wingFlavorLinks.map((flavor) => (
+                  <Link key={flavor.slug} href={`/menu/${flavor.slug}`} className="ps-chip">
+                    {flavor.name}
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {crossCategoryPairings.length > 0 && (
+            <section className="ps-dish-about" aria-labelledby="pairings-title">
+              <span className="ps-detail-kicker">Pairs well with</span>
+              <h2 id="pairings-title" className="ps-detail-title">Complete the Plate</h2>
+              <div className="ps-detail-rule" aria-hidden="true" />
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                {crossCategoryPairings.map((item) => (
+                  <Link key={item.slug} href={`/menu/${item.slug}`} className="ps-chip">
+                    {item.name}
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
 
           <section className="ps-dish-faq" aria-labelledby="dish-faq-title">
             <span className="ps-detail-kicker">FAQ</span>

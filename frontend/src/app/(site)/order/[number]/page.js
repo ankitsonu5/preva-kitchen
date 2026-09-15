@@ -6,7 +6,7 @@ import LiveOrderTracker from '@/components/shop/LiveOrderTracker';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'Live Order Tracker — Preva Kitchen', robots: 'noindex' };
+export const metadata = { title: 'Live Order Tracker', robots: { index: false, follow: false } };
 
 export default async function OrderPage({ params }) {
   const { number } = await params;

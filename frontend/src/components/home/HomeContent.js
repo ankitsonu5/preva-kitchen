@@ -150,6 +150,10 @@ export default function Home() {
   // asks sites to avoid — fall back to the poster image (a still frame) for
   // anyone who has that on, instead of forcing the motion on them.
   const [reduceMotion, setReduceMotion] = useState(false);
+  // Also skip the autoplaying 1080p hero video for visitors on a metered /
+  // slow connection (Data Saver, or 2G-class effectiveType) — same poster
+  // fallback, just triggered by network conditions instead of motion prefs.
+  const [saveData, setSaveData] = useState(false);
   const [activeHeroSlide, setActiveHeroSlide] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const heroVideoRef = useRef(null);
@@ -170,6 +174,19 @@ export default function Home() {
     return () => mql.removeEventListener('change', onChange);
   }, []);
 
+  useEffect(() => {
+    const connection = typeof navigator !== 'undefined'
+      ? (navigator.connection || navigator.mozConnection || navigator.webkitConnection)
+      : null;
+    if (!connection) return undefined;
+    const onChange = () => {
+      setSaveData(Boolean(connection.saveData) || /^(slow-2g|2g)$/.test(connection.effectiveType || ''));
+    };
+    onChange();
+    connection.addEventListener?.('change', onChange);
+    return () => connection.removeEventListener?.('change', onChange);
+  }, []);
+
   // Image slides advance on a fixed timer; the video slide advances itself
   // (see the <video onEnded>  below) once it finishes playing, so it isn't
   // cut short or dragged out relative to its own length.
@@ -182,17 +199,30 @@ export default function Home() {
   }, [activeHeroSlide, reduceMotion]);
 
   // Play/pause the (always-mounted, so it never has to re-buffer) hero video
-  // to match whether its slide is actually the one showing right now.
+  // to match whether its slide is actually the one showing right now. Skipped
+  // entirely (falls back to the poster still) for reduced-motion or Data
+  // Saver / slow-connection visitors.
   useEffect(() => {
     const videoEl = heroVideoRef.current;
     if (!videoEl) return;
-    if (activeHeroSlide === 0 && !reduceMotion) {
+    if (activeHeroSlide === 0 && !reduceMotion && !saveData) {
       videoEl.currentTime = 0;
       videoEl.play().catch(() => {});
     } else {
       videoEl.pause();
     }
-  }, [activeHeroSlide, reduceMotion]);
+  }, [activeHeroSlide, reduceMotion, saveData]);
+
+  // On a metered connection the video slide would otherwise sit frozen on
+  // its poster forever (it normally advances itself via onEnded once
+  // playback finishes) — advance it on the same timer used for image slides.
+  useEffect(() => {
+    if (!saveData || reduceMotion || heroSlides[activeHeroSlide].type !== 'video') return undefined;
+    const timer = window.setTimeout(() => {
+      setActiveHeroSlide((current) => (current + 1) % heroSlides.length);
+    }, HERO_IMAGE_SLIDE_DELAY);
+    return () => window.clearTimeout(timer);
+  }, [activeHeroSlide, reduceMotion, saveData]);
 
   const updateBooking = (field) => (event) => {
     setBooking((current) => ({ ...current, [field]: event.target.value }));
@@ -306,7 +336,7 @@ export default function Home() {
                 aria-hidden={index !== activeHeroSlide}
                 muted
                 playsInline
-                preload="auto"
+                preload={saveData ? 'none' : 'auto'}
                 poster={slide.poster}
                 onEnded={() => { if (!reduceMotion) setActiveHeroSlide((current) => (current + 1) % heroSlides.length); }}
               >
@@ -327,7 +357,7 @@ export default function Home() {
         <div className="pk-ref-hero-shade" aria-hidden="true" />
         <div className="pk-ref-wrap pk-ref-hero-inner">
           <div className="pk-ref-hero-copy">
-            <p className="pk-ref-script">Welcome to Preva Kitchen</p>
+            <p className="pk-ref-script">Welcome to Preva Kitchen — Redford Township, MI</p>
             <h1 id="pk-ref-hero-title">Good Food<br />Good Mood</h1>
             <p className="pk-ref-hero-lead">Experience the perfect blend of bold flavor, warm ambience and genuine hospitality. Every dish is made fresh with care.</p>
             <div className="pk-ref-hero-actions">
@@ -375,7 +405,7 @@ export default function Home() {
             <div className="pk-ref-ornament" aria-hidden="true"><i /><Sparkles size={17} /><i /></div>
             <p>At Preva Kitchen, great food brings people together. Our journey is rooted in serving craveable dishes made from quality ingredients in a warm, welcoming atmosphere.</p>
             <p>From casual dinners to milestone celebrations, every plate and every guest receives our full attention.</p>
-            <Link className="pk-ref-button pk-ref-button--wine" href="/preva-kitchen">
+            <Link className="pk-ref-button pk-ref-button--wine" href="/about">
               Explore Preva Kitchen <ArrowRight size={18} aria-hidden="true" />
             </Link>
           </div>

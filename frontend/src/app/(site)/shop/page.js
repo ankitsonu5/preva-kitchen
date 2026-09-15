@@ -4,7 +4,7 @@ import ShopContent from '@/components/shop/ShopContent';
 export const dynamic = 'force-dynamic';
 
 export const metadata = pageMetadata({
-  title: 'Preva Kitchen Menu — Order Online',
+  title: 'Menu — Order Online in Redford Township, MI',
   description:
     'View the full Preva Kitchen menu and order wings, burgers, tacos, seafood, pasta, sides and dessert for pickup or delivery in Redford Township, MI.',
   path: '/menu',

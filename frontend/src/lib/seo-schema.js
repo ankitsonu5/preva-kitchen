@@ -33,6 +33,12 @@ export const BUSINESS_INFO = {
       dayOfWeek: ['Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
       opens: '17:00',
       closes: '22:00'
+    },
+    {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+      opens: '11:00',
+      closes: '15:30'
     }
   ],
   sameAs: [
@@ -308,7 +314,14 @@ export function generateMenuPageSchema(products = [], origin = 'https://prevakit
     image: item.image || item.featuredImage || `${origin}/asset/home-reference/preva-restaurant-hero.png`,
     offers: {
       '@type': 'Offer',
-      price: item.price ? Number(item.price).toFixed(2) : '12.00',
+      // `item.price` is a pre-formatted currency string (e.g. "$16.50") from
+      // both the CMS API and the frontend fallback data — Number(item.price)
+      // is always NaN. `priceCents` is the real numeric field; fall back to
+      // parsing `price` only for unexpected shapes, and to a sane default
+      // if neither is usable, rather than ever emitting "NaN" here.
+      price: Number.isFinite(item.priceCents)
+        ? (item.priceCents / 100).toFixed(2)
+        : (Number.isFinite(Number(item.price)) ? Number(item.price).toFixed(2) : '12.00'),
       priceCurrency: 'USD',
       availability: 'https://schema.org/InStock',
       url: `${origin}/menu/${item.slug || ''}`

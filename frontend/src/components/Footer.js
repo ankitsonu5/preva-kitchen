@@ -7,6 +7,13 @@ import SvgIcon from './SvgIcon';
 /* ── Module-level constants — stable, never trigger re-renders ── */
 const ORBIT_RADIUS = 390;
 
+function toTelHref(phone) {
+  const digits = (phone || '').replace(/\D/g, '');
+  if (!digits) return 'tel:+13132863586';
+  if (digits.length === 10) return `tel:+1${digits}`;
+  return `tel:+${digits}`;
+}
+
 const FALLBACK_INSTAGRAM_POSTS = [
   { shortcode: 'DbYY080Ez5X', caption: 'Fresh Flavors & Late-Night Bites at Preva Kitchen', image: '/asset/prevaclub/wp-content/uploads/2026/08/Preva-Burger-768x768.jpg' },
   { shortcode: 'DbTZCiolhU8', caption: 'Preva Signature Crispy Jumbo Wings', image: '/asset/prevaclub/wp-content/uploads/2026/08/Preva-Wings-768x768.jpg' },
@@ -56,10 +63,15 @@ export default function Footer() {
   });
 
   const [menuItems, setMenuItems] = useState([
-    { title: 'Reserve a Table', url: '/#prv-reservations' },
+    { title: 'Reserve a Table', url: '/reservations' },
     { title: 'View Menu', url: '/menu' },
     { title: 'Order Online', url: '/menu' },
-    { title: 'Contact Us', url: '/contact' }
+    { title: 'Catering', url: '/catering' },
+    { title: 'About Us', url: '/about' },
+    { title: 'Careers', url: '/careers' },
+    { title: 'Contact Us', url: '/contact' },
+    { title: 'Privacy Policy', url: '/privacy-policy' },
+    { title: 'Terms of Service', url: '/terms' }
   ]);
   const [instagramPosts, setInstagramPosts] = useState(FALLBACK_INSTAGRAM_POSTS);
 
@@ -474,7 +486,7 @@ export default function Footer() {
                 </li>
                 <li>
                   <span className="icon-gold"><SvgIcon name="phone" size={16} /></span>
-                  <span><a href={`tel:${settings.phone}`}>{settings.phone}</a></span>
+                  <span><a href={toTelHref(settings.phone)}>{settings.phone}</a></span>
                 </li>
                 <li>
                   <span className="icon-gold"><SvgIcon name="mail" size={16} /></span>
@@ -504,7 +516,14 @@ export default function Footer() {
                 <li>
                   <span className="icon-gold"><SvgIcon name="clock" size={16} /></span>
                   <div>
-                    <strong>Monday-Friday:</strong><br />
+                    <strong>Dine-In (Tue-Sun):</strong><br />
+                    5:00 pm - 10:00 pm
+                  </div>
+                </li>
+                <li>
+                  <span className="icon-gold"><SvgIcon name="clock" size={16} /></span>
+                  <div>
+                    <strong>Pickup &amp; Delivery (Mon-Fri):</strong><br />
                     11:00 am - 3:30 pm
                   </div>
                 </li>
@@ -592,9 +611,7 @@ export default function Footer() {
              onClick={(e) => { e.preventDefault(); selectTabAndScroll('prv-reservations'); }}
              className="sticky-btn">RESERVE TABLE</a>
           <a href="/menu" className="sticky-btn">ORDER ONLINE</a>
-          <a href="#prv-reservations"
-             onClick={(e) => { e.preventDefault(); selectTabAndScroll('catering'); }}
-             className="sticky-btn">CATERING</a>
+          <a href="/catering" className="sticky-btn">CATERING</a>
         </div>
       )}
     </>
