@@ -146,7 +146,7 @@ function extractAbout(html) {
  * the numeric price too — reading it here lets this sync also correct any
  * priceCents drift instead of only touching text.
  */
-function extractPriceCents(html) {
+function findSourceProductNode(html) {
   const scripts = [...html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
   for (const match of scripts) {
     try {
@@ -156,13 +156,36 @@ function extractPriceCents(html) {
         const types = Array.isArray(node?.['@type']) ? node['@type'] : [node?.['@type']];
         return types.includes('Product') && node?.offers?.price;
       });
-      const price = Number.parseFloat(product?.offers?.price);
-      if (Number.isFinite(price) && price > 0) return Math.round(price * 100);
+      if (product) return product;
     } catch {
       // Some WordPress plugins emit non-JSON script tags; inspect the next one.
     }
   }
   return null;
+}
+
+function extractPriceCents(html) {
+  const price = Number.parseFloat(findSourceProductNode(html)?.offers?.price);
+  return Number.isFinite(price) && price > 0 ? Math.round(price * 100) : null;
+}
+
+function extractShortDescription(html) {
+  const description = findSourceProductNode(html)?.description;
+  return description ? sanitizeSourceText(plainText(description)) : null;
+}
+
+function extractAllergens(html) {
+  const product = findSourceProductNode(html);
+  if (!product) return null;
+  const props = Array.isArray(product.additionalProperty)
+    ? product.additionalProperty
+    : product.additionalProperty
+      ? [product.additionalProperty]
+      : [];
+  const allergens = props
+    .filter((prop) => prop?.name === 'allergen' && prop?.value)
+    .map((prop) => sanitizeSourceText(plainText(String(prop.value))));
+  return allergens.length ? allergens : null;
 }
 
 async function readSource([sourceSlug, shopSlug]) {
@@ -177,7 +200,16 @@ async function readSource([sourceSlug, shopSlug]) {
   const about = rawAbout
     ? { title: sanitizeSourceText(rawAbout.title), paragraphs: rawAbout.paragraphs.map(sanitizeSourceText) }
     : null;
-  return { sourceSlug, shopSlug, sourceUrl, faqs, about, priceCents: extractPriceCents(html) };
+  return {
+    sourceSlug,
+    shopSlug,
+    sourceUrl,
+    faqs,
+    about,
+    priceCents: extractPriceCents(html),
+    description: extractShortDescription(html),
+    allergens: extractAllergens(html)
+  };
 }
 
 const DRY_RUN = process.argv.includes('--dry-run');
@@ -198,11 +230,13 @@ let aboutCount = 0;
 let faqCount = 0;
 let faqFallbackCount = 0;
 let priceChangedCount = 0;
+let descriptionChangedCount = 0;
+let allergensChangedCount = 0;
 
 for (const snapshot of snapshots) {
   const existing = await menuItems.findOne(
     { slug: snapshot.shopSlug },
-    { projection: { priceCents: 1, aboutContent: 1 } }
+    { projection: { priceCents: 1, aboutContent: 1, description: 1, allergens: 1 } }
   );
   if (!existing) throw new Error(`Shop product not found for slug: ${snapshot.shopSlug}`);
 
@@ -213,6 +247,19 @@ for (const snapshot of snapshots) {
   };
   if (SOURCE_IMAGE_OVERRIDES[snapshot.shopSlug]) {
     update.image = SOURCE_IMAGE_OVERRIDES[snapshot.shopSlug];
+  }
+  const descriptionChanged = snapshot.description && snapshot.description !== existing.description;
+  if (descriptionChanged) {
+    update.description = snapshot.description;
+    descriptionChangedCount += 1;
+    console.log(`[description] ${snapshot.shopSlug}: "${existing.description || '(none)'}" -> "${snapshot.description}"`);
+  }
+  const existingAllergens = Array.isArray(existing.allergens) ? existing.allergens : [];
+  const allergensChanged = snapshot.allergens && JSON.stringify([...snapshot.allergens].sort()) !== JSON.stringify([...existingAllergens].sort());
+  if (allergensChanged) {
+    update.allergens = snapshot.allergens;
+    allergensChangedCount += 1;
+    console.log(`[allergens] ${snapshot.shopSlug}: [${existingAllergens.join(', ')}] -> [${snapshot.allergens.join(', ')}]`);
   }
   if (snapshot.faqs.length === 5) {
     update.faqs = snapshot.faqs;
@@ -237,7 +284,7 @@ for (const snapshot of snapshots) {
 
   if (DRY_RUN) {
     const aboutChanged = snapshot.about && snapshot.about.paragraphs.join('\n\n') !== existing.aboutContent;
-    console.log(`[dry-run] ${snapshot.shopSlug}: faqs=${snapshot.faqs.length === 5 ? 'sync' : 'skip'} about=${aboutChanged ? 'CHANGE' : 'same'} price=${priceChanged ? 'CHANGE' : 'same'}`);
+    console.log(`[dry-run] ${snapshot.shopSlug}: faqs=${snapshot.faqs.length === 5 ? 'sync' : 'skip'} about=${aboutChanged ? 'CHANGE' : 'same'} price=${priceChanged ? 'CHANGE' : 'same'} description=${descriptionChanged ? 'CHANGE' : 'same'} allergens=${allergensChanged ? 'CHANGE' : 'same'}`);
     continue;
   }
 
@@ -246,6 +293,6 @@ for (const snapshot of snapshots) {
 }
 
 console.log(
-  `${DRY_RUN ? '[DRY RUN] Would sync' : 'Synced'} exact source FAQs for ${faqCount} products, source About copy for ${aboutCount} products (brand/claim text sanitized), ${priceChangedCount} price corrections; preserved ${faqFallbackCount} validated FAQ fallback.`
+  `${DRY_RUN ? '[DRY RUN] Would sync' : 'Synced'} exact source FAQs for ${faqCount} products, source About copy for ${aboutCount} products (brand/claim text sanitized), ${priceChangedCount} price corrections, ${descriptionChangedCount} description updates, ${allergensChangedCount} allergen updates; preserved ${faqFallbackCount} validated FAQ fallback.`
 );
 process.exit(0);

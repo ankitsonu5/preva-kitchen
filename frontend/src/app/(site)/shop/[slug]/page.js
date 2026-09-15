@@ -100,7 +100,10 @@ export default async function ProductPage({ params }) {
     product.servings ? ['Serves', product.servings] : null,
     product.calories ? ['Calories', String(product.calories)] : null,
     ['Category', product.category],
-    ['Availability', product.available ? 'On today’s menu' : 'Sold out']
+    ['Availability', product.available ? 'On today’s menu' : 'Sold out'],
+    Array.isArray(product.allergens) && product.allergens.length > 0
+      ? ['Contains', product.allergens.map((a) => a[0].toUpperCase() + a.slice(1)).join(', ')]
+      : null
   ].filter(Boolean);
 
   return (
@@ -174,6 +177,11 @@ export default async function ProductPage({ params }) {
                 <details>
                   <summary>Allergens</summary>
                   <div className="ps-acc__body">
+                    {Array.isArray(product.allergens) && product.allergens.length > 0 && (
+                      <p>
+                        <strong>Contains:</strong> {product.allergens.map((a) => a[0].toUpperCase() + a.slice(1)).join(', ')}.
+                      </p>
+                    )}
                     <p>
                       Tell us in the notes if you have an allergy and the kitchen will call you back before
                       it starts cooking. Our fryers are shared, so we cannot guarantee a gluten-free fry.
