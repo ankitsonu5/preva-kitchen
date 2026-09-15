@@ -8,7 +8,6 @@ import {
   getDefaultAboutTitle,
   getDishFaqs,
   parseAboutContent,
-  getWingFlavorLinks,
   isWingFlavorPage,
   getCrossCategoryPairings
 } from '@/lib/dish-detail-content';
@@ -54,7 +53,6 @@ export default async function ProductPage({ params }) {
   const aboutTitle = product.aboutTitle || getDefaultAboutTitle(product);
   const aboutParagraphs = parseAboutContent(product.aboutContent, product);
   const faqs = getDishFaqs(product);
-  const wingFlavorLinks = getWingFlavorLinks(product);
   const linksBackToWingsHub = isWingFlavorPage(product);
   const crossCategoryPairings = getCrossCategoryPairings(product);
   const siteOrigin = getCanonicalOrigin();
@@ -204,21 +202,6 @@ export default async function ProductPage({ params }) {
             </div>
           </section>
 
-          {wingFlavorLinks.length > 0 && (
-            <section className="ps-dish-about" aria-labelledby="wings-sauces-title">
-              <span className="ps-detail-kicker">7 House Sauces</span>
-              <h2 id="wings-sauces-title" className="ps-detail-title">Choose Your Sauce</h2>
-              <div className="ps-detail-rule" aria-hidden="true" />
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                {wingFlavorLinks.map((flavor) => (
-                  <Link key={flavor.slug} href={`/menu/${flavor.slug}`} className="ps-chip">
-                    {flavor.name}
-                  </Link>
-                ))}
-              </div>
-            </section>
-          )}
-
           {crossCategoryPairings.length > 0 && (
             <section className="ps-dish-about" aria-labelledby="pairings-title">
               <span className="ps-detail-kicker">Pairs well with</span>
@@ -240,7 +223,7 @@ export default async function ProductPage({ params }) {
             <div className="ps-detail-rule" aria-hidden="true" />
             <div className="ps-dish-faq__list">
               {faqs.map((faq, index) => (
-                <details key={`${faq.q}-${index}`} open={index === 0}>
+                <details key={`${faq.q}-${index}`} name={`dish-faq-${product.slug}`} open={index === 0}>
                   <summary>
                     <span>{faq.q}</span>
                     <i aria-hidden="true">+</i>

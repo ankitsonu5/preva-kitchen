@@ -132,9 +132,6 @@ export default async function BlogPost({ params }) {
             <span className="date" style={{ display: 'flex', alignItems: 'center' }}>
               <SvgIcon name="calendar" size={16} style={{ marginRight: '6px', color: '#c5a059' }} />{formattedDate}
             </span>
-            <span className="author" style={{ display: 'flex', alignItems: 'center' }}>
-              <SvgIcon name="info" size={16} style={{ marginRight: '6px', color: '#c5a059' }} />BY {(post.author?.name || 'PREVA CULINARY TEAM').toUpperCase()}
-            </span>
             <span style={{ background: 'rgba(197, 163, 78, 0.15)', border: '1px solid #c5a059', color: '#c5a059', padding: '3px 12px', borderRadius: '15px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>
               {categoryName}
             </span>
@@ -162,20 +159,6 @@ export default async function BlogPost({ params }) {
                 style={{ color: '#ccc', fontSize: '1.08rem', lineHeight: '1.85' }} 
                 dangerouslySetInnerHTML={{ __html: rewriteLegacyBlogLinks(post.content) }} 
               />
-
-              {/* Author Bio Box */}
-              <div style={{ marginTop: '50px', background: 'rgba(18, 18, 18, 0.65)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '24px', display: 'flex', gap: '20px', alignItems: 'center' }}>
-                <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--color-gold, #c5a059)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: '#000', fontSize: '1.5rem', flexShrink: 0 }}>
-                  P
-                </div>
-                <div>
-                  <h4 style={{ margin: '0 0 6px 0', color: '#fff', fontSize: '1.05rem' }}>Written by {post.author?.name || 'PREVA Culinary Team'}</h4>
-                  <p style={{ margin: 0, color: '#aaa', fontSize: '0.88rem', lineHeight: '1.5' }}>
-                    Bringing you chef stories, menu inspirations, kitchen updates and honest food worth sharing from Redford, Michigan.
-                  </p>
-                </div>
-              </div>
-
 
             </div>
           </article>
