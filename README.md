@@ -49,6 +49,70 @@ direct API consumers (mobile apps, other services).
 - Local testing: `stripe listen --forward-to localhost:4000/api/shop/webhook`.
 - Run `npm run audit:production` in `backend/` before every production deploy.
 
+## Email Notifications
+
+Every public form (Reservation, Contact, Career Application) saves to Mongo
+**and** sends two emails via [Resend](https://resend.com): an admin alert to
+`ADMIN_EMAIL`, and a branded confirmation to the address the visitor typed
+in. Reservation and career notifications use dedicated reusable functions in
+`backend/src/lib/email.js`. Both sends are attempted in parallel after the
+database write. A provider failure is logged but does not turn an already
+saved form submission into an API error. Every attempt (sent/failed/skipped)
+is logged to the `emailLogs` Mongo collection and to the console.
+
+### 1. Configure Resend
+
+Create a Resend API key, verify `prevakitchen.com`, and add the DNS records
+Resend supplies. The `FROM_EMAIL` domain must be verified before production
+delivery will work. `onboarding@resend.dev` is suitable only for limited
+Resend testing.
+
+### 2. Set the backend environment variables
+
+In `backend/.env` (see `backend/.env.example` for the full list with
+comments):
+
+```
+RESEND_API_KEY=re_your_api_key
+FROM_EMAIL=Preva Kitchen <notifications@prevakitchen.com>
+ADMIN_EMAIL=reservations@prevakitchen.com
+RESERVATION_ADMIN_EMAIL=reservations@prevakitchen.com
+HR_EMAIL=hr@prevakitchen.com
+ADMIN_URL=https://prevakitchen.com/admin
+STOREFRONT_URL=https://prevakitchen.com
+```
+
+`RESERVATION_ADMIN_EMAIL` and `HR_EMAIL` are optional overrides; both fall
+back to `ADMIN_EMAIL`. Comma-separated recipients are supported. Existing
+`ADMIN_EMAILS`, `STAFF_ALERT_EMAIL`, and `STAFF_EMAIL_FROM` values remain
+supported as deployment-compatible fallbacks.
+
+### 3. Verify it works
+
+`cd backend && npm run verify:email` checks the env vars and renders every
+template without sending anything. Add `-- --send you@example.com` to send
+one real test email through Resend and display its provider message ID.
+
+### 4. Local testing without emailing real people
+
+Set `MAIL_CATCH_ALL=you@yourinbox.com` in `backend/.env` (or `.env.local`).
+Whenever `NODE_ENV` is not `production`, every email — admin alert **and**
+customer confirmation — is redirected there instead of the real recipient,
+with a `[email] dev mode: redirecting ...` console line showing the original
+address. Submit each form once, confirm both emails land in that one inbox,
+then check `emailLogs` in Mongo (or the console) for the send status and
+Resend message id.
+
+### Anti-spam / anti-abuse on these routes
+
+- **Honeypot**: every form has a hidden `hp_field` input real visitors never
+  see; a bot that fills it gets a fake 200/201 success with nothing saved and
+  nothing emailed.
+- **Rate limit**: 5 submissions per IP per 15 minutes, per form.
+- **Idempotency**: an identical submission (same IP + fields) within 20s
+  returns the first response again instead of inserting/emailing twice — this
+  is what protects against double-clicking Submit or a client-side retry.
+
 ## Order exports
 
 Admin → Orders → **Excel** / **PDF** buttons. Also directly:

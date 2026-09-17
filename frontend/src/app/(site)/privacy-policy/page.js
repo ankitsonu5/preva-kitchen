@@ -7,7 +7,8 @@ export const metadata = pageMetadata({
   title: 'Privacy Policy | Preva Kitchen, Redford Township MI',
   description: 'How Preva Kitchen collects, uses and protects the information you share with us through checkout, contact forms and reservations.',
   path: '/privacy-policy',
-  image: '/asset/home-reference/preva-restaurant-hero.png'
+  image: '/asset/home-reference/preva-restaurant-hero.png',
+  titleIncludesBrand: true
 });
 
 const sections = [

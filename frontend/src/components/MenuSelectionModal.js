@@ -37,7 +37,7 @@ export default function MenuSelectionModal({ isOpen, onClose }) {
         {/* Modal Toolbar */}
         <div className="preva-selection-modal-bar">
           <div className="preva-selection-modal-title">
-            <span className="preva-selection-tag">PREVA KITCHEN & LOUNGE</span>
+            <span className="preva-selection-tag">PREVA KITCHEN</span>
             <h2>Dine-In & Takeout Menu</h2>
           </div>
 
@@ -69,7 +69,7 @@ export default function MenuSelectionModal({ isOpen, onClose }) {
           <div className="preva-selection-image-wrap">
             <img
               src="/asset/preva-menu-card.jpg"
-              alt="Preva Kitchen and Lounge Menu — Our Selection"
+              alt="Preva Kitchen Menu — Our Selection"
               className="preva-selection-image"
               loading="eager"
             />

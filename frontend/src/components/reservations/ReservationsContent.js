@@ -23,7 +23,7 @@ import {
 
 const API = '/api';
 const EMPTY_FORM = {
-  name: '', phone: '', email: '', guests: '2', date: '', time: '', occasion: '', notes: ''
+  name: '', phone: '', email: '', guests: '2', date: '', time: '', occasion: '', notes: '', hp_field: ''
 };
 
 const faqs = [
@@ -53,6 +53,7 @@ export default function ReservationsContent() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [referenceId, setReferenceId] = useState('');
   const [error, setError] = useState('');
 
   const update = (event) => {
@@ -63,41 +64,54 @@ export default function ReservationsContent() {
   const submit = async (event) => {
     event.preventDefault();
     setError('');
-    if (!form.name || !form.phone) {
-      setError('Please add your name and phone number so we can confirm your table.');
-      showWarning('Complete required fields', 'Add your name and phone number, then submit again.');
+    const name = form.name.trim();
+    const phone = form.phone.trim();
+    const email = form.email.trim();
+
+    if (!name || !phone || !email) {
+      setError('Please add your name, phone number and email address.');
+      showWarning('Complete required fields', 'Add your name, phone number and email address, then submit again.');
       return;
     }
-    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      setError('Please enter a valid email address, or leave that field blank.');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Please enter a valid email address.');
       showWarning('Check your email address', 'That email address does not look valid.');
+      return;
+    }
+    if (!form.date || !form.time) {
+      setError('Please select your preferred reservation date and time.');
+      showWarning('Date and time required', 'Select your preferred date and time, then submit again.');
       return;
     }
 
     setSubmitting(true);
     try {
       const payload = {
-        name: form.name,
-        phone: form.phone,
-        email: form.email,
+        name,
+        phone,
+        email,
         guests: Number(form.guests) || 2,
         date: form.date,
         time: form.time,
         occasion: form.occasion,
-        notes: form.notes
+        notes: form.notes,
+        pageUrl: typeof window !== 'undefined' ? window.location.href : '',
+        hp_field: form.hp_field
       };
       const response = await fetch(`${API}/reservations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      if (!response.ok) throw new Error('Reservation request could not be sent');
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data?.message || 'Reservation request could not be sent');
+      setReferenceId(data?.referenceId || '');
       setSuccess(true);
       setForm(EMPTY_FORM);
-      showSuccess('Request received', 'Thanks! We will confirm your table by phone shortly.');
+      showSuccess('Request received', 'Your confirmation email is on its way. Our team will contact you if anything else is needed.');
     } catch (submitError) {
       console.error(submitError);
-      setError('We could not send your request. Please call (313) 286-3586 and we will book it for you.');
+      setError(submitError.message || 'We could not send your request. Please call (313) 286-3586 and we will book it for you.');
       showError('Request not sent', 'Please try again or call the kitchen at (313) 286-3586.');
     } finally {
       setSubmitting(false);
@@ -111,7 +125,7 @@ export default function ReservationsContent() {
         eyebrowIcon={Sparkles}
         title="Book Your Table at"
         titleAccent="Preva Kitchen, Redford Township MI"
-        subtitle="Reserve a table for a birthday, a date night or a family dinner. Tell us the details and our team confirms same day by phone."
+        subtitle="Reserve a table for a birthday, a date night or a family dinner. We will email your request details and contact you if anything else is needed."
       >
         <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', marginBottom: '28px' }}>
           <PrimaryButton href="#reserve-form" icon={Calendar}>Reserve a table</PrimaryButton>
@@ -143,12 +157,12 @@ export default function ReservationsContent() {
               eyebrowIcon={Calendar}
               title="Reserve Online in"
               titleAccent="Under a Minute"
-              description="Fill in your party size, preferred date and time. We confirm every request by phone or text — usually the same day."
+              description="Fill in your party size, preferred date and time. We email your request details immediately, and our team follows up if needed."
             />
             <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: '14px' }}>
               {[
                 'Submitted instantly to our front-of-house team',
-                'Confirmed by phone or text, usually same day',
+                'Confirmation details sent to your email',
                 'Same-day and next-day requests welcome — just call if it is urgent'
               ].map((line) => (
                 <li key={line} style={{ display: 'flex', gap: '10px', color: COLORS.textMuted, fontSize: '0.95rem', lineHeight: 1.6 }}>
@@ -159,7 +173,7 @@ export default function ReservationsContent() {
             </ul>
           </div>
 
-          <FormCard eyebrow="Table Request" title="Reserve Your Table" description="Complete the form and we'll confirm by phone.">
+          <FormCard eyebrow="Table Request" title="Reserve Your Table" description="Complete the form and we'll email your request details.">
             {success ? (
               <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                 <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(213, 164, 79, 0.15)', border: `1px solid ${COLORS.gold}`, color: COLORS.gold, display: 'grid', placeItems: 'center', margin: '0 auto 20px' }}>
@@ -167,12 +181,27 @@ export default function ReservationsContent() {
                 </div>
                 <h4 style={{ fontFamily, fontSize: '1.6rem', color: '#fff', margin: '0 0 10px' }}>Request Received</h4>
                 <p style={{ color: '#aaa', fontSize: '0.94rem', marginBottom: '24px' }}>
-                  Thanks for reaching out. We&apos;ll confirm your table by phone shortly.
+                  Thanks for reaching out. Check your inbox for your reservation request details. Our team will contact you if anything else is needed.
                 </p>
-                <PrimaryButton onClick={() => setSuccess(false)}>Reserve Another Table</PrimaryButton>
+                {referenceId && (
+                  <p style={{ color: '#888', fontSize: '0.8rem', margin: '-12px 0 24px' }}>
+                    Reference #{referenceId}
+                  </p>
+                )}
+                <PrimaryButton onClick={() => { setSuccess(false); setReferenceId(''); }}>Reserve Another Table</PrimaryButton>
               </div>
             ) : (
               <form onSubmit={submit} style={{ display: 'grid', gap: '18px' }} noValidate>
+                <input
+                  type="text"
+                  name="hp_field"
+                  value={form.hp_field}
+                  onChange={update}
+                  tabIndex="-1"
+                  autoComplete="off"
+                  aria-hidden="true"
+                  style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
+                />
                 {error && (
                   <div style={{ padding: '12px 16px', background: 'rgba(230, 90, 90, 0.12)', border: '1px solid rgba(230, 90, 90, 0.4)', borderRadius: '8px', color: '#ffb2b2', fontSize: '0.85rem' }}>
                     {error}
@@ -182,17 +211,17 @@ export default function ReservationsContent() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '14px' }}>
                   <div>
                     <label htmlFor="reservation-name" style={labelStyle}>Full Name <span style={{ color: COLORS.gold }}>*</span></label>
-                    <input id="reservation-name" name="name" value={form.name} onChange={update} required style={inputStyle} />
+                    <input id="reservation-name" name="name" value={form.name} onChange={update} autoComplete="name" required style={inputStyle} />
                   </div>
                   <div>
                     <label htmlFor="reservation-phone" style={labelStyle}>Phone Number <span style={{ color: COLORS.gold }}>*</span></label>
-                    <input id="reservation-phone" type="tel" name="phone" value={form.phone} onChange={update} required style={inputStyle} />
+                    <input id="reservation-phone" type="tel" name="phone" value={form.phone} onChange={update} autoComplete="tel" required style={inputStyle} />
                   </div>
                 </div>
 
                 <div>
-                  <label htmlFor="reservation-email" style={labelStyle}>Email Address</label>
-                  <input id="reservation-email" type="email" name="email" value={form.email} onChange={update} style={inputStyle} />
+                  <label htmlFor="reservation-email" style={labelStyle}>Email Address <span style={{ color: COLORS.gold }}>*</span></label>
+                  <input id="reservation-email" type="email" name="email" value={form.email} onChange={update} autoComplete="email" placeholder="you@example.com" required style={inputStyle} />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '14px' }}>
@@ -205,12 +234,12 @@ export default function ReservationsContent() {
                     </select>
                   </div>
                   <div>
-                    <label htmlFor="reservation-date" style={labelStyle}>Date</label>
-                    <input id="reservation-date" type="date" name="date" value={form.date} onChange={update} style={inputStyle} />
+                    <label htmlFor="reservation-date" style={labelStyle}>Date <span style={{ color: COLORS.gold }}>*</span></label>
+                    <input id="reservation-date" type="date" name="date" value={form.date} onChange={update} required style={inputStyle} />
                   </div>
                   <div>
-                    <label htmlFor="reservation-time" style={labelStyle}>Time</label>
-                    <input id="reservation-time" type="time" name="time" value={form.time} onChange={update} style={inputStyle} />
+                    <label htmlFor="reservation-time" style={labelStyle}>Time <span style={{ color: COLORS.gold }}>*</span></label>
+                    <input id="reservation-time" type="time" name="time" value={form.time} onChange={update} required style={inputStyle} />
                   </div>
                 </div>
 

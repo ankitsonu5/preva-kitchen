@@ -5,7 +5,7 @@ import Link from 'next/link';
 import SvgIcon from '../SvgIcon';
 import { showError, showSuccess } from '../../lib/swal';
 
-const blank = { firstName: '', lastName: '', email: '', phone: '', role: '', availability: '', startDate: '', message: '', consent: false };
+const blank = { firstName: '', lastName: '', email: '', phone: '', role: '', availability: '', startDate: '', message: '', consent: false, hp_field: '' };
 
 function toDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -22,6 +22,7 @@ export default function CareerApplicationForm({ initialRole = '', jobs = [] }) {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [referenceId, setReferenceId] = useState('');
   const update = (event) => setForm((current) => ({ ...current, [event.target.name]: event.target.type === 'checkbox' ? event.target.checked : event.target.value }));
 
   const submit = async (event) => {
@@ -33,10 +34,15 @@ export default function CareerApplicationForm({ initialRole = '', jobs = [] }) {
       if (resume && resume.size > 3 * 1024 * 1024) throw new Error('Résumé must be 3 MB or smaller.');
       const response = await fetch('/api/career-applications', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, resume: resume ? { name: resume.name, type: resume.type, size: resume.size, data: await toDataUrl(resume) } : null })
+        body: JSON.stringify({
+          ...form,
+          pageUrl: typeof window !== 'undefined' ? window.location.href : '',
+          resume: resume ? { name: resume.name, type: resume.type, size: resume.size, data: await toDataUrl(resume) } : null
+        })
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.message || 'Could not send your application.');
+      setReferenceId(data?.referenceId || '');
       setSuccess(true);
       showSuccess('Application received', 'Thanks for your interest. The Preva Kitchen team aims to follow up within 24 hours.');
     } catch (submitError) {
@@ -47,10 +53,11 @@ export default function CareerApplicationForm({ initialRole = '', jobs = [] }) {
     }
   };
 
-  if (success) return <div className="success success-visible"><div className="check"><SvgIcon name="check" size={28} /></div><h2>Application received.</h2><p>Thanks for your interest. The Preva team aims to follow up within 24 hours.</p><Link className="btn light" href="/careers">Back to careers</Link></div>;
+  if (success) return <div className="success success-visible"><div className="check"><SvgIcon name="check" size={28} /></div><h2>Application received.</h2><p>Thanks for your interest. The Preva team aims to follow up within 24 hours.</p>{referenceId && <p className="fine">Reference #{referenceId} · Check your inbox for a confirmation email.</p>}<Link className="btn light" href="/careers">Back to careers</Link></div>;
 
   return (
     <form className="form" onSubmit={submit}>
+      <input type="text" name="hp_field" value={form.hp_field} onChange={update} tabIndex="-1" autoComplete="off" aria-hidden="true" style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }} />
       <div className="field"><label htmlFor="career-first">First name *</label><input id="career-first" name="firstName" value={form.firstName} onChange={update} required /></div>
       <div className="field"><label htmlFor="career-last">Last name *</label><input id="career-last" name="lastName" value={form.lastName} onChange={update} required /></div>
       <div className="field"><label htmlFor="career-email">Email *</label><input id="career-email" name="email" value={form.email} onChange={update} type="email" required /></div>

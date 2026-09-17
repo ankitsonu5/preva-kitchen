@@ -7,7 +7,8 @@ export const metadata = pageMetadata({
   title: 'Accessibility Statement | Preva Kitchen, Redford MI',
   description: 'Our commitment to an accessible website and dining experience at Preva Kitchen, 13090 Inkster Rd, Redford Township MI.',
   path: '/accessibility',
-  image: '/asset/home-reference/preva-restaurant-hero.png'
+  image: '/asset/home-reference/preva-restaurant-hero.png',
+  titleIncludesBrand: true
 });
 
 const sections = [

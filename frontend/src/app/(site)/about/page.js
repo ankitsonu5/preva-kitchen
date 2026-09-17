@@ -8,7 +8,8 @@ export const metadata = pageMetadata({
   description: 'Meet the team behind Preva Kitchen on Inkster Rd. Chef-driven comfort food made fresh daily for Redford Township, Old Redford and Livonia neighbours.',
   path: '/about',
   image: '/asset/home-reference/preva-restaurant-hero.png',
-  keywords: ['about Preva Kitchen', 'Redford Township restaurant story', 'local kitchen Redford MI']
+  keywords: ['about Preva Kitchen', 'Redford Township restaurant story', 'local kitchen Redford MI'],
+  titleIncludesBrand: true
 });
 
 function aboutSchema(origin) {

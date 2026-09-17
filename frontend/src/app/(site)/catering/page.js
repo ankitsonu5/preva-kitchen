@@ -8,7 +8,8 @@ export const metadata = pageMetadata({
   description: 'Wing trays, pasta pans and full spreads catered across Redford Township, Livonia and Dearborn Heights. Office lunches to family parties. (313) 286-3586.',
   path: '/catering',
   image: '/asset/home-reference/preva-restaurant-hero.png',
-  keywords: ['Preva Kitchen catering', 'party trays Redford MI', 'office lunch catering Redford Township', 'catering Livonia Dearborn Heights']
+  keywords: ['Preva Kitchen catering', 'party trays Redford MI', 'office lunch catering Redford Township', 'catering Livonia Dearborn Heights'],
+  titleIncludesBrand: true
 });
 
 const deliveryAreas = ['Redford Township', 'Old Redford', 'Livonia', 'Dearborn Heights', 'Garden City'];

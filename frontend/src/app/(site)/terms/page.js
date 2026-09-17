@@ -7,7 +7,8 @@ export const metadata = pageMetadata({
   title: 'Terms of Service | Preva Kitchen, Redford Township MI',
   description: 'Terms covering online orders, pickup and delivery, cancellations, catering deposits, and reservations at Preva Kitchen.',
   path: '/terms',
-  image: '/asset/home-reference/preva-restaurant-hero.png'
+  image: '/asset/home-reference/preva-restaurant-hero.png',
+  titleIncludesBrand: true
 });
 
 const sections = [

@@ -20,6 +20,7 @@ export const badRequest = (message = 'Bad request', details) => new HttpError(40
 export const unauthorized = (message = 'Unauthorized') => new HttpError(401, message);
 export const forbidden = (message = 'Forbidden: insufficient permissions') => new HttpError(403, message);
 export const notFound = (message = 'Not found') => new HttpError(404, message);
+export const tooManyRequests = (message = 'Too many requests — please try again shortly.') => new HttpError(429, message);
 
 /** Wrap a value so a handler can set a status or headers when it needs to. */
 export function result(body, { status = 200, headers = {}, cookies = [] } = {}) {

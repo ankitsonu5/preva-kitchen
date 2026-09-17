@@ -9,7 +9,7 @@ import { Phone, Clock, MapPin, Sparkles, Utensils, Calendar, Mail, ArrowRight, C
 const API = '/api';
 const EMPTY_FORM = {
   firstName: '', lastName: '', email: '', phone: '', inquiry: 'general',
-  eventDate: '', guests: '', message: '', consent: false
+  eventDate: '', guests: '', message: '', consent: false, hp_field: ''
 };
 
 const contactOptions = [
@@ -44,6 +44,7 @@ export default function ContactContent() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [referenceId, setReferenceId] = useState('');
 
   const update = (event) => {
     const { name, value, type, checked } = event.target;
@@ -68,14 +69,17 @@ export default function ContactContent() {
         subject: form.inquiry,
         message: form.message,
         formSource: 'Preva Kitchen Contact Page',
-        pageUrl: window.location.href
+        pageUrl: window.location.href,
+        hp_field: form.hp_field
       };
       const response = await fetch(`${API}/contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      if (!response.ok) throw new Error('Message could not be sent');
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.message || 'Message could not be sent');
+      setReferenceId(data?.referenceId || '');
       setSuccess(true);
       setForm(EMPTY_FORM);
       showSuccess('Message received', 'Thanks for reaching out. Our kitchen team will be in touch shortly.');
@@ -497,9 +501,14 @@ export default function ContactContent() {
                   <h4 style={{ fontFamily: 'var(--font-roboto), Arial, sans-serif', fontSize: '1.6rem', color: '#fff', margin: '0 0 10px' }}>
                     Message Received
                   </h4>
-                  <p style={{ color: '#aaa', fontSize: '0.94rem', marginBottom: '24px' }}>
+                  <p style={{ color: '#aaa', fontSize: '0.94rem', marginBottom: referenceId ? '6px' : '24px' }}>
                     Thank you for reaching out. Our kitchen team will be in touch shortly.
                   </p>
+                  {referenceId && (
+                    <p style={{ color: '#777', fontSize: '0.8rem', marginBottom: '24px' }}>
+                      Reference #{referenceId} · Check your inbox for a confirmation email.
+                    </p>
+                  )}
                   <button
                     type="button"
                     onClick={() => setSuccess(false)}
@@ -522,6 +531,17 @@ export default function ContactContent() {
                 </div>
               ) : (
                 <form onSubmit={submit} style={{ display: 'grid', gap: '18px' }} noValidate>
+                  {/* Honeypot — hidden from real visitors, bots that autofill every input trip it */}
+                  <input
+                    type="text"
+                    name="hp_field"
+                    value={form.hp_field}
+                    onChange={update}
+                    tabIndex="-1"
+                    autoComplete="off"
+                    aria-hidden="true"
+                    style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
+                  />
                   {error && (
                     <div style={{ padding: '12px 16px', background: 'rgba(230, 90, 90, 0.12)', border: '1px solid rgba(230, 90, 90, 0.4)', borderRadius: '8px', color: '#ffb2b2', fontSize: '0.85rem' }}>
                       {error}

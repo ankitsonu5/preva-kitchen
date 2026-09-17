@@ -19,7 +19,8 @@
     "audit:production": "node scripts/audit-production.js",
     "routes": "node -e \"import('./src/index.js').then(m=>console.log(m.listRoutes().join('\\n')))\"",
     "verify:payments:local": "node scripts/verify-payment-local.js",
-    "verify:email": "node scripts/verify-email.js"
+    "verify:email": "node scripts/verify-email.js",
+    "test:form-email": "node --test tests/form-email.integration.test.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

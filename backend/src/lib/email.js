@@ -1,25 +1,89 @@
 import { Resend } from 'resend';
+import { col } from './db.js';
 
 /* ══════════════════════════════════════════════════════════════════════════
-   Email notifications — Preva Kitchen Staff Alerts
+   Email notifications — Preva Kitchen Staff Alerts + Customer Confirmations
    ──────────────────────────────────────────────────────────────────────────
-   Uses Resend (https://resend.com). Set RESEND_API_KEY in .env to enable.
-   All functions fail silently so a missing key never crashes a customer request.
+   Sends through Resend. All provider errors are recorded and returned as a
+   false result so a notification outage never rolls back a saved submission.
    ══════════════════════════════════════════════════════════════════════════ */
 
 const BRAND_COLOR  = '#c9a96e';   // Preva gold
+const BRAND_NAME   = 'Preva Kitchen';
+const BRAND_ADDRESS = '13090 Inkster Rd, Redford Township, MI 48239';
+const BRAND_PHONE  = '(313) 286-3586';
 
 function getResendKey() {
   return String(process.env.RESEND_API_KEY || '').trim();
 }
 function getFromAddress() {
-  return String(process.env.STAFF_EMAIL_FROM || 'onboarding@resend.dev').trim();
+  const configuredSender = String(process.env.FROM_EMAIL || process.env.STAFF_EMAIL_FROM || '').trim();
+  if (configuredSender) return configuredSender;
+  return isProduction() ? '' : 'Preva Kitchen <onboarding@resend.dev>';
 }
-function getStaffEmail() {
-  return String(process.env.STAFF_ALERT_EMAIL || '').trim();
+function getSiteUrl() {
+  return String(process.env.STOREFRONT_URL || 'https://prevakitchen.com').trim();
+}
+/** Accept comma-separated addresses while retaining the legacy settings. */
+function parseRecipients(raw) {
+  if (!raw) return [];
+  return String(raw).split(',').map((address) => address.trim()).filter(Boolean);
 }
 
-/** Lazily created — avoids crashing at import when the key is missing. */
+function getAdminRecipients() {
+  return parseRecipients(
+    process.env.ADMIN_EMAIL || process.env.ADMIN_EMAILS || process.env.STAFF_ALERT_EMAIL
+  );
+}
+
+function getReservationRecipients() {
+  return parseRecipients(
+    process.env.RESERVATION_ADMIN_EMAIL || process.env.ADMIN_EMAIL ||
+    process.env.ADMIN_EMAILS || process.env.STAFF_ALERT_EMAIL
+  );
+}
+
+function getCareerRecipients() {
+  return parseRecipients(
+    process.env.CAREER_ADMIN_EMAIL || process.env.HR_EMAIL || process.env.ADMIN_EMAIL ||
+    process.env.ADMIN_EMAILS || process.env.STAFF_ALERT_EMAIL
+  );
+}
+
+function isProduction() {
+  return String(process.env.NODE_ENV || '').trim() === 'production';
+}
+/** Non-production override so testing never emails a real customer's inbox. */
+function getMailCatchAll() {
+  return String(process.env.MAIL_CATCH_ALL || '').trim();
+}
+
+/** REF-XXXXXXXX from a Mongo _id — short, unique enough, no schema change needed. */
+export function buildReferenceId(prefix, id) {
+  return `${prefix}-${String(id).slice(-8).toUpperCase()}`;
+}
+
+async function logEmailAttempt({ formType, recipientType, to, subject, status, providerMessageId, error, referenceId }) {
+  try {
+    const logs = await col('emailLogs');
+    await logs.insertOne({
+      formType: formType || null,
+      recipientType: recipientType || null,
+      to: Array.isArray(to) ? to : [to].filter(Boolean),
+      subject: subject || null,
+      status, // 'sent' | 'failed' | 'skipped'
+      providerMessageId: providerMessageId || null,
+      error: error || null,
+      referenceId: referenceId || null,
+      createdAt: new Date()
+    });
+  } catch (err) {
+    // Logging must never be the reason an email path throws.
+    console.error('[email] failed to write emailLogs entry:', err.message);
+  }
+}
+
+/** Lazily created so a missing key does not make module import fail. */
 let _resend = null;
 let _cachedKey = null;
 function resend() {
@@ -32,35 +96,68 @@ function resend() {
 }
 
 function configured() {
-  return Boolean(getResendKey());
+  return Boolean(getResendKey() && getFromAddress());
 }
 
-/** Send one email. Returns true on success, false (+ console.error) on failure. */
-async function send({ to, subject, html }) {
+/**
+ * Send one email. Returns true on success, false (+ console.error) on failure.
+ * `to` may be a single address or an array (multiple admins). In non-production,
+ * when MAIL_CATCH_ALL is set, every recipient is swapped for it so testing
+ * never reaches a real customer's inbox.
+ */
+async function send({ to, subject, html, text, replyTo, formType, recipientType, referenceId }) {
+  const requested = (Array.isArray(to) ? to : [to]).filter(Boolean);
+  const recipients = requested.length ? requested : getAdminRecipients();
+
+  // Used by the verification script to exercise every template without
+  // touching the provider, recipients, or the email audit collection.
+  if (String(process.env.EMAIL_DRY_RUN || '').toLowerCase() === 'true') {
+    console.log('[email:dry-run] rendered:', subject, { formType, recipientType });
+    return true;
+  }
+
+  if (!recipients.length) {
+    console.warn('[email] No recipient email specified.', { formType, recipientType });
+    await logEmailAttempt({ formType, recipientType, to: requested, subject, status: 'skipped', error: 'no recipient', referenceId });
+    return false;
+  }
+
   if (!configured()) {
-    console.warn('[email] RESEND_API_KEY is not set in .env; skipping email.');
+    console.warn('[email] RESEND_API_KEY / FROM_EMAIL is not configured; skipping email.', { formType, recipientType });
+    await logEmailAttempt({ formType, recipientType, to: recipients, subject, status: 'skipped', error: 'RESEND_API_KEY/FROM_EMAIL not configured', referenceId });
     return false;
   }
-  const recipient = to || getStaffEmail();
-  if (!recipient) {
-    console.warn('[email] No recipient email specified.');
-    return false;
+
+  const catchAll = getMailCatchAll();
+  const useCatchAll = !isProduction() && catchAll;
+  const finalRecipients = useCatchAll ? [catchAll] : recipients;
+  if (useCatchAll) {
+    console.log('[email] dev mode: redirecting', recipients.join(', '), '->', catchAll);
   }
+
   try {
-    const { error } = await resend().emails.send({
+    const { data, error } = await resend().emails.send({
       from: getFromAddress(),
-      to: recipient,
+      to: finalRecipients,
       subject,
       html,
+      ...(text ? { text } : {}),
+      ...(replyTo ? { replyTo } : {})
     });
+
     if (error) {
-      console.error('[email] Resend error:', error);
+      const message = error.message || JSON.stringify(error);
+      console.error('[email] Resend rejected send:', message, { formType, recipientType });
+      await logEmailAttempt({ formType, recipientType, to: finalRecipients, subject, status: 'failed', error: message, referenceId });
       return false;
     }
-    console.log('[email] sent successfully to:', recipient, 'Subject:', subject);
+
+    console.log('[email] sent successfully to:', finalRecipients.join(', '), 'Subject:', subject, 'id:', data?.id);
+    await logEmailAttempt({ formType, recipientType, to: finalRecipients, subject, status: 'sent', providerMessageId: data?.id, referenceId });
     return true;
   } catch (err) {
-    console.error('[email] send failed:', err.message);
+    console.error('[email] send failed:', err.message, { formType, recipientType });
+    await logEmailAttempt({ formType, recipientType, to: finalRecipients, subject, status: 'failed', error: err.message, referenceId });
     return false;
   }
 }
@@ -87,46 +184,58 @@ function row(label, value, isHtml = false) {
     </tr>`;
 }
 
+function textDetails(entries) {
+  return entries
+    .filter(([, value]) => value !== null && value !== undefined && String(value).trim())
+    .map(([label, value]) => `${label}: ${String(value).trim()}`)
+    .join('\n');
+}
+
 function wrap({ icon, title, subtitle, tableRows, adminLink, adminLabel = 'View in Admin' }) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#0d0d0d;font-family:'Segoe UI',Helvetica,Arial,sans-serif">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0d0d;padding:32px 0">
+<body style="margin:0;padding:0;background:#080808;font-family:Arial,'Helvetica Neue',sans-serif">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${escapeHtml(title)} — ${escapeHtml(subtitle)}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#080808;padding:36px 14px">
     <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="background:#1a1a1a;border-radius:12px;border:1px solid #2a2a2a;overflow:hidden;max-width:600px">
-
-        <!-- Header -->
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#121212;border-radius:18px;border:1px solid #332915;overflow:hidden;max-width:620px">
         <tr>
-          <td style="background:linear-gradient(135deg,#1a1208,#2b1e06);padding:28px 32px;border-bottom:1px solid ${BRAND_COLOR}40">
-            <span style="font-size:28px">${icon}</span>
-            <h1 style="margin:8px 0 4px;color:#fff;font-size:20px;font-weight:700">${escapeHtml(title)}</h1>
-            <p style="margin:0;color:${BRAND_COLOR};font-size:13px">${escapeHtml(subtitle)}</p>
+          <td style="background:#18130b;padding:30px 34px;border-bottom:1px solid #4b3a1b;text-align:center">
+            <p style="margin:0 0 7px;color:#f1d28a;font-family:Georgia,'Times New Roman',serif;font-size:24px;letter-spacing:7px">PREVA</p>
+            <p style="margin:0;color:#9b8d72;font-size:9px;font-weight:700;letter-spacing:4px;text-transform:uppercase">Kitchen · Redford Township</p>
           </td>
         </tr>
-
-        <!-- Body -->
         <tr>
-          <td style="padding:28px 32px">
-            <table cellpadding="0" cellspacing="0" width="100%">${tableRows}</table>
+          <td style="padding:34px">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td width="48" valign="top">
+                  <div style="width:38px;height:38px;line-height:38px;text-align:center;border-radius:50%;background:#241c0f;border:1px solid #5c4520;color:#e5bd68;font-size:17px;font-weight:700">${icon}</div>
+                </td>
+                <td valign="top">
+                  <p style="margin:0 0 5px;color:#c7a55f;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase">New website submission</p>
+                  <h1 style="margin:0;color:#fffaf0;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:400;line-height:1.2">${escapeHtml(title)}</h1>
+                  <p style="margin:8px 0 0;color:#b7aa95;font-size:14px;line-height:1.5">${escapeHtml(subtitle)}</p>
+                </td>
+              </tr>
+            </table>
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-top:28px;background:#0d0d0d;border:1px solid #29251d;border-radius:12px">
+              <tr><td style="padding:18px 20px"><table role="presentation" cellpadding="0" cellspacing="0" width="100%">${tableRows}</table></td></tr>
+            </table>
           </td>
         </tr>
-
-        <!-- CTA -->
         ${adminLink ? `
         <tr>
-          <td style="padding:0 32px 28px;text-align:center">
-            <a href="${adminLink}" style="display:inline-block;background:${BRAND_COLOR};color:#0d0d0d;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none">${adminLabel}</a>
+          <td style="padding:0 34px 34px;text-align:center">
+            <a href="${adminLink}" style="display:inline-block;background:#d4ad5c;color:#0a0907;font-weight:800;font-size:12px;letter-spacing:1px;text-transform:uppercase;padding:14px 28px;border-radius:999px;text-decoration:none">${escapeHtml(adminLabel)}</a>
           </td>
         </tr>` : ''}
-
-        <!-- Footer -->
         <tr>
-          <td style="background:#111;padding:16px 32px;border-top:1px solid #2a2a2a;text-align:center">
-            <p style="margin:0;color:#555;font-size:11px">Preva Kitchen Staff Alert · prevakitchen.com · Do not reply</p>
+          <td style="background:#0d0d0d;padding:18px 30px;border-top:1px solid #27231b;text-align:center">
+            <p style="margin:0;color:#776e60;font-size:11px;line-height:1.6">PREVA Kitchen team notification · Reply directly to contact the guest or applicant</p>
           </td>
         </tr>
-
       </table>
     </td></tr>
   </table>
@@ -368,10 +477,13 @@ export async function notifyCustomerOrderStatus(order, newStatus) {
  */
 export async function notifyReservation(data) {
   const adminUrl = String(process.env.ADMIN_URL || 'https://prevakitchen.com/admin').trim();
+  const submitted = data.submittedAt ? new Date(data.submittedAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : '';
   return send({
-    subject: `📅 New Reservation — ${data.name} · ${data.date || 'Date TBD'} · Preva Kitchen`,
+    to: getReservationRecipients(),
+    replyTo: data.email || undefined,
+    subject: 'New Reservation Received - PREVA Kitchen',
     html: wrap({
-      icon: '📅',
+      icon: 'R',
       title: 'New Reservation Request',
       subtitle: `${data.guests || '?'} guests · ${data.date || 'Date TBD'} at ${data.time || 'Time TBD'}`,
       tableRows:
@@ -382,10 +494,28 @@ export async function notifyReservation(data) {
         row('Date', data.date) +
         row('Time', data.time) +
         row('Occasion', data.occasion) +
-        row('Notes', data.notes),
+        row('Notes', data.notes) +
+        row('Reference', data.referenceId) +
+        row('Submitted', submitted) +
+        row('Page', data.pageUrl),
       adminLink: `${adminUrl}/reservations`,
       adminLabel: 'Open Reservations',
     }),
+    text: `New Reservation Request\n\n${textDetails([
+      ['Customer', data.name],
+      ['Email', data.email],
+      ['Phone', data.phone],
+      ['Date', data.date],
+      ['Time', data.time],
+      ['Guests', data.guests],
+      ['Occasion', data.occasion],
+      ['Notes', data.notes],
+      ['Reference', data.referenceId],
+      ['Submitted', submitted]
+    ])}\n\nOpen reservations: ${adminUrl}/reservations`,
+    formType: 'RESERVATION',
+    recipientType: 'admin',
+    referenceId: data.referenceId
   });
 }
 
@@ -420,6 +550,8 @@ export async function notifyVipRequest(data) {
 export async function notifyContactEnquiry(data) {
   const adminUrl = String(process.env.ADMIN_URL || 'https://prevakitchen.com/admin').trim();
   return send({
+    to: getAdminRecipients(),
+    replyTo: data.email || undefined,
     subject: `✉️ Contact Enquiry — ${data.name} · Preva Kitchen`,
     html: wrap({
       icon: '✉️',
@@ -430,10 +562,16 @@ export async function notifyContactEnquiry(data) {
         row('Email', data.email) +
         row('Phone', data.phone) +
         row('Subject', data.subject) +
-        row('Message', data.message),
+        row('Message', data.message) +
+        row('Reference', data.referenceId) +
+        row('Submitted', data.submittedAt ? new Date(data.submittedAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : '') +
+        row('Page', data.pageUrl),
       adminLink: `${adminUrl}/contact-enquiries`,
       adminLabel: 'Open Enquiries',
     }),
+    formType: 'CONTACT',
+    recipientType: 'admin',
+    referenceId: data.referenceId
   });
 }
 
@@ -442,23 +580,205 @@ export async function notifyContactEnquiry(data) {
  */
 export async function notifyCareerApplication(data) {
   const adminUrl = String(process.env.ADMIN_URL || 'https://prevakitchen.com/admin').trim();
+  const submitted = data.submittedAt ? new Date(data.submittedAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : '';
   return send({
-    subject: `💼 New Application — ${data.firstName} ${data.lastName} for ${data.role} · Preva Kitchen`,
+    to: getCareerRecipients(),
+    replyTo: data.email || undefined,
+    subject: 'New Career Application Received - PREVA Kitchen',
     html: wrap({
-      icon: '💼',
+      icon: 'C',
       title: 'New Career Application',
-      subtitle: `Role: ${data.role}`,
+      subtitle: `Position: ${data.position || data.role}`,
       tableRows:
         row('Name', `${data.firstName} ${data.lastName}`) +
         row('Email', data.email) +
         row('Phone', data.phone) +
-        row('Role', data.role) +
+        row('Position', data.position || data.role) +
         row('Availability', data.availability) +
         row('Start Date', data.startDate) +
         row('Message', data.message) +
-        row('Resume', data.resume?.name || 'Attached'),
+        row('Resume', data.resume?.name || 'Not provided') +
+        row('Resume Type', data.resume?.mimeType) +
+        row('Resume Size', data.resume?.size ? `${Math.ceil(data.resume.size / 1024)} KB` : '') +
+        row('Reference', data.referenceId) +
+        row('Submitted', submitted) +
+        row('Page', data.pageUrl),
       adminLink: `${adminUrl}/career-applications`,
       adminLabel: 'View Applications',
     }),
+    text: `New Career Application\n\n${textDetails([
+      ['Candidate', `${data.firstName || ''} ${data.lastName || ''}`.trim()],
+      ['Email', data.email],
+      ['Phone', data.phone],
+      ['Position', data.position || data.role],
+      ['Availability', data.availability],
+      ['Start Date', data.startDate],
+      ['Message', data.message],
+      ['Resume', data.resume?.name || 'Not provided'],
+      ['Reference', data.referenceId],
+      ['Submitted', submitted]
+    ])}\n\nView applications: ${adminUrl}/career-applications`,
+    formType: 'CAREER_APPLICATION',
+    recipientType: 'admin',
+    referenceId: data.referenceId
   });
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Customer confirmation emails — Reservation, Contact, Career Application
+   ──────────────────────────────────────────────────────────────────────────
+   Branded acknowledgement sent to the address the visitor typed in. Shares
+   one template so all three read as the same company, not three off-brand
+   one-offs.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+function customerConfirmationHtml({ eyebrow, heading, name, referenceId, introLine, summaryRows, nextSteps, ctaLabel, ctaHref }) {
+  const siteUrl = getSiteUrl();
+  const safeCtaHref = escapeHtml(ctaHref || siteUrl);
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#080808;font-family:Arial,'Helvetica Neue',sans-serif">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${escapeHtml(heading)} · Reference ${escapeHtml(referenceId || '')}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#080808;padding:36px 14px">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#121212;border-radius:20px;border:1px solid #3a2d17;overflow:hidden;max-width:620px">
+        <tr>
+          <td style="background:#19130a;padding:32px 34px 28px;border-bottom:1px solid #4d3a1b;text-align:center">
+            <p style="margin:0 0 7px;color:#f1d28a;font-family:Georgia,'Times New Roman',serif;font-size:27px;letter-spacing:8px">PREVA</p>
+            <p style="margin:0;color:#a69679;font-size:9px;font-weight:700;letter-spacing:4px;text-transform:uppercase">Kitchen · Redford Township</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:38px 36px 32px">
+            <p style="margin:0 0 12px;color:#c5a35e;font-size:10px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase">${escapeHtml(eyebrow || 'PREVA Concierge')}</p>
+            <h1 style="margin:0 0 18px;color:#fffaf0;font-family:Georgia,'Times New Roman',serif;font-size:31px;font-weight:400;line-height:1.15">${escapeHtml(heading)}</h1>
+            ${referenceId ? `<p style="display:inline-block;margin:0 0 24px;padding:7px 12px;background:#211a0e;border:1px solid #49381a;border-radius:999px;color:#d8b76f;font-size:11px;font-weight:700;letter-spacing:.5px">Reference ${escapeHtml(referenceId)}</p>` : ''}
+            <p style="margin:0 0 26px;color:#d2cbc0;font-size:15px;line-height:1.75">
+              Hello <b style="color:#fffaf0">${escapeHtml(name || 'there')}</b>,<br><br>${introLine}
+            </p>
+            <p style="margin:0 0 10px;color:#9d8c70;font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase">Your details</p>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0c0c0c;border:1px solid #2d281e;border-radius:13px;margin-bottom:22px"><tr><td style="padding:14px 18px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${summaryRows}</table></td></tr></table>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#18140d;border-left:3px solid #c9a96e;border-radius:8px;margin-bottom:28px"><tr><td style="padding:17px 18px">
+              <p style="margin:0 0 6px;color:#fff8e8;font-size:13px;font-weight:700">What happens next</p>
+              <p style="margin:0;color:#bdb4a5;font-size:13px;line-height:1.65">${nextSteps}</p>
+            </td></tr></table>
+            ${ctaLabel ? `<div style="text-align:center"><a href="${safeCtaHref}" style="display:inline-block;background:#d4ad5c;color:#0a0907;font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;text-decoration:none;padding:14px 28px;border-radius:999px">${escapeHtml(ctaLabel)}</a></div>` : ''}
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#0c0c0c;padding:22px 30px;border-top:1px solid #29241a;text-align:center">
+            <p style="margin:0 0 5px;color:#eee7da;font-family:Georgia,'Times New Roman',serif;font-size:14px">${BRAND_NAME}</p>
+            <p style="margin:0;color:#786f61;font-size:11px;line-height:1.7">${BRAND_ADDRESS}<br>${BRAND_PHONE} · <a href="${escapeHtml(siteUrl)}" style="color:#ad9158;text-decoration:none">${escapeHtml(siteUrl.replace(/^https?:\/\//, ''))}</a></p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+}
+
+/** Customer confirmation for a table reservation request. */
+export async function notifyReservationCustomer(data) {
+  if (!data.email) return false;
+  const replyTo = getReservationRecipients()[0];
+  return send({
+    to: data.email,
+    replyTo,
+    subject: 'Reservation Request Received - PREVA Kitchen',
+    html: customerConfirmationHtml({
+      eyebrow: 'Reservation concierge',
+      heading: 'Your request is with our host.',
+      name: data.name,
+      referenceId: data.referenceId,
+      introLine: `Thank you for your reservation request at ${BRAND_NAME}. We've received your details. The PREVA team will contact you if any additional information or confirmation is required.`,
+      summaryRows:
+        row('Guests', data.guests) +
+        row('Date', data.date) +
+        row('Time', data.time) +
+        row('Occasion', data.occasion) +
+        row('Notes', data.notes),
+      nextSteps: `Our host reviews new requests throughout service and will contact you if confirmation or any additional information is required. If your date is urgent, call us directly at ${BRAND_PHONE}.`,
+      ctaLabel: 'Visit PREVA Kitchen',
+      ctaHref: `${getSiteUrl()}/reservations`
+    }),
+    text: `Hello ${data.name || 'there'},\n\nThank you for your reservation request at PREVA Kitchen. We have received your details, and our team will contact you if confirmation or additional information is required.\n\n${textDetails([
+      ['Reference', data.referenceId],
+      ['Date', data.date],
+      ['Time', data.time],
+      ['Guests', data.guests],
+      ['Occasion', data.occasion],
+      ['Notes', data.notes]
+    ])}\n\nQuestions? Call ${BRAND_PHONE}.\n${getSiteUrl()}/reservations`,
+    formType: 'RESERVATION',
+    recipientType: 'customer',
+    referenceId: data.referenceId
+  });
+}
+
+/** Customer confirmation for a contact/enquiry form submission. */
+export async function notifyContactCustomer(data) {
+  if (!data.email) return false;
+  return send({
+    to: data.email,
+    subject: `✅ We've Got Your Message — ${data.referenceId} · Preva Kitchen`,
+    html: customerConfirmationHtml({
+      icon: '✉️',
+      heading: 'Message Received!',
+      name: data.name,
+      referenceId: data.referenceId,
+      introLine: `thanks for reaching out to ${BRAND_NAME}. We've received your message and someone from our team will get back to you soon.`,
+      summaryRows:
+        row('Subject', data.subject || 'General enquiry') +
+        row('Message', data.message, false),
+      nextSteps: `We typically reply within 1 business day. For anything urgent, call us at ${BRAND_PHONE}.`
+    }),
+    formType: 'CONTACT',
+    recipientType: 'customer',
+    referenceId: data.referenceId
+  });
+}
+
+/** Customer confirmation for a career application submission. */
+export async function notifyCareerApplicationCustomer(data) {
+  if (!data.email) return false;
+  const candidateName = `${data.firstName || ''} ${data.lastName || ''}`.trim();
+  const position = data.position || data.role || '';
+  const replyTo = getCareerRecipients()[0];
+  return send({
+    to: data.email,
+    replyTo,
+    subject: 'Application Received - PREVA Kitchen',
+    html: customerConfirmationHtml({
+      eyebrow: 'Careers at PREVA',
+      heading: 'Thank you for bringing your talent to us.',
+      name: candidateName,
+      referenceId: data.referenceId,
+      introLine: `Thank you for applying to ${BRAND_NAME}. We've received your application for the <b style="color:${BRAND_COLOR}">${escapeHtml(position)}</b> position.`,
+      summaryRows:
+        row('Position', position) +
+        row('Availability', data.availability) +
+        row('Start Date', data.startDate),
+      nextSteps: `Our hiring team will review your application and reach out by phone or email if your experience matches a current opportunity. No additional action is required right now.`,
+      ctaLabel: 'Explore PREVA Careers',
+      ctaHref: `${getSiteUrl()}/careers`
+    }),
+    text: `Hello ${candidateName || 'there'},\n\nThank you for applying to PREVA Kitchen. We have received your application for the ${position} position.\n\n${textDetails([
+      ['Reference', data.referenceId],
+      ['Position', position],
+      ['Availability', data.availability],
+      ['Available Start Date', data.startDate]
+    ])}\n\nOur hiring team will contact you by phone or email if your experience matches a current opportunity.\n${getSiteUrl()}/careers`,
+    formType: 'CAREER_APPLICATION',
+    recipientType: 'customer',
+    referenceId: data.referenceId
+  });
+}
+
+// Explicit form-oriented names for new code; legacy notify* exports remain
+// available because order/public routes already use that naming convention.
+export const sendReservationCustomerEmail = notifyReservationCustomer;
+export const sendReservationAdminEmail = notifyReservation;
+export const sendCareerApplicantEmail = notifyCareerApplicationCustomer;
+export const sendCareerAdminEmail = notifyCareerApplication;

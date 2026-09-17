@@ -52,7 +52,7 @@ export default function Footer() {
   const [settings, setSettings] = useState({
     phone: '(313) 286-3586',
     contactEmail: 'info@prevaclub.com',
-    reservationsEmail: 'reservations@prevaclub.com',
+    reservationsEmail: 'reservations@prevakitchen.com',
     eventsEmail: 'events@prevaclub.com',
     supportEmail: 'support@prevaclub.com',
     address: '13090 Inkster Rd, Redford Township, MI 48239, United States',

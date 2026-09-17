@@ -9,8 +9,13 @@ import { get, post, result, badRequest, notFound, unauthorized } from '../router
 import { logActivity } from '../lib/activity.js';
 import { careerJobsCollection } from '../lib/career-jobs.js';
 import {
-  notifyReservation, notifyVipRequest, notifyContactEnquiry, notifyCareerApplication
+  notifyReservation, notifyVipRequest, notifyContactEnquiry, notifyCareerApplication,
+  notifyReservationCustomer, notifyContactCustomer, notifyCareerApplicationCustomer,
+  buildReferenceId
 } from '../lib/email.js';
+import {
+  isHoneypotTripped, enforceRateLimit, getIdempotentResponse, rememberIdempotentResponse
+} from '../lib/formGuard.js';
 
 /* ══════════════════════════════════════════════════════════════════════════
    Helpers
@@ -723,31 +728,74 @@ get('/preview/:token', async ({ params }) => {
    plain acknowledgement — no ids, no internal state.
    ══════════════════════════════════════════════════════════════════════════ */
 
-async function storeEnquiry(collectionName, document, { action, entity, name, ip }, notifyFn = null) {
+/**
+ * Insert one enquiry document, then attempt the admin + customer emails in
+ * parallel. Promise.allSettled keeps a provider failure from changing the
+ * successful form result, while awaiting it prevents work from being dropped
+ * if the process or deployment is recycled immediately after the response.
+ */
+async function storeEnquiry(collectionName, refPrefix, document, { action, entity, name, ip, pageUrl }, { notifyAdmin, notifyCustomer } = {}) {
   const target = await col(collectionName);
-  await target.insertOne({ ...document, status: 'NEW', createdAt: new Date() });
+  const now = new Date();
+  const { insertedId } = await target.insertOne({ ...document, status: 'NEW', createdAt: now, pageUrl: pageUrl || null });
   await logActivity({ user: null, ip }, action, entity, name);
-  // Fire-and-forget: email failure must never reject a customer submission
-  if (notifyFn) notifyFn(document).catch(err => console.error('[email] notify failed:', err.message));
-  return { ok: true };
+
+  const referenceId = buildReferenceId(refPrefix, insertedId);
+  const enriched = { ...document, referenceId, submittedAt: now, pageUrl: pageUrl || null };
+
+  await Promise.allSettled([
+    notifyAdmin ? notifyAdmin(enriched) : null,
+    notifyCustomer ? notifyCustomer(enriched) : null
+  ].filter(Boolean));
+
+  return { ok: true, referenceId };
 }
 
-post('/reservations', async ({ body, ip }) => {
+post('/reservations', async ({ body, ip, request }) => {
+  if (isHoneypotTripped(body)) return { ok: true, referenceId: null }; // silent no-op for bots
+  enforceRateLimit('reservations', ip);
+
   const name = cleanText(body?.name, 120);
   const phone = cleanText(body?.phone, 40);
-  if (!name || !phone) throw badRequest('Name and phone number are required.');
+  const email = cleanEmail(body?.email);
+  const date = cleanText(body?.date, 40);
+  const time = cleanText(body?.time, 40);
+  const guests = Number(body?.guests);
+  if (!name || !phone || !email || !date || !time) {
+    throw badRequest('Name, email, phone, date and time are required.');
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw badRequest('Enter a valid email address.');
+  const parsedDate = new Date(`${date}T00:00:00.000Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== date) {
+    throw badRequest('Enter a valid reservation date.');
+  }
+  if (!Number.isInteger(guests) || guests < 1 || guests > 20) {
+    throw badRequest('Guests must be a whole number between 1 and 20.');
+  }
 
   const doc = {
     name,
     phone,
-    email: cleanEmail(body?.email),
-    guests: Math.min(Math.max(Number(body?.guests) || 2, 1), 20),
-    date: cleanText(body?.date, 40),
-    time: cleanText(body?.time, 40),
+    email,
+    guests,
+    date,
+    time,
     occasion: cleanText(body?.occasion, 80),
     notes: cleanText(body?.notes, 1000)
   };
-  return storeEnquiry('reservation', doc, { action: 'CREATE', entity: 'RESERVATION', name, ip }, notifyReservation);
+
+  const idempotencyKey = { name, email, phone, date: doc.date, time: doc.time };
+  const cached = getIdempotentResponse('reservations', ip, idempotencyKey);
+  if (cached) return cached;
+
+  const pageUrl = cleanText(body?.pageUrl, 300) || request?.headers?.referer || '';
+  const response = await storeEnquiry(
+    'reservation', 'RES', doc,
+    { action: 'CREATE', entity: 'RESERVATION', name, ip, pageUrl },
+    { notifyAdmin: notifyReservation, notifyCustomer: notifyReservationCustomer }
+  );
+  rememberIdempotentResponse('reservations', ip, idempotencyKey, response);
+  return response;
 });
 
 post('/vip-requests', async ({ body, ip }) => {
@@ -764,10 +812,13 @@ post('/vip-requests', async ({ body, ip }) => {
     occasion: cleanText(body?.occasion, 80),
     notes: cleanText(body?.notes, 1000)
   };
-  return storeEnquiry('vipRequest', doc, { action: 'CREATE', entity: 'VIP_REQUEST', name, ip }, notifyVipRequest);
+  return storeEnquiry('vipRequest', 'VIP', doc, { action: 'CREATE', entity: 'VIP_REQUEST', name, ip }, { notifyAdmin: notifyVipRequest });
 });
 
-post('/contact', async ({ body, ip }) => {
+post('/contact', async ({ body, ip, request }) => {
+  if (isHoneypotTripped(body)) return { ok: true, referenceId: null };
+  enforceRateLimit('contact', ip);
+
   const name = cleanText(body?.name, 120);
   const email = cleanEmail(body?.email);
   const message = cleanText(body?.message, 4000);
@@ -782,7 +833,19 @@ post('/contact', async ({ body, ip }) => {
     message,
     formSource: cleanText(body?.formSource, 60) || 'CONTACT'
   };
-  return storeEnquiry('contactEnquiry', doc, { action: 'CREATE', entity: 'CONTACT', name, ip }, notifyContactEnquiry);
+
+  const idempotencyKey = { name, email, message };
+  const cached = getIdempotentResponse('contact', ip, idempotencyKey);
+  if (cached) return cached;
+
+  const pageUrl = cleanText(body?.pageUrl, 300) || request?.headers?.referer || '';
+  const response = await storeEnquiry(
+    'contactEnquiry', 'CON', doc,
+    { action: 'CREATE', entity: 'CONTACT', name, ip, pageUrl },
+    { notifyAdmin: notifyContactEnquiry, notifyCustomer: notifyContactCustomer }
+  );
+  rememberIdempotentResponse('contact', ip, idempotencyKey, response);
+  return response;
 });
 
 post('/guest-list', async ({ body, ip }) => {
@@ -792,6 +855,7 @@ post('/guest-list', async ({ body, ip }) => {
 
   return storeEnquiry(
     'guestListEntry',
+    'GST',
     {
       name,
       phone,
@@ -810,7 +874,10 @@ const RESUME_TYPES = new Set([
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 ]);
 
-post('/career-applications', async ({ body, ip }) => {
+post('/career-applications', async ({ body, ip, request }) => {
+  if (isHoneypotTripped(body)) return result({ ok: true }, { status: 201 });
+  enforceRateLimit('career-applications', ip);
+
   const firstName = cleanText(body?.firstName, 80);
   const lastName = cleanText(body?.lastName, 80);
   const email = cleanEmail(body?.email);
@@ -822,13 +889,19 @@ post('/career-applications', async ({ body, ip }) => {
     throw badRequest('Name, email, phone, role and availability are required.');
   }
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw badRequest('Enter a valid email address.');
+  let position = 'General Application';
   if (role !== 'general-application') {
     const jobs = await careerJobsCollection();
     const openJob = await jobs.findOne({ slug: role, status: 'PUBLISHED' });
     if (!openJob) throw badRequest('Please select a currently published role.');
+    position = cleanText(openJob.title, 120) || role;
   }
   if (body?.consent !== true) throw badRequest('Consent is required before submitting.');
   if (!body?.resume) throw badRequest('Résumé / CV is required. Please upload your résumé (PDF, DOC, or DOCX).');
+
+  const idempotencyKey = { firstName, lastName, email, role };
+  const cachedResponse = getIdempotentResponse('career-applications', ip, idempotencyKey);
+  if (cachedResponse) return cachedResponse;
 
   let resume = null;
   if (body?.resume) {
@@ -875,13 +948,30 @@ post('/career-applications', async ({ body, ip }) => {
   };
 
   const applications = await col('careerApplications');
-  await applications.insertOne(document);
+  const { insertedId } = await applications.insertOne(document);
 
   await logActivity({ user: null, ip }, 'CREATE', 'CAREER_APPLICATION', `${firstName} ${lastName} — ${role}`);
-  // Fire-and-forget staff alert — email failure must not block 201
-  notifyCareerApplication({ ...document, resume: resume ? { name: resume.name } : null })
-    .catch(err => console.error('[email] career application notify failed:', err.message));
-  return result({ ok: true }, { status: 201 });
+
+  const referenceId = buildReferenceId('APP', insertedId);
+  const pageUrl = cleanText(body?.pageUrl, 300) || request?.headers?.referer || '';
+  const emailData = {
+    ...document,
+    position,
+    resume: resume ? { name: resume.name, mimeType: resume.mimeType, size: resume.size } : null,
+    referenceId,
+    submittedAt: now,
+    pageUrl
+  };
+  // Both attempts finish before the response, but allSettled ensures email
+  // failure cannot turn a successfully stored application into an API error.
+  await Promise.allSettled([
+    notifyCareerApplication(emailData),
+    notifyCareerApplicationCustomer(emailData)
+  ]);
+
+  const response = result({ ok: true, referenceId }, { status: 201 });
+  rememberIdempotentResponse('career-applications', ip, idempotencyKey, response);
+  return response;
 });
 
 post('/subscribe', async ({ body }) => {

@@ -8,7 +8,8 @@ export const metadata = pageMetadata({
   title: 'Apply to Preva Kitchen',
   description: 'Apply to join the Preva Kitchen team in Redford, Michigan.',
   path: '/careers/apply',
-  keywords: ['apply Preva Kitchen', 'restaurant jobs Redford MI']
+  keywords: ['apply Preva Kitchen', 'restaurant jobs Redford MI'],
+  titleIncludesBrand: true
 });
 
 export default async function ApplyPage({ searchParams }) {

@@ -8,7 +8,8 @@ export const metadata = pageMetadata({
   description: 'Reserve a table at Preva Kitchen, 13090 Inkster Rd, Redford Township MI. Birthdays, date nights, family dinners and group bookings confirmed same day.',
   path: '/reservations',
   image: '/asset/home-reference/preva-restaurant-hero.png',
-  keywords: ['Preva Kitchen reservations', 'book a table Redford MI', 'restaurant reservations Redford Township', 'group dining Redford Michigan']
+  keywords: ['Preva Kitchen reservations', 'book a table Redford MI', 'restaurant reservations Redford Township', 'group dining Redford Michigan'],
+  titleIncludesBrand: true
 });
 
 function reservationsSchema(origin) {

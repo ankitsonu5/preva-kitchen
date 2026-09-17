@@ -85,6 +85,24 @@ add(
   process.env.STRIPE_WEBHOOK_SECRET ? 'set (redacted)' : '<unset>'
 );
 
+const resendKey = String(process.env.RESEND_API_KEY || '').trim();
+const fromEmail = String(process.env.FROM_EMAIL || process.env.STAFF_EMAIL_FROM || '').trim();
+const adminRecipients = String(
+  process.env.ADMIN_EMAIL || process.env.ADMIN_EMAILS || process.env.STAFF_ALERT_EMAIL || ''
+).trim();
+const careerRecipients = String(
+  process.env.CAREER_ADMIN_EMAIL || process.env.HR_EMAIL || adminRecipients
+).trim();
+add('Resend API key', resendKey.startsWith('re_'), resendKey ? 'set (redacted)' : '<unset>');
+add(
+  'Verified email sender',
+  /@[^>\s]+\.[^>\s]+>?$/.test(fromEmail) && !fromEmail.includes('onboarding@resend.dev'),
+  fromEmail || '<unset>'
+);
+add('Reservation admin email', Boolean(adminRecipients), adminRecipients || '<unset>');
+add('Career/HR email', Boolean(careerRecipients), careerRecipients || '<unset>');
+add('Production mail catch-all disabled', !String(process.env.MAIL_CATCH_ALL || '').trim(), process.env.MAIL_CATCH_ALL ? 'set' : '<unset>');
+
 if (stripeKey) {
   try {
     const stripe = new Stripe(stripeKey, { apiVersion: '2024-12-18.acacia' });

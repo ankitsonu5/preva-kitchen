@@ -13,7 +13,7 @@ export async function generateMetadata({ params }) {
 
   if (!post) {
     return {
-      title: 'Blog Post Not Found | Preva Kitchen',
+      title: { absolute: 'Blog Post Not Found | Preva Kitchen' },
       robots: { index: false, follow: false }
     };
   }
@@ -26,7 +26,7 @@ export async function generateMetadata({ params }) {
   const categoryName = post.categories?.[0]?.category?.name || post.categories?.[0]?.name || 'Culinary Journal';
 
   return {
-    title: cleanTitle,
+    title: { absolute: cleanTitle },
     description: cleanDesc,
     keywords: post.focusKeyword ? [post.focusKeyword, ...tagsList, 'Preva Kitchen', 'Redford MI'] : [...tagsList, 'Preva Kitchen', 'Redford MI'],
     alternates: {

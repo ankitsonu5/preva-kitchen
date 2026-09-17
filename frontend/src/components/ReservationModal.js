@@ -35,6 +35,8 @@ export default function ReservationModal({ isOpen, onClose, initialOccasion = 'P
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [referenceId, setReferenceId] = useState('');
+  const [hpField, setHpField] = useState(''); // honeypot — real visitors never see or fill this
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -49,8 +51,8 @@ export default function ReservationModal({ isOpen, onClose, initialOccasion = 'P
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim() || !phone.trim()) {
-      showError('Details required', 'Please provide your full name and phone number.');
+    if (!name.trim() || !phone.trim() || !email.trim()) {
+      showError('Details required', 'Please provide your full name, email address, and phone number.');
       return;
     }
 
@@ -67,7 +69,9 @@ export default function ReservationModal({ isOpen, onClose, initialOccasion = 'P
           date,
           time,
           occasion: occasion || 'Private Suite',
-          notes: notes.trim()
+          notes: notes.trim(),
+          pageUrl: typeof window !== 'undefined' ? window.location.href : '',
+          hp_field: hpField
         })
       });
 
@@ -76,6 +80,7 @@ export default function ReservationModal({ isOpen, onClose, initialOccasion = 'P
         throw new Error(data?.message || 'Could not place reservation.');
       }
 
+      setReferenceId(data?.referenceId || '');
       setSuccess(true);
       showToast('Reservation requested successfully!', 'success');
     } catch (err) {
@@ -87,6 +92,7 @@ export default function ReservationModal({ isOpen, onClose, initialOccasion = 'P
 
   const handleClose = () => {
     setSuccess(false);
+    setReferenceId('');
     onClose();
   };
 
@@ -162,7 +168,7 @@ export default function ReservationModal({ isOpen, onClose, initialOccasion = 'P
           <>
             <div style={{ marginBottom: 20 }}>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#C9A84C', fontSize: '11px', fontWeight: 800, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 6 }}>
-                <Sparkles size={14} /> Preva Kitchen & Lounge
+                <Sparkles size={14} /> Preva Kitchen
               </div>
               <h2 id="reservationModalTitle" style={{ fontSize: 'clamp(22px, 3vw, 28px)', fontWeight: 800, color: '#fff', margin: '0 0 6px' }}>
                 Table & Suite Reservation
@@ -173,6 +179,17 @@ export default function ReservationModal({ isOpen, onClose, initialOccasion = 'P
             </div>
 
             <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 14 }}>
+              {/* Honeypot — hidden from real visitors, bots that autofill every input trip it */}
+              <input
+                type="text"
+                name="hp_field"
+                value={hpField}
+                onChange={(e) => setHpField(e.target.value)}
+                tabIndex="-1"
+                autoComplete="off"
+                aria-hidden="true"
+                style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
+              />
               {/* Name & Phone */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
                 <div>
@@ -208,11 +225,13 @@ export default function ReservationModal({ isOpen, onClose, initialOccasion = 'P
               {/* Email */}
               <div>
                 <label htmlFor="rm-email" style={{ display: 'block', fontSize: '11.5px', color: '#C9A84C', fontWeight: 700, marginBottom: 5 }}>
-                  EMAIL ADDRESS (OPTIONAL)
+                  EMAIL ADDRESS *
                 </label>
                 <input
                   id="rm-email"
                   type="email"
+                  required
+                  autoComplete="email"
                   placeholder="e.g. contact@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -352,9 +371,14 @@ export default function ReservationModal({ isOpen, onClose, initialOccasion = 'P
             <h3 style={{ fontSize: '24px', fontWeight: 800, color: '#fff', margin: '0 0 8px' }}>
               Reservation Requested!
             </h3>
-            <p style={{ fontSize: '14px', color: '#bbb', lineHeight: 1.6, maxWidth: 380, margin: '0 auto 20px' }}>
+            <p style={{ fontSize: '14px', color: '#bbb', lineHeight: 1.6, maxWidth: 380, margin: '0 auto 8px' }}>
               Thank you, <b style={{ color: '#fff' }}>{name}</b>! We received your reservation for <b style={{ color: '#C9A84C' }}>{guests} guests</b> on <b style={{ color: '#C9A84C' }}>{date} at {time}</b>. Our host will confirm via phone shortly.
             </p>
+            {referenceId && (
+              <p style={{ fontSize: '12px', color: '#888', margin: '0 auto 20px' }}>
+                Reference #{referenceId} · A confirmation email is on its way{email ? ` to ${email}` : ''}.
+              </p>
+            )}
             <button
               type="button"
               onClick={handleClose}

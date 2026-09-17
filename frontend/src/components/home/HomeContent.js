@@ -13,6 +13,7 @@ import {
   ChefHat,
   Clock3,
   CookingPot,
+  Mail,
   Phone,
   ShoppingBag,
   Sofa,
@@ -140,7 +141,7 @@ const signatureDishes = [
 ];
 
 export default function Home() {
-  const [booking, setBooking] = useState({ name: '', phone: '', purpose: '', date: '', time: '', guests: '2' });
+  const [booking, setBooking] = useState({ name: '', email: '', phone: '', purpose: '', date: '', time: '', guests: '2', hp_field: '' });
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   // "Other" in the purpose dropdown reveals this free-text field instead of
   // replacing the dropdown outright — keeps a category for the common cases
@@ -252,6 +253,10 @@ export default function Home() {
       Swal.fire({ ...swalBase, icon: 'warning', title: 'Phone required', text: 'Please enter your phone number.' });
       return;
     }
+    if (!booking.email.trim()) {
+      Swal.fire({ ...swalBase, icon: 'warning', title: 'Email required', text: 'Please enter your email address so we can send your confirmation.' });
+      return;
+    }
     if (!effectivePurpose) {
       Swal.fire({ ...swalBase, icon: 'warning', title: 'Booking purpose required', text: 'Please tell us the purpose of your reservation.' });
       return;
@@ -268,17 +273,20 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: booking.name.trim(),
+          email: booking.email.trim(),
           phone: booking.phone.trim(),
           occasion: effectivePurpose,
           date: booking.date,
           time: booking.time,
-          guests: Number(booking.guests)
+          guests: Number(booking.guests),
+          pageUrl: typeof window !== 'undefined' ? window.location.href : '',
+          hp_field: booking.hp_field
         })
       });
 
       if (!response.ok) {
         const result = await response.json().catch(() => ({}));
-        throw new Error(result?.error || 'Unable to send your reservation request.');
+        throw new Error(result?.message || result?.error || 'Unable to send your reservation request.');
       }
     } catch (error) {
       await Swal.fire({
@@ -316,7 +324,7 @@ export default function Home() {
       confirmButtonText: 'Done ✓',
       width: '460px',
     });
-    setBooking({ name: '', phone: '', purpose: '', date: '', time: '', guests: '2' });
+    setBooking({ name: '', email: '', phone: '', purpose: '', date: '', time: '', guests: '2', hp_field: '' });
     setPurposeOther('');
   };
 
@@ -481,6 +489,16 @@ export default function Home() {
               </div>
 
               <form className="pk-ref-booking-form-split" onSubmit={submitBooking}>
+                <input
+                  type="text"
+                  name="hp_field"
+                  value={booking.hp_field}
+                  onChange={(e) => setBooking((current) => ({ ...current, hp_field: e.target.value }))}
+                  tabIndex="-1"
+                  autoComplete="off"
+                  aria-hidden="true"
+                  style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
+                />
                 <div className="pk-ref-booking-contact-row">
                   <div className="pk-ref-booking-group">
                     <span className="pk-ref-booking-label"><User size={12} /> Your Name</span>
@@ -509,6 +527,20 @@ export default function Home() {
                       required
                     />
                   </div>
+                </div>
+
+                <div className="pk-ref-booking-group">
+                  <span className="pk-ref-booking-label"><Mail size={12} /> Email Address</span>
+                  <input
+                    className="pk-ref-booking-input"
+                    type="email"
+                    placeholder="e.g. contact@example.com"
+                    value={booking.email}
+                    onChange={updateBooking('email')}
+                    aria-label="Email address"
+                    autoComplete="email"
+                    required
+                  />
                 </div>
 
                 <div className="pk-ref-booking-group">

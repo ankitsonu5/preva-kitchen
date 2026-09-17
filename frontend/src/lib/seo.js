@@ -7,7 +7,11 @@ export function pageMetadata({
   image = DEFAULT_OG_IMAGE,
   type = 'website',
   keywords = [],
-  noIndex = false
+  noIndex = false,
+  // Set when `title` already spells out the brand (e.g. "Terms of Service |
+  // Preva Kitchen"). Without this, the root layout's title.template appends
+  // " | Preva Kitchen" a second time to every page-level title.
+  titleIncludesBrand = false
 }) {
   const images = image
     ? [{ url: image, width: 1200, height: 630, alt: title }]
@@ -22,7 +26,7 @@ export function pageMetadata({
     : keywords;
 
   return {
-    title,
+    title: titleIncludesBrand ? { absolute: title } : title,
     description,
     keywords: dedupedKeywords,
     alternates: { canonical: path },
