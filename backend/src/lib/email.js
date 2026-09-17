@@ -4,8 +4,9 @@ import { col } from './db.js';
 /* ══════════════════════════════════════════════════════════════════════════
    Email notifications — Preva Kitchen Staff Alerts + Customer Confirmations
    ──────────────────────────────────────────────────────────────────────────
-   Sends through Resend. All provider errors are recorded and returned as a
-   false result so a notification outage never rolls back a saved submission.
+   Sends through Resend (https://resend.com) — free 3,000 emails/month.
+   All provider errors are recorded and returned as a false result so a
+   notification outage never rolls back a saved submission.
    ══════════════════════════════════════════════════════════════════════════ */
 
 const BRAND_COLOR  = '#c9a96e';   // Preva gold
@@ -17,8 +18,9 @@ function getResendKey() {
   return String(process.env.RESEND_API_KEY || '').trim();
 }
 function getFromAddress() {
-  const configuredSender = String(process.env.FROM_EMAIL || process.env.STAFF_EMAIL_FROM || '').trim();
-  if (configuredSender) return configuredSender;
+  const configured = String(process.env.FROM_EMAIL || process.env.STAFF_EMAIL_FROM || '').trim();
+  if (configured) return configured;
+  // Dev fallback: Resend's onboarding address works without domain setup
   return isProduction() ? '' : 'Preva Kitchen <onboarding@resend.dev>';
 }
 function getSiteUrl() {
@@ -83,10 +85,15 @@ async function logEmailAttempt({ formType, recipientType, to, subject, status, p
   }
 }
 
+/* ── Resend transport ─────────────────────────────────────────────────────
+   Free 3,000 emails/month. Get API key at https://resend.com
+   Domain verification needed for custom FROM address in production.
+   In dev, onboarding@resend.dev works without any domain setup.           */
+
 /** Lazily created so a missing key does not make module import fail. */
 let _resend = null;
 let _cachedKey = null;
-function resend() {
+function getResendClient() {
   const key = getResendKey();
   if (!_resend || _cachedKey !== key) {
     _cachedKey = key;
@@ -100,17 +107,16 @@ function configured() {
 }
 
 /**
- * Send one email. Returns true on success, false (+ console.error) on failure.
- * `to` may be a single address or an array (multiple admins). In non-production,
- * when MAIL_CATCH_ALL is set, every recipient is swapped for it so testing
- * never reaches a real customer's inbox.
+ * Send one email via Resend.
+ * Returns true on success, false (+ console.error) on failure.
+ * `to` may be a single address or an array. In non-production, when
+ * MAIL_CATCH_ALL is set, every recipient is replaced so real inboxes stay clean.
  */
 async function send({ to, subject, html, text, replyTo, formType, recipientType, referenceId }) {
   const requested = (Array.isArray(to) ? to : [to]).filter(Boolean);
   const recipients = requested.length ? requested : getAdminRecipients();
 
-  // Used by the verification script to exercise every template without
-  // touching the provider, recipients, or the email audit collection.
+  // Dry-run mode: log the render without touching any mail provider.
   if (String(process.env.EMAIL_DRY_RUN || '').toLowerCase() === 'true') {
     console.log('[email:dry-run] rendered:', subject, { formType, recipientType });
     return true;
@@ -123,7 +129,7 @@ async function send({ to, subject, html, text, replyTo, formType, recipientType,
   }
 
   if (!configured()) {
-    console.warn('[email] RESEND_API_KEY / FROM_EMAIL is not configured; skipping email.', { formType, recipientType });
+    console.warn('[email] RESEND_API_KEY / FROM_EMAIL not configured; skipping email.', { formType, recipientType });
     await logEmailAttempt({ formType, recipientType, to: recipients, subject, status: 'skipped', error: 'RESEND_API_KEY/FROM_EMAIL not configured', referenceId });
     return false;
   }
@@ -136,7 +142,7 @@ async function send({ to, subject, html, text, replyTo, formType, recipientType,
   }
 
   try {
-    const { data, error } = await resend().emails.send({
+    const { data, error } = await getResendClient().emails.send({
       from: getFromAddress(),
       to: finalRecipients,
       subject,
@@ -152,7 +158,7 @@ async function send({ to, subject, html, text, replyTo, formType, recipientType,
       return false;
     }
 
-    console.log('[email] sent successfully to:', finalRecipients.join(', '), 'Subject:', subject, 'id:', data?.id);
+    console.log('[email] sent via Resend to:', finalRecipients.join(', '), 'Subject:', subject, 'id:', data?.id);
     await logEmailAttempt({ formType, recipientType, to: finalRecipients, subject, status: 'sent', providerMessageId: data?.id, referenceId });
     return true;
   } catch (err) {
@@ -175,12 +181,25 @@ function escapeHtml(value) {
 /* ── Shared HTML helpers ──────────────────────────────────────────────── */
 
 function row(label, value, isHtml = false) {
-  if (!value) return '';
+  if (value === null || value === undefined || String(value).trim() === '') return '';
   const display = isHtml ? value : escapeHtml(value);
+  const isReference = /reference/i.test(label);
+  const isEmail = /email/i.test(label) && !isHtml;
+  const isPhone = /phone/i.test(label) && !isHtml;
+
+  let formattedValue = display;
+  if (isReference) {
+    formattedValue = `<span style="display:inline-block;background:linear-gradient(135deg,#2E2414 0%,#1A140A 100%);color:#F5D899;border:1px solid #735728;padding:4px 12px;border-radius:6px;font-weight:700;font-family:Consolas,monospace;font-size:13px;letter-spacing:1px;box-shadow:0 2px 6px rgba(0,0,0,0.4);">${display}</span>`;
+  } else if (isEmail) {
+    formattedValue = `<a href="mailto:${display}" style="color:#E8C57A;text-decoration:none;font-weight:600;border-bottom:1px dotted #E8C57A;">${display}</a>`;
+  } else if (isPhone) {
+    formattedValue = `<a href="tel:${display}" style="color:#E8C57A;text-decoration:none;font-weight:600;">${display}</a>`;
+  }
+
   return `
     <tr>
-      <td style="padding:6px 12px 6px 0;color:#888;font-size:13px;white-space:nowrap;vertical-align:top">${escapeHtml(label)}</td>
-      <td style="padding:6px 0;color:#e8e0d5;font-size:13px">${display}</td>
+      <td class="label-col" style="padding:12px 14px 12px 0;color:#948978;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;white-space:nowrap;vertical-align:top;border-bottom:1px solid #1C1914;width:28%;">${escapeHtml(label)}</td>
+      <td style="padding:12px 0;color:#F5EFE6;font-size:14px;font-weight:500;line-height:1.6;vertical-align:top;border-bottom:1px solid #1C1914;">${formattedValue}</td>
     </tr>`;
 }
 
@@ -192,52 +211,111 @@ function textDetails(entries) {
 }
 
 function wrap({ icon, title, subtitle, tableRows, adminLink, adminLabel = 'View in Admin' }) {
+  const siteUrl = getSiteUrl();
   return `<!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#080808;font-family:Arial,'Helvetica Neue',sans-serif">
-  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${escapeHtml(title)} — ${escapeHtml(subtitle)}</div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#080808;padding:36px 14px">
-    <tr><td align="center">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#121212;border-radius:18px;border:1px solid #332915;overflow:hidden;max-width:620px">
-        <tr>
-          <td style="background:#18130b;padding:30px 34px;border-bottom:1px solid #4b3a1b;text-align:center">
-            <p style="margin:0 0 7px;color:#f1d28a;font-family:Georgia,'Times New Roman',serif;font-size:24px;letter-spacing:7px">PREVA</p>
-            <p style="margin:0;color:#9b8d72;font-size:9px;font-weight:700;letter-spacing:4px;text-transform:uppercase">Kitchen · Redford Township</p>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:34px">
-            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
-              <tr>
-                <td width="48" valign="top">
-                  <div style="width:38px;height:38px;line-height:38px;text-align:center;border-radius:50%;background:#241c0f;border:1px solid #5c4520;color:#e5bd68;font-size:17px;font-weight:700">${icon}</div>
-                </td>
-                <td valign="top">
-                  <p style="margin:0 0 5px;color:#c7a55f;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase">New website submission</p>
-                  <h1 style="margin:0;color:#fffaf0;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:400;line-height:1.2">${escapeHtml(title)}</h1>
-                  <p style="margin:8px 0 0;color:#b7aa95;font-size:14px;line-height:1.5">${escapeHtml(subtitle)}</p>
-                </td>
-              </tr>
-            </table>
-            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-top:28px;background:#0d0d0d;border:1px solid #29251d;border-radius:12px">
-              <tr><td style="padding:18px 20px"><table role="presentation" cellpadding="0" cellspacing="0" width="100%">${tableRows}</table></td></tr>
-            </table>
-          </td>
-        </tr>
-        ${adminLink ? `
-        <tr>
-          <td style="padding:0 34px 34px;text-align:center">
-            <a href="${adminLink}" style="display:inline-block;background:#d4ad5c;color:#0a0907;font-weight:800;font-size:12px;letter-spacing:1px;text-transform:uppercase;padding:14px 28px;border-radius:999px;text-decoration:none">${escapeHtml(adminLabel)}</a>
-          </td>
-        </tr>` : ''}
-        <tr>
-          <td style="background:#0d0d0d;padding:18px 30px;border-top:1px solid #27231b;text-align:center">
-            <p style="margin:0;color:#776e60;font-size:11px;line-height:1.6">PREVA Kitchen team notification · Reply directly to contact the guest or applicant</p>
-          </td>
-        </tr>
-      </table>
-    </td></tr>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting">
+  <title>${escapeHtml(title)}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+    body, table, td, p, a, li, blockquote { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; min-height: 100vh; background-color: #070708; }
+    @media only screen and (max-width: 640px) {
+      .email-container { width: 100% !important; max-width: 100% !important; border-radius: 0 !important; border-left: none !important; border-right: none !important; }
+      .content-cell { padding: 26px 20px !important; }
+      .header-cell { padding: 28px 20px 22px !important; }
+      .label-col { width: 34% !important; font-size: 10px !important; padding-right: 8px !important; }
+      .cta-btn { display: block !important; width: 100% !important; box-sizing: border-box !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#070708;font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${escapeHtml(title)} — ${escapeHtml(subtitle || '')}</div>
+  <table role="presentation" width="100%" height="100%" cellpadding="0" cellspacing="0" style="background-color:#070708;min-height:100vh;width:100%;padding:40px 14px;table-layout:fixed;">
+    <tr>
+      <td align="center" valign="top">
+        <!-- Main Card -->
+        <table role="presentation" class="email-container" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;margin:0 auto;background:#131210;border-radius:20px;border:1px solid #382D1B;box-shadow:0 24px 60px rgba(0,0,0,0.8),0 0 1px rgba(212,175,55,0.4);overflow:hidden;">
+          <!-- Top Accent Gold Line -->
+          <tr>
+            <td height="3" style="background:linear-gradient(90deg, #8A641E 0%, #F5D899 50%, #8A641E 100%);font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
+          <!-- Luxury Header -->
+          <tr>
+            <td class="header-cell" style="background:linear-gradient(180deg, #1C1710 0%, #13110E 100%);padding:36px 36px 28px;border-bottom:1px solid #382D1B;text-align:center;">
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 14px;">
+                <tr>
+                  <td align="center" style="width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg, #2D2313 0%, #1A1408 100%);border:1px solid #6E5325;text-align:center;line-height:46px;box-shadow:0 4px 14px rgba(0,0,0,0.5);">
+                    <span style="font-family:'Cinzel',Georgia,serif;font-size:24px;font-weight:700;color:#F5D899;letter-spacing:1px;">P</span>
+                  </td>
+                </tr>
+              </table>
+              <div style="margin:0 0 6px;color:#F5D899;font-family:'Cinzel',Georgia,serif;font-size:28px;font-weight:700;letter-spacing:10px;text-transform:uppercase;text-shadow:0 2px 10px rgba(245,216,153,0.2);">PREVA</div>
+              <div style="margin:0 auto;color:#9E8E75;font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;">Kitchen &bull; Redford Township</div>
+              <div style="width:70px;height:1px;background:linear-gradient(90deg, transparent, #D4AF37 50%, transparent);margin:16px auto 0;"></div>
+            </td>
+          </tr>
+          <!-- Main Content -->
+          <tr>
+            <td class="content-cell" style="padding:36px 38px 30px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>
+                    <!-- Pill Badge -->
+                    <div style="margin:0 0 14px;">
+                      <span style="display:inline-block;padding:5px 14px;background:rgba(212,175,55,0.12);border:1px solid rgba(212,175,55,0.32);border-radius:999px;color:#F3D58C;font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;">
+                        ${icon ? `<span style="margin-right:6px;">${icon}</span>` : ''}New Website Submission
+                      </span>
+                    </div>
+                    <h1 style="margin:0 0 8px;color:#FFFFFF;font-family:'Cinzel',Georgia,serif;font-size:26px;font-weight:600;line-height:1.25;letter-spacing:0.3px;">${escapeHtml(title)}</h1>
+                    <p style="margin:0 0 26px;color:#B3A795;font-size:14px;line-height:1.6;">${escapeHtml(subtitle)}</p>
+
+                    <!-- Details Table Container -->
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#09090B;border:1px solid #282218;border-radius:14px;overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,0.03);">
+                      <tr>
+                        <td style="padding:8px 20px;">
+                          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                            ${tableRows}
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Action Button -->
+          ${adminLink ? `
+          <tr>
+            <td style="padding:0 38px 34px;text-align:center;">
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
+                <tr>
+                  <td align="center">
+                    <a href="${adminLink}" class="cta-btn" style="display:inline-block;background:linear-gradient(135deg, #F5D899 0%, #D4AF37 50%, #A87F22 100%);color:#0D0A06;font-family:'Plus Jakarta Sans',Arial,sans-serif;font-weight:800;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;padding:15px 38px;border-radius:999px;text-decoration:none;box-shadow:0 8px 24px rgba(212,175,55,0.3);">${escapeHtml(adminLabel)} &rarr;</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>` : ''}
+          <!-- Footer -->
+          <tr>
+            <td style="background:#0C0B09;padding:24px 34px;border-top:1px solid #241D12;text-align:center;">
+              <p style="margin:0 0 5px;color:#E5DAC6;font-family:'Cinzel',Georgia,serif;font-size:13px;letter-spacing:3px;font-weight:600;">PREVA KITCHEN</p>
+              <p style="margin:0 0 10px;color:#786E5E;font-size:11px;line-height:1.7;">
+                ${BRAND_ADDRESS}<br>
+                <a href="tel:3132863586" style="color:#C9A96E;text-decoration:none;">${BRAND_PHONE}</a> &bull; 
+                <a href="${escapeHtml(siteUrl)}" style="color:#C9A96E;text-decoration:none;">${escapeHtml(siteUrl.replace(/^https?:\/\//, ''))}</a>
+              </p>
+              <p style="margin:0;color:#544D42;font-size:10px;line-height:1.5;">PREVA Kitchen Notification &bull; Reply directly to contact the guest or applicant</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
   </table>
 </body>
 </html>`;
@@ -637,43 +715,104 @@ function customerConfirmationHtml({ eyebrow, heading, name, referenceId, introLi
   const safeCtaHref = escapeHtml(ctaHref || siteUrl);
   return `<!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#080808;font-family:Arial,'Helvetica Neue',sans-serif">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting">
+  <title>${escapeHtml(heading)}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+    body, table, td, p, a, li, blockquote { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; min-height: 100vh; background-color: #070708; }
+    @media only screen and (max-width: 640px) {
+      .email-container { width: 100% !important; max-width: 100% !important; border-radius: 0 !important; border-left: none !important; border-right: none !important; }
+      .content-cell { padding: 26px 20px !important; }
+      .header-cell { padding: 28px 20px 22px !important; }
+      .label-col { width: 34% !important; font-size: 10px !important; padding-right: 8px !important; }
+      .cta-btn { display: block !important; width: 100% !important; box-sizing: border-box !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#070708;font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${escapeHtml(heading)} · Reference ${escapeHtml(referenceId || '')}</div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#080808;padding:36px 14px">
-    <tr><td align="center">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#121212;border-radius:20px;border:1px solid #3a2d17;overflow:hidden;max-width:620px">
-        <tr>
-          <td style="background:#19130a;padding:32px 34px 28px;border-bottom:1px solid #4d3a1b;text-align:center">
-            <p style="margin:0 0 7px;color:#f1d28a;font-family:Georgia,'Times New Roman',serif;font-size:27px;letter-spacing:8px">PREVA</p>
-            <p style="margin:0;color:#a69679;font-size:9px;font-weight:700;letter-spacing:4px;text-transform:uppercase">Kitchen · Redford Township</p>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:38px 36px 32px">
-            <p style="margin:0 0 12px;color:#c5a35e;font-size:10px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase">${escapeHtml(eyebrow || 'PREVA Concierge')}</p>
-            <h1 style="margin:0 0 18px;color:#fffaf0;font-family:Georgia,'Times New Roman',serif;font-size:31px;font-weight:400;line-height:1.15">${escapeHtml(heading)}</h1>
-            ${referenceId ? `<p style="display:inline-block;margin:0 0 24px;padding:7px 12px;background:#211a0e;border:1px solid #49381a;border-radius:999px;color:#d8b76f;font-size:11px;font-weight:700;letter-spacing:.5px">Reference ${escapeHtml(referenceId)}</p>` : ''}
-            <p style="margin:0 0 26px;color:#d2cbc0;font-size:15px;line-height:1.75">
-              Hello <b style="color:#fffaf0">${escapeHtml(name || 'there')}</b>,<br><br>${introLine}
-            </p>
-            <p style="margin:0 0 10px;color:#9d8c70;font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase">Your details</p>
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0c0c0c;border:1px solid #2d281e;border-radius:13px;margin-bottom:22px"><tr><td style="padding:14px 18px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${summaryRows}</table></td></tr></table>
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#18140d;border-left:3px solid #c9a96e;border-radius:8px;margin-bottom:28px"><tr><td style="padding:17px 18px">
-              <p style="margin:0 0 6px;color:#fff8e8;font-size:13px;font-weight:700">What happens next</p>
-              <p style="margin:0;color:#bdb4a5;font-size:13px;line-height:1.65">${nextSteps}</p>
-            </td></tr></table>
-            ${ctaLabel ? `<div style="text-align:center"><a href="${safeCtaHref}" style="display:inline-block;background:#d4ad5c;color:#0a0907;font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;text-decoration:none;padding:14px 28px;border-radius:999px">${escapeHtml(ctaLabel)}</a></div>` : ''}
-          </td>
-        </tr>
-        <tr>
-          <td style="background:#0c0c0c;padding:22px 30px;border-top:1px solid #29241a;text-align:center">
-            <p style="margin:0 0 5px;color:#eee7da;font-family:Georgia,'Times New Roman',serif;font-size:14px">${BRAND_NAME}</p>
-            <p style="margin:0;color:#786f61;font-size:11px;line-height:1.7">${BRAND_ADDRESS}<br>${BRAND_PHONE} · <a href="${escapeHtml(siteUrl)}" style="color:#ad9158;text-decoration:none">${escapeHtml(siteUrl.replace(/^https?:\/\//, ''))}</a></p>
-          </td>
-        </tr>
-      </table>
-    </td></tr>
+  <table role="presentation" width="100%" height="100%" cellpadding="0" cellspacing="0" style="background-color:#070708;min-height:100vh;width:100%;padding:40px 14px;table-layout:fixed;">
+    <tr>
+      <td align="center" valign="top">
+        <!-- Main Card -->
+        <table role="presentation" class="email-container" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;margin:0 auto;background:#131210;border-radius:20px;border:1px solid #382D1B;box-shadow:0 24px 60px rgba(0,0,0,0.8),0 0 1px rgba(212,175,55,0.4);overflow:hidden;">
+          <!-- Top Accent Gold Line -->
+          <tr>
+            <td height="3" style="background:linear-gradient(90deg, #8A641E 0%, #F5D899 50%, #8A641E 100%);font-size:0;line-height:0;">&nbsp;</td>
+          </tr>
+          <!-- Luxury Header -->
+          <tr>
+            <td class="header-cell" style="background:linear-gradient(180deg, #1C1710 0%, #13110E 100%);padding:36px 36px 28px;border-bottom:1px solid #382D1B;text-align:center;">
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 14px;">
+                <tr>
+                  <td align="center" style="width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg, #2D2313 0%, #1A1408 100%);border:1px solid #6E5325;text-align:center;line-height:46px;box-shadow:0 4px 14px rgba(0,0,0,0.5);">
+                    <span style="font-family:'Cinzel',Georgia,serif;font-size:24px;font-weight:700;color:#F5D899;letter-spacing:1px;">P</span>
+                  </td>
+                </tr>
+              </table>
+              <div style="margin:0 0 6px;color:#F5D899;font-family:'Cinzel',Georgia,serif;font-size:28px;font-weight:700;letter-spacing:10px;text-transform:uppercase;text-shadow:0 2px 10px rgba(245,216,153,0.2);">PREVA</div>
+              <div style="margin:0 auto;color:#9E8E75;font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;">Kitchen &bull; Redford Township</div>
+              <div style="width:70px;height:1px;background:linear-gradient(90deg, transparent, #D4AF37 50%, transparent);margin:16px auto 0;"></div>
+            </td>
+          </tr>
+          <!-- Content Body -->
+          <tr>
+            <td class="content-cell" style="padding:38px 38px 32px;">
+              <p style="margin:0 0 10px;color:#C9A96E;font-size:10px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;">${escapeHtml(eyebrow || 'PREVA Concierge')}</p>
+              <h1 style="margin:0 0 16px;color:#FFFFFF;font-family:'Cinzel',Georgia,serif;font-size:28px;font-weight:600;line-height:1.2;letter-spacing:0.2px;">${escapeHtml(heading)}</h1>
+              ${referenceId ? `<div style="margin:0 0 22px;"><span style="display:inline-block;background:linear-gradient(135deg,#2E2414 0%,#1A140A 100%);color:#F5D899;border:1px solid #735728;padding:5px 14px;border-radius:6px;font-weight:700;font-family:Consolas,monospace;font-size:12px;letter-spacing:1px;">REFERENCE #${escapeHtml(referenceId)}</span></div>` : ''}
+              <p style="margin:0 0 24px;color:#DDD4C7;font-size:15px;line-height:1.75;">
+                Hello <b style="color:#FFF8EC;">${escapeHtml(name || 'there')}</b>,<br><br>${introLine}
+              </p>
+              <!-- Details Box -->
+              <p style="margin:0 0 10px;color:#A8987E;font-size:11px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;">Summary of Request</p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#09090B;border:1px solid #282218;border-radius:14px;margin-bottom:24px;overflow:hidden;">
+                <tr>
+                  <td style="padding:8px 20px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                      ${summaryRows}
+                    </table>
+                  </td>
+                </tr>
+              </table>
+              <!-- What happens next Callout -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg, #1A150D 0%, #120F09 100%);border-left:3px solid #D4AF37;border-radius:10px;border-top:1px solid #2C2213;border-right:1px solid #2C2213;border-bottom:1px solid #2C2213;margin-bottom:28px;">
+                <tr>
+                  <td style="padding:18px 22px;">
+                    <p style="margin:0 0 6px;color:#F5D899;font-size:13px;font-weight:700;letter-spacing:0.5px;">✨ What happens next</p>
+                    <p style="margin:0;color:#C4BBAE;font-size:13px;line-height:1.7;">${nextSteps}</p>
+                  </td>
+                </tr>
+              </table>
+              ${ctaLabel ? `
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
+                <tr>
+                  <td align="center">
+                    <a href="${safeCtaHref}" class="cta-btn" style="display:inline-block;background:linear-gradient(135deg, #F5D899 0%, #D4AF37 50%, #A87F22 100%);color:#0D0A06;font-family:'Plus Jakarta Sans',Arial,sans-serif;font-weight:800;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;padding:15px 38px;border-radius:999px;text-decoration:none;box-shadow:0 8px 24px rgba(212,175,55,0.3);">${escapeHtml(ctaLabel)} &rarr;</a>
+                  </td>
+                </tr>
+              </table>` : ''}
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="background:#0C0B09;padding:24px 34px;border-top:1px solid #241D12;text-align:center;">
+              <p style="margin:0 0 5px;color:#E5DAC6;font-family:'Cinzel',Georgia,serif;font-size:13px;letter-spacing:3px;font-weight:600;">${BRAND_NAME}</p>
+              <p style="margin:0 0 10px;color:#786E5E;font-size:11px;line-height:1.7;">
+                ${BRAND_ADDRESS}<br>
+                <a href="tel:3132863586" style="color:#C9A96E;text-decoration:none;">${BRAND_PHONE}</a> &bull; 
+                <a href="${escapeHtml(siteUrl)}" style="color:#C9A96E;text-decoration:none;">${escapeHtml(siteUrl.replace(/^https?:\/\//, ''))}</a>
+              </p>
+              <p style="margin:0;color:#544D42;font-size:10px;line-height:1.5;">Fine Dining & Hospitality &bull; Redford Township, MI</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
   </table>
 </body>
 </html>`;
