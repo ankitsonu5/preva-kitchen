@@ -400,6 +400,7 @@ export default function KitchenDisplayPage() {
       if (filterStage === 'RECEIVED' && !['RECEIVED', 'PAID'].includes(order.status)) return false;
       if (filterStage === 'PREPARING' && order.status !== 'PREPARING') return false;
       if (filterStage === 'READY' && order.status !== 'READY') return false;
+      if (filterStage === 'ON_THE_WAY' && order.status !== 'ON_THE_WAY') return false;
       if (filterFulfilment !== 'ALL' && order.fulfilment !== filterFulfilment) return false;
       return true;
     });
@@ -410,14 +411,15 @@ export default function KitchenDisplayPage() {
     const waiting = orders.filter((o) => ['RECEIVED', 'PAID'].includes(o.status)).length;
     const cooking = orders.filter((o) => o.status === 'PREPARING').length;
     const ready = orders.filter((o) => o.status === 'READY').length;
-    return { waiting, cooking, ready, total: orders.length };
+    const onTheWay = orders.filter((o) => o.status === 'ON_THE_WAY').length;
+    return { waiting, cooking, ready, onTheWay, total: orders.length };
   }, [orders]);
 
   // All-Day Aggregate Item Counts
   const allDayPrepSummary = useMemo(() => {
     const map = new Map();
     for (const order of orders) {
-      if (order.status === 'READY') continue;
+      if (order.status === 'READY' || order.status === 'ON_THE_WAY') continue;
       for (const line of order.lines || []) {
         const key = line.name;
         const current = map.get(key) || { name: key, qty: 0, options: [] };
@@ -1088,6 +1090,36 @@ export default function KitchenDisplayPage() {
               fontWeight: 900
             }}>{counts.ready}</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterStage('ON_THE_WAY')}
+            style={{
+              height: '32px',
+              padding: '0 14px',
+              borderRadius: '7px',
+              border: 'none',
+              background: filterStage === 'ON_THE_WAY' ? '#8b5cf6' : 'transparent',
+              color: filterStage === 'ON_THE_WAY' ? '#fff' : '#999',
+              fontWeight: 800,
+              fontSize: '13px',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            🚗 On Way
+            <span style={{
+              background: filterStage === 'ON_THE_WAY' ? 'rgba(0,0,0,0.3)' : '#222230',
+              color: filterStage === 'ON_THE_WAY' ? '#fff' : '#aaa',
+              padding: '1px 6px',
+              borderRadius: '8px',
+              fontSize: '11px',
+              fontWeight: 900
+            }}>{counts.onTheWay}</span>
+          </button>
         </div>
 
         {/* Right: Kitchen Tools & Order Type (All 36px Height, Matching 8px Radius) */}
@@ -1603,6 +1635,8 @@ export default function KitchenDisplayPage() {
               const isWaiting = ['RECEIVED', 'PAID'].includes(order.status);
               const isCooking = order.status === 'PREPARING';
               const isReady = order.status === 'READY';
+              const isOnTheWay = order.status === 'ON_THE_WAY';
+              const isDelivery = order.fulfilment === 'DELIVERY';
 
               // Visual styling hierarchy
               let cardBorder = '1px solid rgba(255,255,255,0.1)';
@@ -1617,6 +1651,12 @@ export default function KitchenDisplayPage() {
                 headerBg = 'rgba(239, 68, 68, 0.2)';
                 timerBg = 'rgba(239, 68, 68, 0.3)';
                 timerColor = '#fca5a5';
+              } else if (isOnTheWay) {
+                cardBorder = '2px solid #8b5cf6';
+                cardShadow = '0 0 25px rgba(139, 92, 246, 0.3)';
+                headerBg = 'rgba(139, 92, 246, 0.18)';
+                timerBg = 'rgba(139, 92, 246, 0.25)';
+                timerColor = '#c4b5fd';
               } else if (isCooking) {
                 cardBorder = '2px solid #3b82f6';
                 cardShadow = '0 0 25px rgba(59, 130, 246, 0.25)';
@@ -1765,14 +1805,34 @@ export default function KitchenDisplayPage() {
                         padding: '2px 7px',
                         borderRadius: '5px',
                         flexShrink: 0,
-                        background: isReady ? 'rgba(16, 185, 129, 0.15)' : isCooking ? 'rgba(59, 130, 246, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                        color: isReady ? '#34d399' : isCooking ? '#60a5fa' : '#fde68a',
-                        border: `1px solid ${isReady ? 'rgba(16, 185, 129, 0.3)' : isCooking ? 'rgba(59, 130, 246, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`
+                        background: isOnTheWay ? 'rgba(139, 92, 246, 0.2)' : isReady ? 'rgba(16, 185, 129, 0.15)' : isCooking ? 'rgba(59, 130, 246, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                        color: isOnTheWay ? '#c4b5fd' : isReady ? '#34d399' : isCooking ? '#60a5fa' : '#fde68a',
+                        border: `1px solid ${isOnTheWay ? 'rgba(139, 92, 246, 0.4)' : isReady ? 'rgba(16, 185, 129, 0.3)' : isCooking ? 'rgba(59, 130, 246, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`
                       }}>
-                        {isReady ? 'READY' : isCooking ? 'IN PREP' : 'WAITING'}
+                        {isOnTheWay ? 'OUT FOR DELIVERY' : isReady ? 'READY' : isCooking ? 'IN PREP' : 'WAITING'}
                       </span>
                     </div>
                   </div>
+
+                  {/* ── CUSTOMER DELIVERY ADDRESS BANNER ── */}
+                  {isDelivery && order.customer?.address && (
+                    <div style={{
+                      background: 'rgba(139, 92, 246, 0.1)',
+                      borderLeft: '4px solid #8b5cf6',
+                      padding: '8px 16px',
+                      fontSize: '12px',
+                      color: '#f1f5f9',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <Truck size={15} color="#a78bfa" style={{ flexShrink: 0 }} />
+                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <strong style={{ color: '#a78bfa', textTransform: 'uppercase', fontSize: '10px', letterSpacing: '0.5px', marginRight: '6px' }}>Address:</strong>
+                        <span>{order.customer.address}{order.customer.postcode ? `, ${order.customer.postcode}` : ''}</span>
+                      </div>
+                    </div>
+                  )}
 
                   {/* ── CUSTOMER SPECIAL COOKING NOTE ── */}
                   {order.customer?.note && (
@@ -1924,12 +1984,59 @@ export default function KitchenDisplayPage() {
                       </button>
                     )}
 
+                    {/* Undo Step Back Button */}
+                    {isCooking && (
+                      <button
+                        type="button"
+                        onClick={() => updateStatus(order, 'RECEIVED')}
+                        disabled={isProcessing}
+                        title="Revert back to Waiting"
+                        style={{
+                          width: '44px',
+                          height: '46px',
+                          borderRadius: '10px',
+                          background: '#1a1a24',
+                          border: '1px solid #333',
+                          color: '#aaa',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <Undo2 size={18} />
+                      </button>
+                    )}
+
                     {isReady && (
                       <button
                         type="button"
                         onClick={() => updateStatus(order, 'PREPARING')}
                         disabled={isProcessing}
                         title="Revert back to Cooking"
+                        style={{
+                          width: '44px',
+                          height: '46px',
+                          borderRadius: '10px',
+                          background: '#1a1a24',
+                          border: '1px solid #333',
+                          color: '#aaa',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <Undo2 size={18} />
+                      </button>
+                    )}
+
+                    {isOnTheWay && (
+                      <button
+                        type="button"
+                        onClick={() => updateStatus(order, 'READY')}
+                        disabled={isProcessing}
+                        title="Revert back to Ready (Kitchen)"
                         style={{
                           width: '44px',
                           height: '46px',
@@ -2002,14 +2109,43 @@ export default function KitchenDisplayPage() {
                         }}
                       >
                         <CheckCircle2 size={20} />
-                        <span>MARK READY (ALERT COUNTER)</span>
+                        <span>MARK READY (PACKED)</span>
                       </button>
                     )}
 
-                    {isReady && (
+                    {isReady && isDelivery && (
                       <button
                         type="button"
-                        onClick={() => updateStatus(order, order.fulfilment === 'DELIVERY' ? 'DELIVERED' : 'COMPLETED')}
+                        onClick={() => updateStatus(order, 'ON_THE_WAY')}
+                        disabled={isProcessing}
+                        style={{
+                          flex: 1,
+                          height: '48px',
+                          borderRadius: '10px',
+                          background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
+                          border: 'none',
+                          color: '#fff',
+                          fontSize: '14px',
+                          fontWeight: 900,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          cursor: 'pointer',
+                          boxShadow: '0 4px 16px rgba(139, 92, 246, 0.4)'
+                        }}
+                      >
+                        <Truck size={20} />
+                        <span>OUT FOR DELIVERY (HANDOVER) 🚗</span>
+                      </button>
+                    )}
+
+                    {isReady && !isDelivery && (
+                      <button
+                        type="button"
+                        onClick={() => updateStatus(order, 'COMPLETED')}
                         disabled={isProcessing}
                         style={{
                           flex: 1,
@@ -2031,7 +2167,36 @@ export default function KitchenDisplayPage() {
                         }}
                       >
                         <PackageCheck size={20} />
-                        <span>DISPATCH / BUMP (DONE)</span>
+                        <span>PICKED UP / BUMP (DONE)</span>
+                      </button>
+                    )}
+
+                    {isOnTheWay && (
+                      <button
+                        type="button"
+                        onClick={() => updateStatus(order, 'DELIVERED')}
+                        disabled={isProcessing}
+                        style={{
+                          flex: 1,
+                          height: '48px',
+                          borderRadius: '10px',
+                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                          border: 'none',
+                          color: '#fff',
+                          fontSize: '14px',
+                          fontWeight: 900,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          cursor: 'pointer',
+                          boxShadow: '0 4px 16px rgba(16, 185, 129, 0.4)'
+                        }}
+                      >
+                        <CheckCircle2 size={20} />
+                        <span>MARK DELIVERED (COMPLETE)</span>
                       </button>
                     )}
                   </div>

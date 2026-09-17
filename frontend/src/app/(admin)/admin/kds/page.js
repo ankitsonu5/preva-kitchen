@@ -279,6 +279,7 @@ export default function KitchenDisplayPage() {
       if (filterStage === 'RECEIVED' && !['RECEIVED', 'PAID'].includes(order.status)) return false;
       if (filterStage === 'PREPARING' && order.status !== 'PREPARING') return false;
       if (filterStage === 'READY' && order.status !== 'READY') return false;
+      if (filterStage === 'ON_THE_WAY' && order.status !== 'ON_THE_WAY') return false;
 
       // Fulfilment filter
       if (filterFulfilment !== 'ALL' && order.fulfilment !== filterFulfilment) return false;
@@ -292,7 +293,8 @@ export default function KitchenDisplayPage() {
     const waiting = orders.filter(o => ['RECEIVED', 'PAID'].includes(o.status)).length;
     const cooking = orders.filter(o => o.status === 'PREPARING').length;
     const ready = orders.filter(o => o.status === 'READY').length;
-    return { waiting, cooking, ready, total: orders.length };
+    const onTheWay = orders.filter(o => o.status === 'ON_THE_WAY').length;
+    return { waiting, cooking, ready, onTheWay, total: orders.length };
   }, [orders]);
 
   // All-Day Aggregate Item Counts (prep summary across all active tickets)
@@ -648,6 +650,36 @@ export default function KitchenDisplayPage() {
               fontSize: '11px',
               fontWeight: 900
             }}>{counts.ready}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterStage('ON_THE_WAY')}
+            style={{
+              height: '32px',
+              padding: '0 14px',
+              borderRadius: '7px',
+              border: 'none',
+              background: filterStage === 'ON_THE_WAY' ? '#8b5cf6' : 'transparent',
+              color: filterStage === 'ON_THE_WAY' ? '#fff' : '#999',
+              fontWeight: 800,
+              fontSize: '13px',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            🚗 On Way
+            <span style={{
+              background: filterStage === 'ON_THE_WAY' ? 'rgba(0,0,0,0.3)' : '#222230',
+              color: filterStage === 'ON_THE_WAY' ? '#fff' : '#aaa',
+              padding: '1px 6px',
+              borderRadius: '8px',
+              fontSize: '11px',
+              fontWeight: 900
+            }}>{counts.onTheWay}</span>
           </button>
         </div>
 
@@ -1206,6 +1238,10 @@ export default function KitchenDisplayPage() {
                 cardBorder = '1.5px solid #f59e0b';
                 timerBg = 'rgba(245, 158, 11, 0.2)';
                 timerColor = '#f59e0b';
+              } else if (order.status === 'ON_THE_WAY') {
+                cardBorder = '1.5px solid #8b5cf6';
+                timerBg = 'rgba(139, 92, 246, 0.2)';
+                timerColor = '#c4b5fd';
               } else if (order.status === 'READY') {
                 cardBorder = '1.5px solid #10b981';
                 timerBg = 'rgba(16, 185, 129, 0.2)';
@@ -1267,6 +1303,21 @@ export default function KitchenDisplayPage() {
                         }}>
                           {order.fulfilment === 'DELIVERY' ? '🚗 Delivery' : '🏃 Pickup'}
                         </span>
+
+                        {order.status === 'ON_THE_WAY' && (
+                          <span style={{
+                            fontSize: '11px',
+                            fontWeight: 800,
+                            textTransform: 'uppercase',
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            background: 'rgba(139, 92, 246, 0.25)',
+                            color: '#c4b5fd',
+                            border: '1px solid #8b5cf6'
+                          }}>
+                            🚗 Out For Delivery
+                          </span>
+                        )}
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1346,6 +1397,26 @@ export default function KitchenDisplayPage() {
                       )}
                     </div>
                   </div>
+
+                  {/* ── CUSTOMER DELIVERY ADDRESS BANNER ── */}
+                  {order.fulfilment === 'DELIVERY' && order.customer?.address && (
+                    <div style={{
+                      background: 'rgba(139, 92, 246, 0.12)',
+                      borderBottom: '1px solid rgba(139, 92, 246, 0.25)',
+                      padding: '8px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      color: '#c4b5fd',
+                      fontSize: '12px'
+                    }}>
+                      <Truck size={14} style={{ flexShrink: 0, color: '#a78bfa' }} />
+                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <strong style={{ color: '#a78bfa', textTransform: 'uppercase', fontSize: '10px', letterSpacing: '0.5px', marginRight: '6px' }}>Address:</strong>
+                        <span>{order.customer.address}{order.customer.postcode ? `, ${order.customer.postcode}` : ''}</span>
+                      </div>
+                    </div>
+                  )}
 
                   {/* ── ALLERGY / CUSTOMER NOTE CALLOUT ── */}
                   {order.customer?.note && (
@@ -1473,11 +1544,11 @@ export default function KitchenDisplayPage() {
                     gap: '8px'
                   }}>
                     {/* Revert / Undo step */}
-                    {['PREPARING', 'READY'].includes(order.status) && (
+                    {['PREPARING', 'READY', 'ON_THE_WAY'].includes(order.status) && (
                       <button
                         type="button"
                         onClick={() => {
-                          const prev = order.status === 'READY' ? 'PREPARING' : 'RECEIVED';
+                          const prev = order.status === 'ON_THE_WAY' ? 'READY' : order.status === 'READY' ? 'PREPARING' : 'RECEIVED';
                           updateStatus(order, prev);
                         }}
                         disabled={isProcessing}
@@ -1551,7 +1622,7 @@ export default function KitchenDisplayPage() {
                         }}
                       >
                         <CheckCircle2 size={18} />
-                        {isProcessing ? 'UPDATING...' : 'MARK READY'}
+                        {isProcessing ? 'UPDATING...' : 'MARK READY (PACKED)'}
                       </button>
                     )}
 
@@ -1562,7 +1633,7 @@ export default function KitchenDisplayPage() {
                         disabled={isProcessing}
                         style={{
                           flex: 1,
-                          background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                          background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
                           color: '#fff',
                           border: 'none',
                           borderRadius: '10px',
@@ -1575,11 +1646,11 @@ export default function KitchenDisplayPage() {
                           justifyContent: 'center',
                           gap: '8px',
                           letterSpacing: '0.5px',
-                          boxShadow: '0 4px 14px rgba(59, 130, 246, 0.35)'
+                          boxShadow: '0 4px 16px rgba(139, 92, 246, 0.4)'
                         }}
                       >
                         <Truck size={18} />
-                        {isProcessing ? 'UPDATING...' : 'SEND FOR DELIVERY'}
+                        {isProcessing ? 'UPDATING...' : 'OUT FOR DELIVERY (HANDOVER) 🚗'}
                       </button>
                     )}
 
@@ -1608,6 +1679,34 @@ export default function KitchenDisplayPage() {
                       >
                         <PackageCheck size={18} />
                         {isProcessing ? 'UPDATING...' : 'BUMP / COLLECTED'}
+                      </button>
+                    )}
+
+                    {order.status === 'ON_THE_WAY' && (
+                      <button
+                        type="button"
+                        onClick={() => updateStatus(order, 'DELIVERED')}
+                        disabled={isProcessing}
+                        style={{
+                          flex: 1,
+                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '10px',
+                          padding: '13px 16px',
+                          fontSize: '15px',
+                          fontWeight: 900,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          letterSpacing: '0.5px',
+                          boxShadow: '0 4px 16px rgba(16, 185, 129, 0.4)'
+                        }}
+                      >
+                        <CheckCircle2 size={18} />
+                        {isProcessing ? 'UPDATING...' : 'MARK DELIVERED (COMPLETE)'}
                       </button>
                     )}
                   </div>

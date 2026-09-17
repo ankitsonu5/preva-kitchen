@@ -210,7 +210,7 @@ export default function RestaurantDisplayBoard() {
   }, [orders]);
 
   const readyOrders = useMemo(() => {
-    return orders.filter(o => o.stage === 'READY' || o.stage === 'COMPLETED');
+    return orders.filter(o => o.stage === 'READY' || o.stage === 'COMPLETED' || o.stage === 'ON_THE_WAY');
   }, [orders]);
 
   return (
@@ -790,18 +790,18 @@ export default function RestaurantDisplayBoard() {
                     </div>
 
                     <div style={{
-                      background: 'rgba(16, 185, 129, 0.2)',
-                      border: '1px solid rgba(16, 185, 129, 0.4)',
+                      background: order.stage === 'ON_THE_WAY' ? 'rgba(139, 92, 246, 0.25)' : 'rgba(16, 185, 129, 0.2)',
+                      border: `1px solid ${order.stage === 'ON_THE_WAY' ? 'rgba(139, 92, 246, 0.5)' : 'rgba(16, 185, 129, 0.4)'}`,
                       borderRadius: '8px',
                       padding: '6px 10px',
                       marginTop: '4px',
                       textAlign: 'center',
                       fontSize: '12px',
                       fontWeight: 800,
-                      color: '#6ee7b7',
+                      color: order.stage === 'ON_THE_WAY' ? '#c4b5fd' : '#6ee7b7',
                       letterSpacing: '0.5px'
                     }}>
-                      COLLECT AT COUNTER ➔
+                      {order.stage === 'ON_THE_WAY' ? '🚗 ON THE WAY (OUT FOR DELIVERY)' : 'COLLECT AT COUNTER ➔'}
                     </div>
                   </div>
                 );

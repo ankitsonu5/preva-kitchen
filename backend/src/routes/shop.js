@@ -105,7 +105,7 @@ get('/shop/display-board', async () => {
 
   const rows = await orders.find({
     $or: [
-      { status: { $in: ['RECEIVED', 'PAID', 'PREPARING', 'READY'] } },
+      { status: { $in: ['RECEIVED', 'PAID', 'PREPARING', 'READY', 'ON_THE_WAY'] } },
       { status: { $in: ['COMPLETED', 'DELIVERED'] }, updatedAt: { $gte: recentCutoff } }
     ]
   }).sort({ createdAt: -1 }).limit(60).toArray();
@@ -119,6 +119,7 @@ get('/shop/display-board', async () => {
 
     let stage = 'PREPARING';
     if (order.status === 'READY') stage = 'READY';
+    else if (order.status === 'ON_THE_WAY') stage = 'ON_THE_WAY';
     else if (['COMPLETED', 'DELIVERED'].includes(order.status)) stage = 'COMPLETED';
 
     return {
@@ -203,7 +204,7 @@ get('/shop/kitchen-tickets', async (ctx) => {
 
   const orders = await col('order');
   const rows = await orders.find({
-    status: { $in: ['RECEIVED', 'PAID', 'PREPARING', 'READY'] }
+    status: { $in: ['RECEIVED', 'PAID', 'PREPARING', 'READY', 'ON_THE_WAY'] }
   }).sort({ createdAt: 1 }).limit(100).toArray();
 
   return rows.map((order) => {
@@ -216,7 +217,9 @@ get('/shop/kitchen-tickets', async (ctx) => {
       customer: {
         name: safe.customer?.name || 'Walk-in Guest',
         phone: safe.customer?.phone || '',
-        note: safe.customer?.note || ''
+        note: safe.customer?.note || '',
+        address: safe.customer?.address || '',
+        postcode: safe.customer?.postcode || ''
       },
       lines: safe.lines || [],
       subtotalCents: safe.subtotalCents,
@@ -244,7 +247,7 @@ patch('/shop/kitchen-tickets/:id/status', async (ctx) => {
   if (!order) throw notFound('Order not found.');
 
   const targetStatus = cleanText(body?.status, 30).toUpperCase();
-  const ALLOWED_KITCHEN_STATUSES = ['RECEIVED', 'PREPARING', 'READY', 'COMPLETED', 'DELIVERED', 'CANCELLED'];
+  const ALLOWED_KITCHEN_STATUSES = ['RECEIVED', 'PREPARING', 'READY', 'ON_THE_WAY', 'COMPLETED', 'DELIVERED', 'CANCELLED'];
   if (!ALLOWED_KITCHEN_STATUSES.includes(targetStatus)) {
     throw badRequest(`Cannot change status to ${targetStatus}`);
   }
