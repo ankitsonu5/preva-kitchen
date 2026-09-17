@@ -1,3 +1,5 @@
+"use client";
+
 import { FileText } from 'lucide-react';
 import { PageShell, PageHero, Section, COLORS, fontFamily } from '@/components/site-page/PageKit';
 

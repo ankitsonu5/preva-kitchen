@@ -1,3 +1,5 @@
+"use client";
+
 import Link from 'next/link';
 import { Sparkles, MapPin, ChefHat, Utensils, Clock, Phone } from 'lucide-react';
 import {
