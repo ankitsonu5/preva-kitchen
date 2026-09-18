@@ -1,5 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#0d0c0a"/>
-  <circle cx="32" cy="32" r="25" fill="none" stroke="#c5a059" stroke-width="2.5"/>
-  <text x="32" y="44" fill="#dfc07e" font-family="Roboto, Arial, sans-serif" font-size="34" font-weight="800" text-anchor="middle">P</text>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1c1812"/>
+      <stop offset="50%" stop-color="#0a0907"/>
+      <stop offset="100%" stop-color="#241f17"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F9EBBE"/>
+      <stop offset="38%" stop-color="#E3C077"/>
+      <stop offset="62%" stop-color="#C9A34E"/>
+      <stop offset="100%" stop-color="#8F6B2C"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="12" fill="url(#bg)"/>
+  <circle cx="32" cy="32" r="26" fill="none" stroke="url(#gold)" stroke-width="2"/>
+  <text x="32" y="43" fill="url(#gold)" font-family="Georgia, 'Times New Roman', serif" font-size="34" font-weight="900" text-anchor="middle">P</text>
 </svg>

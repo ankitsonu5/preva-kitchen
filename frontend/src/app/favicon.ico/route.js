@@ -12,26 +12,36 @@ export function GET() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#050507',
-          borderRadius: 10
+          background: 'linear-gradient(160deg, #1c1812 0%, #0a0907 50%, #241f17 100%)',
+          borderRadius: 10,
         }}
       >
+        {/* Outer golden ring */}
         <div
           style={{
-            width: 38,
-            height: 38,
+            width: 40,
+            height: 40,
             borderRadius: '50%',
-            border: '2px solid #d6af55',
+            border: '2px solid #C5A059',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#f1d68c',
-            fontFamily: 'Arial, sans-serif',
-            fontSize: 26,
-            fontWeight: 700
+            background: 'linear-gradient(160deg, #1c1812 0%, #0a0907 50%, #241f17 100%)',
           }}
         >
-          P
+          {/* Golden "P" letter */}
+          <span
+            style={{
+              fontFamily: 'Georgia, "Times New Roman", serif',
+              fontSize: 24,
+              fontWeight: 900,
+              color: '#D4AF37',
+              lineHeight: 1,
+              marginTop: 2,
+            }}
+          >
+            P
+          </span>
         </div>
       </div>
     ),
