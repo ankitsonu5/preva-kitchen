@@ -189,7 +189,7 @@ function row(label, value, isHtml = false) {
 
   let formattedValue = display;
   if (isReference) {
-    formattedValue = `<span style="display:inline-block;background:linear-gradient(135deg,#2E2414 0%,#1A140A 100%);color:#F5D899;border:1px solid #735728;padding:4px 12px;border-radius:6px;font-weight:700;font-family:Consolas,monospace;font-size:13px;letter-spacing:1px;box-shadow:0 2px 6px rgba(0,0,0,0.4);">${display}</span>`;
+    formattedValue = `<span style="display:inline-block;background:linear-gradient(135deg,#2E2414 0%,#1A140A 100%);color:#F5D899;border:1px solid #735728;padding:3px 10px;border-radius:6px;font-weight:700;font-family:Consolas,monospace;font-size:12px;letter-spacing:1px;box-shadow:0 2px 6px rgba(0,0,0,0.4);">${display}</span>`;
   } else if (isEmail) {
     formattedValue = `<a href="mailto:${display}" style="color:#E8C57A;text-decoration:none;font-weight:600;border-bottom:1px dotted #E8C57A;">${display}</a>`;
   } else if (isPhone) {
@@ -198,8 +198,8 @@ function row(label, value, isHtml = false) {
 
   return `
     <tr>
-      <td class="label-col" style="padding:12px 14px 12px 0;color:#948978;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;white-space:nowrap;vertical-align:top;border-bottom:1px solid #1C1914;width:28%;">${escapeHtml(label)}</td>
-      <td style="padding:12px 0;color:#F5EFE6;font-size:14px;font-weight:500;line-height:1.6;vertical-align:top;border-bottom:1px solid #1C1914;">${formattedValue}</td>
+      <td class="label-col" style="padding:10px 14px 10px 0;color:#948978;font-size:10px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;white-space:nowrap;vertical-align:top;border-bottom:1px solid #1C1914;width:28%;">${escapeHtml(label)}</td>
+      <td style="padding:10px 0;color:#F5EFE6;font-size:13px;font-weight:500;line-height:1.55;vertical-align:top;border-bottom:1px solid #1C1914;">${formattedValue}</td>
     </tr>`;
 }
 
@@ -222,7 +222,7 @@ function wrap({ icon, title, subtitle, tableRows, adminLink, adminLabel = 'View 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
     body, table, td, p, a, li, blockquote { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-    body { margin: 0 !important; padding: 0 !important; width: 100% !important; min-height: 100vh; background-color: #070708; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #070708; }
     @media only screen and (max-width: 640px) {
       .email-container { width: 100% !important; max-width: 100% !important; border-radius: 0 !important; border-left: none !important; border-right: none !important; }
       .content-cell { padding: 26px 20px !important; }
@@ -234,7 +234,7 @@ function wrap({ icon, title, subtitle, tableRows, adminLink, adminLabel = 'View 
 </head>
 <body style="margin:0;padding:0;background-color:#070708;font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${escapeHtml(title)} — ${escapeHtml(subtitle || '')}</div>
-  <table role="presentation" width="100%" height="100%" cellpadding="0" cellspacing="0" style="background-color:#070708;min-height:100vh;width:100%;padding:40px 14px;table-layout:fixed;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#070708;width:100%;padding:40px 14px;table-layout:fixed;">
     <tr>
       <td align="center" valign="top">
         <!-- Main Card -->
@@ -245,33 +245,33 @@ function wrap({ icon, title, subtitle, tableRows, adminLink, adminLabel = 'View 
           </tr>
           <!-- Luxury Header -->
           <tr>
-            <td class="header-cell" style="background:linear-gradient(180deg, #1C1710 0%, #13110E 100%);padding:36px 36px 28px;border-bottom:1px solid #382D1B;text-align:center;">
-              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 14px;">
+            <td class="header-cell" style="background:linear-gradient(180deg, #1C1710 0%, #13110E 100%);padding:28px 36px 22px;border-bottom:1px solid #382D1B;text-align:center;">
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 12px;">
                 <tr>
-                  <td align="center" style="width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg, #2D2313 0%, #1A1408 100%);border:1px solid #6E5325;text-align:center;line-height:46px;box-shadow:0 4px 14px rgba(0,0,0,0.5);">
-                    <span style="font-family:'Cinzel',Georgia,serif;font-size:24px;font-weight:700;color:#F5D899;letter-spacing:1px;">P</span>
+                  <td align="center" style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg, #2D2313 0%, #1A1408 100%);border:1px solid #6E5325;text-align:center;line-height:38px;box-shadow:0 4px 14px rgba(0,0,0,0.5);">
+                    <span style="font-family:'Cinzel',Georgia,serif;font-size:19px;font-weight:700;color:#F5D899;letter-spacing:1px;">P</span>
                   </td>
                 </tr>
               </table>
-              <div style="margin:0 0 6px;color:#F5D899;font-family:'Cinzel',Georgia,serif;font-size:28px;font-weight:700;letter-spacing:10px;text-transform:uppercase;text-shadow:0 2px 10px rgba(245,216,153,0.2);">PREVA</div>
-              <div style="margin:0 auto;color:#9E8E75;font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;">Kitchen &bull; Redford Township</div>
-              <div style="width:70px;height:1px;background:linear-gradient(90deg, transparent, #D4AF37 50%, transparent);margin:16px auto 0;"></div>
+              <div style="margin:0 0 5px;color:#F5D899;font-family:'Cinzel',Georgia,serif;font-size:20px;font-weight:700;letter-spacing:6px;text-transform:uppercase;text-shadow:0 2px 10px rgba(245,216,153,0.2);">PREVA</div>
+              <div style="margin:0 auto;color:#9E8E75;font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">Kitchen &bull; Redford Township</div>
+              <div style="width:56px;height:1px;background:linear-gradient(90deg, transparent, #D4AF37 50%, transparent);margin:12px auto 0;"></div>
             </td>
           </tr>
           <!-- Main Content -->
           <tr>
-            <td class="content-cell" style="padding:36px 38px 30px;">
+            <td class="content-cell" style="padding:28px 38px 26px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td>
                     <!-- Pill Badge -->
-                    <div style="margin:0 0 14px;">
-                      <span style="display:inline-block;padding:5px 14px;background:rgba(212,175,55,0.12);border:1px solid rgba(212,175,55,0.32);border-radius:999px;color:#F3D58C;font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;">
+                    <div style="margin:0 0 12px;">
+                      <span style="display:inline-block;padding:4px 12px;background:rgba(212,175,55,0.12);border:1px solid rgba(212,175,55,0.32);border-radius:999px;color:#F3D58C;font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;">
                         ${icon ? `<span style="margin-right:6px;">${icon}</span>` : ''}New Website Submission
                       </span>
                     </div>
-                    <h1 style="margin:0 0 8px;color:#FFFFFF;font-family:'Cinzel',Georgia,serif;font-size:26px;font-weight:600;line-height:1.25;letter-spacing:0.3px;">${escapeHtml(title)}</h1>
-                    <p style="margin:0 0 26px;color:#B3A795;font-size:14px;line-height:1.6;">${escapeHtml(subtitle)}</p>
+                    <h1 style="margin:0 0 6px;color:#FFFFFF;font-family:'Cinzel',Georgia,serif;font-size:19px;font-weight:600;line-height:1.25;letter-spacing:0.2px;">${escapeHtml(title)}</h1>
+                    <p style="margin:0 0 20px;color:#B3A795;font-size:13px;line-height:1.55;">${escapeHtml(subtitle)}</p>
 
                     <!-- Details Table Container -->
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#09090B;border:1px solid #282218;border-radius:14px;overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,0.03);">
@@ -291,11 +291,11 @@ function wrap({ icon, title, subtitle, tableRows, adminLink, adminLabel = 'View 
           <!-- Action Button -->
           ${adminLink ? `
           <tr>
-            <td style="padding:0 38px 34px;text-align:center;">
+            <td style="padding:0 38px 28px;text-align:center;">
               <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
                 <tr>
                   <td align="center">
-                    <a href="${adminLink}" class="cta-btn" style="display:inline-block;background:linear-gradient(135deg, #F5D899 0%, #D4AF37 50%, #A87F22 100%);color:#0D0A06;font-family:'Plus Jakarta Sans',Arial,sans-serif;font-weight:800;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;padding:15px 38px;border-radius:999px;text-decoration:none;box-shadow:0 8px 24px rgba(212,175,55,0.3);">${escapeHtml(adminLabel)} &rarr;</a>
+                    <a href="${adminLink}" class="cta-btn" style="display:inline-block;background:linear-gradient(135deg, #F5D899 0%, #D4AF37 50%, #A87F22 100%);color:#0D0A06;font-family:'Plus Jakarta Sans',Arial,sans-serif;font-weight:800;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;padding:13px 34px;border-radius:999px;text-decoration:none;box-shadow:0 8px 24px rgba(212,175,55,0.3);">${escapeHtml(adminLabel)} &rarr;</a>
                   </td>
                 </tr>
               </table>
@@ -303,14 +303,14 @@ function wrap({ icon, title, subtitle, tableRows, adminLink, adminLabel = 'View 
           </tr>` : ''}
           <!-- Footer -->
           <tr>
-            <td style="background:#0C0B09;padding:24px 34px;border-top:1px solid #241D12;text-align:center;">
-              <p style="margin:0 0 5px;color:#E5DAC6;font-family:'Cinzel',Georgia,serif;font-size:13px;letter-spacing:3px;font-weight:600;">PREVA KITCHEN</p>
-              <p style="margin:0 0 10px;color:#786E5E;font-size:11px;line-height:1.7;">
+            <td style="background:#0C0B09;padding:20px 34px;border-top:1px solid #241D12;text-align:center;">
+              <p style="margin:0 0 4px;color:#E5DAC6;font-family:'Cinzel',Georgia,serif;font-size:12px;letter-spacing:2.5px;font-weight:600;">PREVA KITCHEN</p>
+              <p style="margin:0 0 8px;color:#786E5E;font-size:10px;line-height:1.6;">
                 ${BRAND_ADDRESS}<br>
-                <a href="tel:3132863586" style="color:#C9A96E;text-decoration:none;">${BRAND_PHONE}</a> &bull; 
+                <a href="tel:3132863586" style="color:#C9A96E;text-decoration:none;">${BRAND_PHONE}</a> &bull;
                 <a href="${escapeHtml(siteUrl)}" style="color:#C9A96E;text-decoration:none;">${escapeHtml(siteUrl.replace(/^https?:\/\//, ''))}</a>
               </p>
-              <p style="margin:0;color:#544D42;font-size:10px;line-height:1.5;">PREVA Kitchen Notification &bull; Reply directly to contact the guest or applicant</p>
+              <p style="margin:0;color:#544D42;font-size:9px;line-height:1.5;">PREVA Kitchen Notification &bull; Reply directly to contact the guest or applicant</p>
             </td>
           </tr>
         </table>
@@ -723,7 +723,7 @@ function customerConfirmationHtml({ eyebrow, heading, name, referenceId, introLi
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
     body, table, td, p, a, li, blockquote { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-    body { margin: 0 !important; padding: 0 !important; width: 100% !important; min-height: 100vh; background-color: #070708; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #070708; }
     @media only screen and (max-width: 640px) {
       .email-container { width: 100% !important; max-width: 100% !important; border-radius: 0 !important; border-left: none !important; border-right: none !important; }
       .content-cell { padding: 26px 20px !important; }
@@ -735,7 +735,7 @@ function customerConfirmationHtml({ eyebrow, heading, name, referenceId, introLi
 </head>
 <body style="margin:0;padding:0;background-color:#070708;font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${escapeHtml(heading)} · Reference ${escapeHtml(referenceId || '')}</div>
-  <table role="presentation" width="100%" height="100%" cellpadding="0" cellspacing="0" style="background-color:#070708;min-height:100vh;width:100%;padding:40px 14px;table-layout:fixed;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#070708;width:100%;padding:40px 14px;table-layout:fixed;">
     <tr>
       <td align="center" valign="top">
         <!-- Main Card -->
@@ -746,30 +746,30 @@ function customerConfirmationHtml({ eyebrow, heading, name, referenceId, introLi
           </tr>
           <!-- Luxury Header -->
           <tr>
-            <td class="header-cell" style="background:linear-gradient(180deg, #1C1710 0%, #13110E 100%);padding:36px 36px 28px;border-bottom:1px solid #382D1B;text-align:center;">
-              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 14px;">
+            <td class="header-cell" style="background:linear-gradient(180deg, #1C1710 0%, #13110E 100%);padding:28px 36px 22px;border-bottom:1px solid #382D1B;text-align:center;">
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 12px;">
                 <tr>
-                  <td align="center" style="width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg, #2D2313 0%, #1A1408 100%);border:1px solid #6E5325;text-align:center;line-height:46px;box-shadow:0 4px 14px rgba(0,0,0,0.5);">
-                    <span style="font-family:'Cinzel',Georgia,serif;font-size:24px;font-weight:700;color:#F5D899;letter-spacing:1px;">P</span>
+                  <td align="center" style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg, #2D2313 0%, #1A1408 100%);border:1px solid #6E5325;text-align:center;line-height:38px;box-shadow:0 4px 14px rgba(0,0,0,0.5);">
+                    <span style="font-family:'Cinzel',Georgia,serif;font-size:19px;font-weight:700;color:#F5D899;letter-spacing:1px;">P</span>
                   </td>
                 </tr>
               </table>
-              <div style="margin:0 0 6px;color:#F5D899;font-family:'Cinzel',Georgia,serif;font-size:28px;font-weight:700;letter-spacing:10px;text-transform:uppercase;text-shadow:0 2px 10px rgba(245,216,153,0.2);">PREVA</div>
-              <div style="margin:0 auto;color:#9E8E75;font-size:10px;font-weight:700;letter-spacing:4px;text-transform:uppercase;">Kitchen &bull; Redford Township</div>
-              <div style="width:70px;height:1px;background:linear-gradient(90deg, transparent, #D4AF37 50%, transparent);margin:16px auto 0;"></div>
+              <div style="margin:0 0 5px;color:#F5D899;font-family:'Cinzel',Georgia,serif;font-size:20px;font-weight:700;letter-spacing:6px;text-transform:uppercase;text-shadow:0 2px 10px rgba(245,216,153,0.2);">PREVA</div>
+              <div style="margin:0 auto;color:#9E8E75;font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">Kitchen &bull; Redford Township</div>
+              <div style="width:56px;height:1px;background:linear-gradient(90deg, transparent, #D4AF37 50%, transparent);margin:12px auto 0;"></div>
             </td>
           </tr>
           <!-- Content Body -->
           <tr>
-            <td class="content-cell" style="padding:38px 38px 32px;">
-              <p style="margin:0 0 10px;color:#C9A96E;font-size:10px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;">${escapeHtml(eyebrow || 'PREVA Concierge')}</p>
-              <h1 style="margin:0 0 16px;color:#FFFFFF;font-family:'Cinzel',Georgia,serif;font-size:28px;font-weight:600;line-height:1.2;letter-spacing:0.2px;">${escapeHtml(heading)}</h1>
-              ${referenceId ? `<div style="margin:0 0 22px;"><span style="display:inline-block;background:linear-gradient(135deg,#2E2414 0%,#1A140A 100%);color:#F5D899;border:1px solid #735728;padding:5px 14px;border-radius:6px;font-weight:700;font-family:Consolas,monospace;font-size:12px;letter-spacing:1px;">REFERENCE #${escapeHtml(referenceId)}</span></div>` : ''}
-              <p style="margin:0 0 24px;color:#DDD4C7;font-size:15px;line-height:1.75;">
+            <td class="content-cell" style="padding:28px 38px 26px;">
+              <p style="margin:0 0 8px;color:#C9A96E;font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;">${escapeHtml(eyebrow || 'PREVA Concierge')}</p>
+              <h1 style="margin:0 0 12px;color:#FFFFFF;font-family:'Cinzel',Georgia,serif;font-size:19px;font-weight:600;line-height:1.25;letter-spacing:0.2px;">${escapeHtml(heading)}</h1>
+              ${referenceId ? `<div style="margin:0 0 18px;"><span style="display:inline-block;background:linear-gradient(135deg,#2E2414 0%,#1A140A 100%);color:#F5D899;border:1px solid #735728;padding:4px 12px;border-radius:6px;font-weight:700;font-family:Consolas,monospace;font-size:11px;letter-spacing:1px;">REFERENCE #${escapeHtml(referenceId)}</span></div>` : ''}
+              <p style="margin:0 0 20px;color:#DDD4C7;font-size:13px;line-height:1.65;">
                 Hello <b style="color:#FFF8EC;">${escapeHtml(name || 'there')}</b>,<br><br>${introLine}
               </p>
               <!-- Details Box -->
-              <p style="margin:0 0 10px;color:#A8987E;font-size:11px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;">Summary of Request</p>
+              <p style="margin:0 0 8px;color:#A8987E;font-size:10px;font-weight:800;letter-spacing:1.6px;text-transform:uppercase;">Summary of Request</p>
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#09090B;border:1px solid #282218;border-radius:14px;margin-bottom:24px;overflow:hidden;">
                 <tr>
                   <td style="padding:8px 20px;">
@@ -780,11 +780,11 @@ function customerConfirmationHtml({ eyebrow, heading, name, referenceId, introLi
                 </tr>
               </table>
               <!-- What happens next Callout -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg, #1A150D 0%, #120F09 100%);border-left:3px solid #D4AF37;border-radius:10px;border-top:1px solid #2C2213;border-right:1px solid #2C2213;border-bottom:1px solid #2C2213;margin-bottom:28px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg, #1A150D 0%, #120F09 100%);border-left:3px solid #D4AF37;border-radius:10px;border-top:1px solid #2C2213;border-right:1px solid #2C2213;border-bottom:1px solid #2C2213;margin-bottom:22px;">
                 <tr>
-                  <td style="padding:18px 22px;">
-                    <p style="margin:0 0 6px;color:#F5D899;font-size:13px;font-weight:700;letter-spacing:0.5px;">✨ What happens next</p>
-                    <p style="margin:0;color:#C4BBAE;font-size:13px;line-height:1.7;">${nextSteps}</p>
+                  <td style="padding:14px 18px;">
+                    <p style="margin:0 0 5px;color:#F5D899;font-size:12px;font-weight:700;letter-spacing:0.4px;">✨ What happens next</p>
+                    <p style="margin:0;color:#C4BBAE;font-size:12px;line-height:1.6;">${nextSteps}</p>
                   </td>
                 </tr>
               </table>
@@ -792,7 +792,7 @@ function customerConfirmationHtml({ eyebrow, heading, name, referenceId, introLi
               <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
                 <tr>
                   <td align="center">
-                    <a href="${safeCtaHref}" class="cta-btn" style="display:inline-block;background:linear-gradient(135deg, #F5D899 0%, #D4AF37 50%, #A87F22 100%);color:#0D0A06;font-family:'Plus Jakarta Sans',Arial,sans-serif;font-weight:800;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;padding:15px 38px;border-radius:999px;text-decoration:none;box-shadow:0 8px 24px rgba(212,175,55,0.3);">${escapeHtml(ctaLabel)} &rarr;</a>
+                    <a href="${safeCtaHref}" class="cta-btn" style="display:inline-block;background:linear-gradient(135deg, #F5D899 0%, #D4AF37 50%, #A87F22 100%);color:#0D0A06;font-family:'Plus Jakarta Sans',Arial,sans-serif;font-weight:800;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;padding:13px 34px;border-radius:999px;text-decoration:none;box-shadow:0 8px 24px rgba(212,175,55,0.3);">${escapeHtml(ctaLabel)} &rarr;</a>
                   </td>
                 </tr>
               </table>` : ''}
@@ -800,14 +800,14 @@ function customerConfirmationHtml({ eyebrow, heading, name, referenceId, introLi
           </tr>
           <!-- Footer -->
           <tr>
-            <td style="background:#0C0B09;padding:24px 34px;border-top:1px solid #241D12;text-align:center;">
-              <p style="margin:0 0 5px;color:#E5DAC6;font-family:'Cinzel',Georgia,serif;font-size:13px;letter-spacing:3px;font-weight:600;">${BRAND_NAME}</p>
-              <p style="margin:0 0 10px;color:#786E5E;font-size:11px;line-height:1.7;">
+            <td style="background:#0C0B09;padding:20px 34px;border-top:1px solid #241D12;text-align:center;">
+              <p style="margin:0 0 4px;color:#E5DAC6;font-family:'Cinzel',Georgia,serif;font-size:12px;letter-spacing:2.5px;font-weight:600;">${BRAND_NAME}</p>
+              <p style="margin:0 0 8px;color:#786E5E;font-size:10px;line-height:1.6;">
                 ${BRAND_ADDRESS}<br>
-                <a href="tel:3132863586" style="color:#C9A96E;text-decoration:none;">${BRAND_PHONE}</a> &bull; 
+                <a href="tel:3132863586" style="color:#C9A96E;text-decoration:none;">${BRAND_PHONE}</a> &bull;
                 <a href="${escapeHtml(siteUrl)}" style="color:#C9A96E;text-decoration:none;">${escapeHtml(siteUrl.replace(/^https?:\/\//, ''))}</a>
               </p>
-              <p style="margin:0;color:#544D42;font-size:10px;line-height:1.5;">Fine Dining & Hospitality &bull; Redford Township, MI</p>
+              <p style="margin:0;color:#544D42;font-size:9px;line-height:1.5;">Fine Dining & Hospitality &bull; Redford Township, MI</p>
             </td>
           </tr>
         </table>
