@@ -71,7 +71,7 @@ export default function Shell({ children }) {
       if (active && !user && typeof window !== 'undefined') {
         window.location.replace('/admin/login');
       }
-    }, 400);
+    }, 1200);
 
     getUser()
       .then((activeUser) => {
