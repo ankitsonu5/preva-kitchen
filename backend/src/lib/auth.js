@@ -5,7 +5,7 @@ import { col, asObjectId } from './db.js';
 export const SESSION_COOKIE = 'preva_session';
 const SESSION_MAX_AGE = 60 * 60 * 8; // 8 hours
 
-function secret() {
+export function jwtSecret() {
   const value = process.env.JWT_SECRET?.trim();
   if (!value || value.length < 16) {
     if (process.env.NODE_ENV === 'production') {
@@ -19,7 +19,7 @@ function secret() {
 export function signSession(user) {
   return jwt.sign(
     { sub: user._id.toString(), email: user.email, role: user.role, name: user.name },
-    secret(),
+    jwtSecret(),
     { expiresIn: SESSION_MAX_AGE }
   );
 }
@@ -48,7 +48,7 @@ export async function currentUser(request) {
 
   let payload;
   try {
-    payload = jwt.verify(token, secret());
+    payload = jwt.verify(token, jwtSecret());
   } catch {
     return null;
   }
@@ -76,33 +76,36 @@ export async function verifyPassword(plain, hash) {
 }
 
 /* ── login throttling ─────────────────────────────────────────────────────
-   In-memory, which is enough for a single instance. Behind more than one
-   process this needs to move into Mongo or Redis, otherwise an attacker just
-   spreads attempts across instances. */
-const attempts = new Map();
+   Backed by Mongo (a `loginAttempts` collection, TTL-cleaned) instead of an
+   in-process Map, so the window is shared across every backend instance —
+   an attacker can't dodge the throttle by landing on a different process. */
 const WINDOW_MS = 15 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
 
-export function loginBlocked(key) {
+export async function loginBlocked(key) {
   if (process.env.NODE_ENV !== 'production') return false;
-  const record = attempts.get(key);
+  const attempts = await col('loginAttempts');
+  const record = await attempts.findOne({ key });
   if (!record) return false;
-  if (Date.now() - record.first > WINDOW_MS) {
-    attempts.delete(key);
+  if (Date.now() - new Date(record.first).getTime() > WINDOW_MS) {
+    await attempts.deleteOne({ key });
     return false;
   }
   return record.count >= MAX_ATTEMPTS;
 }
 
-export function noteFailedLogin(key) {
-  const record = attempts.get(key);
-  if (!record || Date.now() - record.first > WINDOW_MS) {
-    attempts.set(key, { count: 1, first: Date.now() });
+export async function noteFailedLogin(key) {
+  const attempts = await col('loginAttempts');
+  const record = await attempts.findOne({ key });
+  const now = new Date();
+  if (!record || now.getTime() - new Date(record.first).getTime() > WINDOW_MS) {
+    await attempts.updateOne({ key }, { $set: { key, count: 1, first: now } }, { upsert: true });
     return;
   }
-  record.count += 1;
+  await attempts.updateOne({ key }, { $inc: { count: 1 } });
 }
 
-export function clearLoginAttempts(key) {
-  attempts.delete(key);
+export async function clearLoginAttempts(key) {
+  const attempts = await col('loginAttempts');
+  await attempts.deleteOne({ key });
 }

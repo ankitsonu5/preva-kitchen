@@ -20,7 +20,9 @@
     "routes": "node -e \"import('./src/index.js').then(m=>console.log(m.listRoutes().join('\\n')))\"",
     "verify:payments:local": "node scripts/verify-payment-local.js",
     "verify:email": "node scripts/verify-email.js",
-    "test:form-email": "node --test tests/form-email.integration.test.js"
+    "test:form-email": "node --test tests/form-email.integration.test.js",
+    "test:kds": "node --test tests/kds.integration.test.js",
+    "test": "node --test tests/*.test.js"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.6",

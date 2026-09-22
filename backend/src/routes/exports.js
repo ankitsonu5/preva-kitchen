@@ -30,7 +30,7 @@ async function fetchOrders(query) {
   if (query.open === 'true') filter.status = { $in: ['PAID', 'RECEIVED', 'PREPARING', 'READY', 'ON_THE_WAY'] };
 
   const fulfilment = cleanText(query.fulfilment, 20).toUpperCase();
-  if (['PICKUP', 'DELIVERY'].includes(fulfilment)) filter.fulfilment = fulfilment;
+  if (['PICKUP', 'DELIVERY', 'DINE_IN'].includes(fulfilment)) filter.fulfilment = fulfilment;
 
   const search = cleanText(query.search, 100);
   if (search) {

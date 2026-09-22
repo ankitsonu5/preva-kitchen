@@ -557,6 +557,9 @@ const INITIAL_FALLBACK_DATA = {
     { key: 'shopMinOrderCents', value: 1500 },
     { key: 'shopPickupMinutes', value: 25 },
     { key: 'shopDeliveryMinutes', value: 45 },
+    { key: 'shopClosedMessage', value: 'Online ordering is closed right now.' },
+    { key: 'kdsStations', value: ['Expo', 'Grill', 'Fryer', 'Pantry'] },
+    { key: 'dineInTables', value: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] },
     { key: 'shopTipPresets', value: [15, 18, 20] }
   ],
   contentSections: [],
@@ -1425,6 +1428,11 @@ class InMemoryCollection {
     if (doc && update.$set) {
       for (const [key, value] of Object.entries(update.$set)) this._write(doc, key, value);
     }
+    if (doc && update.$inc) {
+      for (const [key, amount] of Object.entries(update.$inc)) {
+        this._write(doc, key, (Number(this._read(doc, key)) || 0) + Number(amount));
+      }
+    }
     if (doc && update.$unset) {
       for (const key of Object.keys(update.$unset)) this._write(doc, key, undefined);
     }
@@ -1605,7 +1613,13 @@ export async function createIndexes(db) {
     ['careerApplications', { email: 1 }, { name: 'career_email' }],
     ['careerApplications', { responseDueAt: 1, status: 1 }, { name: 'career_response_due' }],
     ['careerApplications', { 'interview.scheduledAt': 1 }, { name: 'career_interview_date' }],
-    ['counters', { key: 1 }, { unique: true, name: 'counters_key_unique' }]
+    ['counters', { key: 1 }, { unique: true, name: 'counters_key_unique' }],
+
+    // Shared across every backend instance, so a login-throttle window can't
+    // be dodged by hitting a different process. Self-cleans via TTL so this
+    // never needs a cron job.
+    ['loginAttempts', { key: 1 }, { unique: true, name: 'login_attempts_key_unique' }],
+    ['loginAttempts', { first: 1 }, { expireAfterSeconds: 900, name: 'login_attempts_ttl' }]
   ];
 
   for (const [collection, keys, options] of indexes) {

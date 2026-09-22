@@ -10,7 +10,7 @@ import { loadContentInclude } from './public.js';
 import { stripe, stripeConfigured, paymentStatusSummary } from '../lib/stripe.js';
 import { careerJobsCollection } from '../lib/career-jobs.js';
 import { get, post, put, patch, del, badRequest, forbidden, notFound, result } from '../router.js';
-import { notifyCustomerOrderStatus } from '../lib/email.js';
+import { KDS_ACTIVE_STATUSES, ORDER_STATUSES, transitionOrderStatus } from '../lib/order-workflow.js';
 
 const WRITE = ['SUPER_ADMIN', 'ADMIN', 'EDITOR'];
 const AUTHOR = ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'AUTHOR'];
@@ -624,6 +624,7 @@ resource({
       aboutTitle: cleanText(body?.aboutTitle ?? current?.aboutTitle, 240),
       aboutContent: cleanText(body?.aboutContent ?? current?.aboutContent, 6000),
       category: cleanText(body?.category, 80) || 'Others',
+      kdsStation: cleanText(body?.kdsStation ?? current?.kdsStation, 40) || 'Expo',
       image: cleanText(body?.image, 2000) || null,
       available: cleanBool(body?.available, true),
       orderable: cleanBool(body?.orderable, current?.orderable ?? false),
@@ -880,8 +881,6 @@ del('/admin/media/:id', { auth: true, roles: WRITE }, async (ctx) => {
    Orders and the kitchen display
    ══════════════════════════════════════════════════════════════════════════ */
 
-const ORDER_STATUS = ['PENDING', 'PAID', 'RECEIVED', 'PREPARING', 'READY', 'ON_THE_WAY', 'DELIVERED', 'COMPLETED', 'CANCELLED', 'REFUNDED'];
-
 function orderFilter(query = {}) {
   const filter = {};
   const status = cleanText(query.status, 20).toUpperCase();
@@ -889,15 +888,15 @@ function orderFilter(query = {}) {
   const search = cleanText(query.search, 100);
 
   if (status === 'KDS' || status === 'ACTIVE') {
-    filter.status = { $in: ['PAID', 'RECEIVED', 'PREPARING', 'READY'] };
+    filter.status = { $in: KDS_ACTIVE_STATUSES };
   } else if (status === 'OPEN' || query.open === 'true') {
     filter.status = { $in: ['PENDING', 'PAID', 'RECEIVED', 'PREPARING', 'READY', 'ON_THE_WAY'] };
   } else if (status === 'PAID' || status === 'RECEIVED') {
     filter.status = { $in: ['PAID', 'RECEIVED'] };
-  } else if (ORDER_STATUS.includes(status)) {
+  } else if (ORDER_STATUSES.includes(status)) {
     filter.status = status;
   }
-  if (['PICKUP', 'DELIVERY'].includes(fulfilment)) filter.fulfilment = fulfilment;
+  if (['PICKUP', 'DELIVERY', 'DINE_IN'].includes(fulfilment)) filter.fulfilment = fulfilment;
 
   if (search) {
     const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -937,9 +936,13 @@ get('/admin/orders-summary', { auth: true }, async () => {
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const paidStatuses = new Set(['PAID', 'RECEIVED', 'PREPARING', 'READY', 'ON_THE_WAY', 'DELIVERED', 'COMPLETED']);
   const openStatuses = new Set(['PENDING', 'PAID', 'RECEIVED', 'PREPARING', 'READY', 'ON_THE_WAY']);
-  const counts = Object.fromEntries(ORDER_STATUS.map((one) => [one, 0]));
+  const counts = Object.fromEntries(ORDER_STATUSES.map((one) => [one, 0]));
   let todayOrders = 0;
   let todayRevenueCents = 0;
+  let completedToday = 0;
+  let prepMinutesSum = 0;
+  let prepMinutesCount = 0;
+  let slaBreaches = 0;
 
   for (const order of rows) {
     if (counts[order.status] !== undefined) counts[order.status] += 1;
@@ -948,6 +951,25 @@ get('/admin/orders-summary', { auth: true }, async () => {
       todayOrders += 1;
       todayRevenueCents += Number(order.totalCents) || 0;
     }
+
+    const completedAt = order.completedAt ? new Date(order.completedAt) : null;
+    if (completedAt && completedAt >= todayStart && ['COMPLETED', 'DELIVERED'].includes(order.status)) {
+      completedToday += 1;
+    }
+
+    // How long the kitchen actually spent cooking, not counting time spent
+    // waiting before PREPARING started.
+    if (order.preparingAt && order.actualReadyAt) {
+      const minutes = (new Date(order.actualReadyAt).getTime() - new Date(order.preparingAt).getTime()) / 60000;
+      if (minutes >= 0 && minutes < 240) {
+        prepMinutesSum += minutes;
+        prepMinutesCount += 1;
+      }
+    }
+
+    if (openStatuses.has(order.status) && order.estimatedReadyAt && now > new Date(order.estimatedReadyAt)) {
+      slaBreaches += 1;
+    }
   }
 
   return {
@@ -955,6 +977,9 @@ get('/admin/orders-summary', { auth: true }, async () => {
     open: rows.filter((order) => openStatuses.has(order.status)).length,
     todayOrders,
     todayRevenueCents,
+    completedToday,
+    avgPrepMinutes: prepMinutesCount ? Math.round((prepMinutesSum / prepMinutesCount) * 10) / 10 : null,
+    slaBreaches,
     counts
   };
 });
@@ -971,37 +996,22 @@ get('/admin/orders/:id', { auth: true }, async ({ params }) => {
 
 patch('/admin/orders/:id/status', { auth: true }, async (ctx) => {
   const status = cleanText(ctx.body?.status, 20).toUpperCase();
-  if (!ORDER_STATUS.includes(status)) throw badRequest('That is not a valid order status.');
+  if (!ORDER_STATUSES.includes(status)) throw badRequest('That is not a valid order status.');
 
   const orders = await col('order');
   const id = asObjectId(ctx.params.id);
   const current = id ? await orders.findOne({ _id: id }) : null;
   if (!current) throw notFound('Order not found.');
 
-  const allowed = {
-    PENDING: ['CANCELLED'],
-    PAID: ['PREPARING', 'CANCELLED'],
-    RECEIVED: ['PREPARING', 'CANCELLED'],
-    PREPARING: ['READY', 'RECEIVED'],
-    READY: current.fulfilment === 'DELIVERY' ? ['ON_THE_WAY', 'PREPARING'] : ['COMPLETED', 'PREPARING'],
-    ON_THE_WAY: ['DELIVERED', 'READY'],
-    DELIVERED: ['COMPLETED', 'ON_THE_WAY'],
-    COMPLETED: ['READY']
-  };
-  if (!(allowed[current.status] || []).includes(status)) {
-    throw badRequest(`Order #${current.orderNumber} cannot move from ${current.status} to ${status}.`);
-  }
-
-  const now = new Date();
-  const statusHistory = [
-    ...(Array.isArray(current.statusHistory) ? current.statusHistory : []),
-    { status, at: now, by: ctx.user?.email || 'admin' }
-  ].slice(-30);
-  await orders.updateOne({ _id: id }, { $set: { status, statusHistory, updatedAt: now } });
+  const updated = await transitionOrderStatus({
+    orders,
+    order: current,
+    targetStatus: status,
+    actor: ctx.user?.email || 'admin',
+    reason: cleanText(ctx.body?.reason, 300)
+  });
   await logActivity(ctx, 'UPDATE', 'ORDER', `#${current.orderNumber} → ${status}`);
-  notifyCustomerOrderStatus({ ...current, status }, status)
-    .catch(err => console.error('[email] customer status notify error:', err.message));
-  return serialize({ ...current, status, statusHistory, updatedAt: now });
+  return serialize(updated);
 });
 
 /**

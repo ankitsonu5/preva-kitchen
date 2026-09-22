@@ -2,6 +2,8 @@ import { col, asObjectId } from './lib/db.js';
 import { stripe, stripeConfigured, webhookSecret } from './lib/stripe.js';
 import { logActivity } from './lib/activity.js';
 import { notifyNewOrder, notifyCustomerOrder } from './lib/email.js';
+import { releaseStock, reserveStock } from './lib/inventory.js';
+import { notifyKdsChange } from './lib/events.js';
 
 /**
  * Stripe webhook.
@@ -143,7 +145,7 @@ async function markPaid(orders, order, payment) {
     { _id: order._id },
     {
       $set: {
-        ...(advance ? { status: 'RECEIVED' } : {}),
+        ...(advance ? { status: 'RECEIVED', statusChangedAt: now } : {}),
         ...(advance ? {
           statusHistory: [
             ...(Array.isArray(order.statusHistory) ? order.statusHistory : []),
@@ -170,6 +172,22 @@ async function markPaid(orders, order, payment) {
   if (!alreadyPaid) {
     await logActivity({}, 'PAYMENT', 'ORDER', `#${order.orderNumber} paid`);
   }
+
+  // Stock is only ever reserved once the order is genuinely committed
+  // (RECEIVED) — never at checkout time, so an abandoned Stripe session
+  // never locks stock nobody actually bought. By now the customer has
+  // already paid, so a stock shortfall cannot cancel the order — it can
+  // only be logged for the kitchen to catch and call the customer.
+  if (advance) {
+    try {
+      await reserveStock(await col('menuItems'), order.lines || []);
+    } catch (error) {
+      console.error(`[stripe] stock reservation failed for order #${order.orderNumber}: ${error.message}`);
+      await logActivity({}, 'UPDATE', 'ORDER', `#${order.orderNumber} paid but oversold — ${error.message}`);
+    }
+    notifyKdsChange();
+  }
+
   return true;
 }
 
@@ -359,6 +377,18 @@ export async function handleStripeWebhook(req, res) {
           'ORDER',
           `#${order.orderNumber} refunded ${(refunded / 100).toFixed(2)}`
         );
+
+        // A full refund voids the whole order, so every reserved unit goes
+        // back. A partial refund doesn't say which line items it covers, so
+        // stock is intentionally left alone for those.
+        if (fully) {
+          try {
+            await releaseStock(await col('menuItems'), order.lines || []);
+          } catch (error) {
+            console.error(`[stripe] stock release failed for refunded order #${order.orderNumber}: ${error.message}`);
+          }
+        }
+        notifyKdsChange();
         break;
       }
 

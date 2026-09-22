@@ -252,7 +252,7 @@ post('/auth/login', async ({ body, ip }) => {
   const key = `${ip}:${email}`;
 
   if (!email || !password) throw badRequest('Email and password are required.');
-  if (loginBlocked(key)) throw badRequest('Too many attempts. Try again in a few minutes.');
+  if (await loginBlocked(key)) throw badRequest('Too many attempts. Try again in a few minutes.');
 
   const users = await col('users');
   const user = await users.findOne({ email });
@@ -260,11 +260,11 @@ post('/auth/login', async ({ body, ip }) => {
   // The same message for a missing account and a wrong password, so the form
   // cannot be used to find out which addresses exist.
   if (!user || user.status === 'DISABLED' || !(await verifyPassword(password, user.passwordHash))) {
-    noteFailedLogin(key);
+    await noteFailedLogin(key);
     throw unauthorized('Email or password is incorrect.');
   }
 
-  clearLoginAttempts(key);
+  await clearLoginAttempts(key);
   await users.updateOne({ _id: user._id }, { $set: { lastLoginAt: new Date() } });
 
   const token = signSession(user);

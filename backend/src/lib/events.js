@@ -1,0 +1,18 @@
+import { EventEmitter } from 'node:events';
+
+/**
+ * A single in-process bus that tells every open KDS screen "something on the
+ * board changed, refetch now." It carries no payload on purpose — the
+ * existing polling fetch already knows how to build the correct ticket list
+ * for whichever entry point asks, so this only needs to wake it up sooner.
+ *
+ * This does not replace polling. It rides on top of it: if no browser is
+ * subscribed (SSE unsupported, blocked by a proxy, still reconnecting), the
+ * existing poll timer keeps working exactly as it always has.
+ */
+export const kdsEvents = new EventEmitter();
+kdsEvents.setMaxListeners(100); // many kitchen screens/terminals can be open at once
+
+export function notifyKdsChange() {
+  kdsEvents.emit('change');
+}

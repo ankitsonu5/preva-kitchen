@@ -9,11 +9,13 @@ if (process.env.NODE_ENV !== 'production') {
 }
 import express from 'express';
 import cors from 'cors';
+import jwt from 'jsonwebtoken';
 import { dispatch } from './src/index.js';
-import { currentUser } from './src/lib/auth.js';
+import { currentUser, jwtSecret } from './src/lib/auth.js';
 import { handleStripeWebhook } from './src/webhook.js';
 import { stripeConfigured, stripeMode, storefrontUrl, webhookSecret } from './src/lib/stripe.js';
 import { connectDatabase } from './src/lib/db.js';
+import { kdsEvents } from './src/lib/events.js';
 
 /**
  * The Preva API server.
@@ -33,6 +35,12 @@ if (isProduction) {
   const jwtSecret = String(process.env.JWT_SECRET || '').trim();
   if (jwtSecret.length < 32 || /replace[-_ ]?me|change[-_ ]?me|example|default/i.test(jwtSecret)) {
     throw new Error('JWT_SECRET must be a unique non-placeholder value of at least 32 characters in production.');
+  }
+
+  const kitchenId = String(process.env.KITCHEN_ID || '').trim();
+  const kitchenPassword = String(process.env.KITCHEN_PASSWORD || '').trim();
+  if (!kitchenId || kitchenPassword.length < 12 || /replace[-_ ]?me|change[-_ ]?me|example|default/i.test(kitchenPassword)) {
+    throw new Error('KITCHEN_ID and a unique KITCHEN_PASSWORD of at least 12 characters are required in production.');
   }
 
   const mongoUri = String(process.env.MONGODB_URI || process.env.DATABASE_URL || '').trim();
@@ -176,6 +184,57 @@ app.get('/api/health', (req, res) => {
     service: 'preva-backend',
     environment: isProduction ? 'production' : 'development',
     time: new Date().toISOString()
+  });
+});
+
+/* ── KDS live-update stream ────────────────────────────────────────────────
+   A push accelerant on top of the KDS board's existing poll, not a
+   replacement for it. It carries no payload — a "change" event just tells
+   an already-open screen to refetch immediately instead of waiting for its
+   next poll tick. If this connection never opens (proxy strips SSE,
+   browser support, network blip), the screen's normal poll timer keeps
+   working exactly as it always has; nothing depends on this succeeding.
+
+   This bypasses the shared dispatch() router because that router returns a
+   single JSON body per request — it has no way to hold a response open and
+   stream from it. Auth is re-derived here for the same reason: an
+   EventSource can't send an Authorization header, so the kitchen-terminal
+   token (normally a Bearer header) is accepted as a `token` query param
+   here, mirroring the query fallback verifyKitchenAuth() already has. */
+app.get('/api/shop/kitchen-events', async (req, res) => {
+  const user = await currentUser(asFetchLikeRequest(req)).catch(() => null);
+  let authorized = Boolean(user);
+  if (!authorized) {
+    const token = String(req.query?.token || '').replace(/^Bearer\s+/i, '').trim();
+    if (token) {
+      try {
+        const payload = jwt.verify(token, jwtSecret());
+        authorized = Boolean(payload && (payload.role === 'kitchen' || payload.role === 'admin'));
+      } catch {
+        authorized = false;
+      }
+    }
+  }
+  if (!authorized) return res.status(401).json({ message: 'Kitchen access required.' });
+
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no' // production nginx must not buffer this
+  });
+  res.write(': connected\n\n');
+
+  const onChange = () => res.write('event: change\ndata: {}\n\n');
+  kdsEvents.on('change', onChange);
+
+  // Keeps intermediary proxies from timing out an idle connection, and lets
+  // the client detect a dead connection instead of hanging forever.
+  const heartbeat = setInterval(() => res.write(': ping\n\n'), 25000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    kdsEvents.off('change', onChange);
   });
 });
 

@@ -44,7 +44,7 @@ function nextStep(order) {
   if (order.status === 'READY' && order.fulfilment === 'DELIVERY') {
     return { status: 'ON_THE_WAY', label: 'Send for delivery' };
   }
-  if (order.status === 'READY') return { status: 'COMPLETED', label: 'Mark collected' };
+  if (order.status === 'READY') return { status: 'COMPLETED', label: order.fulfilment === 'DINE_IN' ? 'Mark served' : 'Mark collected' };
   if (order.status === 'ON_THE_WAY') return { status: 'DELIVERED', label: 'Mark delivered' };
   if (order.status === 'DELIVERED') return { status: 'COMPLETED', label: 'Close order' };
   return null;
@@ -310,7 +310,7 @@ export default function OrdersPage() {
 
       <div className="order-toolbar panel">
         <label className="order-search"><Search size={16} /><input value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="Search order, customer, phone or email" />{searchInput && <button type="button" onClick={() => setSearchInput('')} aria-label="Clear search"><X size={14} /></button>}</label>
-        <select className="input order-fulfilment" value={fulfilment} onChange={(event) => setFulfilment(event.target.value)} aria-label="Fulfilment filter"><option value="">Pickup & delivery</option><option value="PICKUP">Pickup only</option><option value="DELIVERY">Delivery only</option></select>
+        <select className="input order-fulfilment" value={fulfilment} onChange={(event) => setFulfilment(event.target.value)} aria-label="Fulfilment filter"><option value="">Pickup, delivery & dine-in</option><option value="PICKUP">Pickup only</option><option value="DELIVERY">Delivery only</option><option value="DINE_IN">Dine-in only</option></select>
       </div>
 
       <div className="order-filters" role="tablist" aria-label="Order status">

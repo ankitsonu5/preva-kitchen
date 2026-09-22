@@ -11,7 +11,7 @@ import { badRequest } from '../router.js';
  * for* and nothing else.
  */
 
-export const FULFILMENT = ['PICKUP', 'DELIVERY'];
+export const FULFILMENT = ['PICKUP', 'DELIVERY', 'DINE_IN'];
 
 /** Prices stored as "$18.00" strings are read as cents; priceCents wins if set. */
 export function itemPriceCents(item) {
@@ -48,11 +48,15 @@ export async function shopSettings() {
 export async function priceOrder(input) {
   const settings = await shopSettings();
 
-  if (!settings.orderingEnabled) throw badRequest(settings.closedMessage);
-
   const fulfilment = FULFILMENT.includes(input?.fulfilment) ? input.fulfilment : 'PICKUP';
-  if (fulfilment === 'PICKUP' && !settings.pickupEnabled) throw badRequest('Pickup is not available right now.');
-  if (fulfilment === 'DELIVERY' && !settings.deliveryEnabled) throw badRequest('Delivery is not available right now.');
+
+  // Dine-in is staff-entered at the restaurant, not a customer-facing ordering
+  // channel, so the online ordering/pickup/delivery pause toggles don't apply.
+  if (fulfilment !== 'DINE_IN') {
+    if (!settings.orderingEnabled) throw badRequest(settings.closedMessage);
+    if (fulfilment === 'PICKUP' && !settings.pickupEnabled) throw badRequest('Pickup is not available right now.');
+    if (fulfilment === 'DELIVERY' && !settings.deliveryEnabled) throw badRequest('Delivery is not available right now.');
+  }
 
   const rawLines = Array.isArray(input?.lines) ? input.lines : [];
   if (rawLines.length === 0) throw badRequest('Your cart is empty.');
@@ -129,11 +133,12 @@ export async function priceOrder(input) {
       qty,
       unitCents,
       options: chosen.join(', '),
-      note: cleanText(raw.note, 200)
+      note: cleanText(raw.note, 200),
+      station: cleanText(item.kdsStation, 40) || 'Expo'
     });
   }
 
-  if (subtotalCents < settings.minOrderCents) {
+  if (fulfilment !== 'DINE_IN' && subtotalCents < settings.minOrderCents) {
     throw badRequest(`Orders start at $${(settings.minOrderCents / 100).toFixed(2)}.`);
   }
 

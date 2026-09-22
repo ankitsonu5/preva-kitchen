@@ -3,9 +3,13 @@ import { cleanText, cleanEmail, formatMoney } from '../lib/sanitize.js';
 import { priceOrder, shopSettings, itemPriceCents, readyAt } from '../lib/pricing.js';
 import { logActivity } from '../lib/activity.js';
 import { stripe, stripeConfigured, allowUnpaidTestOrders, paymentStatusSummary, storefrontUrl, webhookSecret } from '../lib/stripe.js';
-import { get, post, patch, badRequest, notFound, unauthorized } from '../router.js';
+import { get, post, patch, badRequest, notFound, unauthorized, tooManyRequests } from '../router.js';
 import { notifyNewOrder, notifyCustomerOrder } from '../lib/email.js';
 import { getKitchenOperatingStatus } from '../lib/operatingHours.js';
+import { clearLoginAttempts, jwtSecret, loginBlocked, noteFailedLogin, verifyPassword } from '../lib/auth.js';
+import { assignOrderTicket, KDS_ACTIVE_STATUSES, setOrderItemChecked, transitionOrderStatus } from '../lib/order-workflow.js';
+import { reserveStock } from '../lib/inventory.js';
+import { notifyKdsChange } from '../lib/events.js';
 import jwt from 'jsonwebtoken';
 
 get('/shop/kitchen-status', async () => {
@@ -42,6 +46,7 @@ function toProduct(item) {
     faqs: out.faqs || [],
     servings: out.servings || '',
     calories: out.calories || null,
+    ...(item.trackInventory ? { stockRemaining: Number.isFinite(item.stockCount) ? item.stockCount : 0 } : {}),
     optionGroups: (out.optionGroups || []).map((group) => ({
       id: group.id,
       label: group.label,
@@ -140,7 +145,10 @@ get('/shop/display-board', async () => {
 /* ── Kitchen Display Security & Protected Tickets ───────────────────────── */
 
 function verifyKitchenAuth(ctx) {
-  if (ctx?.user) return true; // Logged in admin/staff has access
+  if (ctx?.user) {
+    ctx.kitchenActor = ctx.user.email || ctx.user.name || 'admin';
+    return true; // Logged in admin/staff has access
+  }
 
   const req = ctx?.request;
   const headers = req?.headers || {};
@@ -152,8 +160,10 @@ function verifyKitchenAuth(ctx) {
   if (!token) return false;
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET || 'preva-secret-key');
-    return payload && (payload.role === 'kitchen' || payload.role === 'admin');
+    const payload = jwt.verify(token, jwtSecret());
+    const valid = payload && (payload.role === 'kitchen' || payload.role === 'admin');
+    if (valid) ctx.kitchenActor = payload.username || payload.email || payload.role;
+    return Boolean(valid);
   } catch {
     return false;
   }
@@ -162,11 +172,18 @@ function verifyKitchenAuth(ctx) {
 post('/shop/kitchen-login', async ({ body, ip }) => {
   const username = cleanText(body?.username || body?.id || 'chef', 50).trim();
   const password = String(body?.password || '').trim();
+  const attemptKey = `kitchen:${ip || 'unknown'}:${username.toLowerCase()}`;
 
-  const configuredUser = String(process.env.KITCHEN_ID || 'chef').trim();
-  const configuredPass = String(process.env.KITCHEN_PASSWORD || 'Prevakds@2026').trim();
+  if (await loginBlocked(attemptKey)) {
+    throw tooManyRequests('Too many kitchen login attempts. Please try again later.');
+  }
 
-  let isValid = (
+  const configuredUser = String(process.env.KITCHEN_ID || '').trim();
+  const configuredPass = String(process.env.KITCHEN_PASSWORD || '').trim();
+
+  let isValid = Boolean(
+    configuredUser &&
+    configuredPass &&
     username.toLowerCase() === configuredUser.toLowerCase() &&
     password === configuredPass
   );
@@ -175,8 +192,7 @@ post('/shop/kitchen-login', async ({ body, ip }) => {
   if (!isValid) {
     const users = await col('users');
     const adminUser = await users.findOne({ email: username.toLowerCase() });
-    if (adminUser && adminUser.status !== 'DISABLED') {
-      const { verifyPassword } = await import('../lib/auth.js');
+    if (adminUser && adminUser.status !== 'DISABLED' && ['SUPER_ADMIN', 'ADMIN'].includes(adminUser.role)) {
       if (await verifyPassword(password, adminUser.passwordHash)) {
         isValid = true;
       }
@@ -184,13 +200,16 @@ post('/shop/kitchen-login', async ({ body, ip }) => {
   }
 
   if (!isValid) {
+    await noteFailedLogin(attemptKey);
     throw unauthorized('Invalid Kitchen ID or Password. Please try again.');
   }
 
+  await clearLoginAttempts(attemptKey);
+
   const token = jwt.sign(
     { role: 'kitchen', username: username || 'chef' },
-    process.env.JWT_SECRET || 'preva-secret-key',
-    { expiresIn: '60d' }
+    jwtSecret(),
+    { expiresIn: process.env.KITCHEN_TOKEN_TTL || '12h' }
   );
 
   await logActivity({ ip }, 'LOGIN', 'KITCHEN', `Kitchen terminal unlocked by ${username}`);
@@ -204,7 +223,7 @@ get('/shop/kitchen-tickets', async (ctx) => {
 
   const orders = await col('order');
   const rows = await orders.find({
-    status: { $in: ['RECEIVED', 'PAID', 'PREPARING', 'READY', 'ON_THE_WAY'] }
+    status: { $in: KDS_ACTIVE_STATUSES }
   }).sort({ createdAt: 1 }).limit(100).toArray();
 
   return rows.map((order) => {
@@ -214,6 +233,8 @@ get('/shop/kitchen-tickets', async (ctx) => {
       orderNumber: safe.orderNumber,
       status: safe.status,
       fulfilment: safe.fulfilment,
+      tableNumber: safe.tableNumber || '',
+      paymentStatus: safe.payment?.status || '',
       customer: {
         name: safe.customer?.name || 'Walk-in Guest',
         phone: safe.customer?.phone || '',
@@ -227,10 +248,60 @@ get('/shop/kitchen-tickets', async (ctx) => {
       isScheduled: safe.isScheduled,
       scheduledAt: safe.scheduledAt,
       readyAt: safe.readyAt,
+      estimatedReadyAt: safe.estimatedReadyAt || safe.readyAt,
+      actualReadyAt: safe.actualReadyAt || null,
+      kdsItemStates: safe.kdsItemStates || [],
+      kdsAssignment: safe.kdsAssignment || null,
+      statusChangedAt: safe.statusChangedAt || safe.createdAt,
       createdAt: safe.createdAt,
       updatedAt: safe.updatedAt
     };
   });
+});
+
+patch('/shop/kitchen-tickets/:id/items/:index', async (ctx) => {
+  if (!verifyKitchenAuth(ctx)) throw unauthorized('Kitchen access required.');
+
+  const orders = await col('order');
+  const id = asObjectId(ctx.params.id);
+  if (!id) throw badRequest('Invalid order ID.');
+
+  const order = await orders.findOne({ _id: id });
+  if (!order) throw notFound('Order not found.');
+
+  const updated = await setOrderItemChecked({
+    orders,
+    order,
+    lineIndex: ctx.params.index,
+    checked: ctx.body?.checked,
+    actor: ctx.kitchenActor
+  });
+
+  const itemState = updated.kdsItemStates.find(
+    (entry) => Number(entry.lineIndex) === Number(ctx.params.index)
+  );
+  await logActivity(ctx, 'UPDATE', 'ORDER_ITEM', `#${order.orderNumber} item ${Number(ctx.params.index) + 1} -> ${itemState.checked ? 'DONE' : 'OPEN'}`);
+  return { ok: true, orderId: id.toString(), itemState };
+});
+
+patch('/shop/kitchen-tickets/:id/assignment', async (ctx) => {
+  if (!verifyKitchenAuth(ctx)) throw unauthorized('Kitchen access required.');
+
+  const orders = await col('order');
+  const id = asObjectId(ctx.params.id);
+  if (!id) throw badRequest('Invalid order ID.');
+  const order = await orders.findOne({ _id: id });
+  if (!order) throw notFound('Order not found.');
+
+  const updated = await assignOrderTicket({
+    orders,
+    order,
+    station: cleanText(ctx.body?.station, 40),
+    assignee: cleanText(ctx.body?.assignee, 80),
+    actor: ctx.kitchenActor
+  });
+  await logActivity(ctx, 'UPDATE', 'ORDER_ASSIGNMENT', `#${order.orderNumber}: ${updated.kdsAssignment.station} / ${updated.kdsAssignment.assignee || 'unassigned'}`);
+  return { ok: true, assignment: updated.kdsAssignment };
 });
 
 patch('/shop/kitchen-tickets/:id/status', async (ctx) => {
@@ -247,34 +318,13 @@ patch('/shop/kitchen-tickets/:id/status', async (ctx) => {
   if (!order) throw notFound('Order not found.');
 
   const targetStatus = cleanText(body?.status, 30).toUpperCase();
-  const ALLOWED_KITCHEN_STATUSES = ['RECEIVED', 'PREPARING', 'READY', 'ON_THE_WAY', 'COMPLETED', 'DELIVERED', 'CANCELLED'];
-  if (!ALLOWED_KITCHEN_STATUSES.includes(targetStatus)) {
-    throw badRequest(`Cannot change status to ${targetStatus}`);
-  }
-
-  const now = new Date();
-  const updateFields = {
-    status: targetStatus,
-    updatedAt: now
-  };
-
-  if (targetStatus === 'READY' && !order.readyAt) {
-    updateFields.readyAt = now;
-  }
-
-  await orders.updateOne(
-    { _id: id },
-    {
-      $set: updateFields,
-      $push: {
-        statusHistory: {
-          status: targetStatus,
-          at: now,
-          by: 'kitchen-display'
-        }
-      }
-    }
-  );
+  await transitionOrderStatus({
+    orders,
+    order,
+    targetStatus,
+    actor: ctx.kitchenActor || 'kitchen-display',
+    reason: cleanText(body?.reason, 300)
+  });
 
   await logActivity({ ip }, 'UPDATE', 'ORDER', `#${order.orderNumber} -> ${targetStatus} (Kitchen KDS)`);
   return { ok: true, status: targetStatus, orderNumber: order.orderNumber };
@@ -293,8 +343,11 @@ get('/shop/kitchen-recalls', async (ctx) => {
   return rows.map((order) => {
     const safe = serialize(order);
     const lines = safe.lines || [];
-    const itemsCount = lines.reduce((sum, l) => sum + (Number(l.quantity) || 1), 0);
-    const itemsSummary = lines.map(l => `${l.quantity || 1}x ${l.name || 'Item'}`).slice(0, 2).join(', ');
+    const itemsCount = lines.reduce((sum, line) => sum + (Number(line.qty ?? line.quantity) || 1), 0);
+    const itemsSummary = lines
+      .map((line) => `${line.qty ?? line.quantity ?? 1}x ${line.name || 'Item'}`)
+      .slice(0, 2)
+      .join(', ');
 
     return {
       id: safe.id,
@@ -305,6 +358,8 @@ get('/shop/kitchen-recalls', async (ctx) => {
         name: safe.customer?.name || 'Walk-in Guest'
       },
       lines,
+      kdsItemStates: safe.kdsItemStates || [],
+      kdsAssignment: safe.kdsAssignment || null,
       itemsCount,
       itemsSummary: lines.length > 2 ? `${itemsSummary} +${lines.length - 2} more` : itemsSummary,
       totalCents: safe.totalCents || 0,
@@ -316,6 +371,303 @@ get('/shop/kitchen-recalls', async (ctx) => {
 /* ══════════════════════════════════════════════════════════════════════════
    Checkout
    ══════════════════════════════════════════════════════════════════════════ */
+
+/** Reads a `setting` row that stores a short list of names (stations, tables), with a fallback default. */
+async function namedList(settingRows, key, fallback) {
+  const row = await settingRows.findOne({ key });
+  return Array.isArray(row?.value) && row.value.length
+    ? row.value.map((value) => cleanText(value, 40)).filter(Boolean).slice(0, 40)
+    : fallback;
+}
+
+/** Validates a PATCH body list of names: trims, dedupes case-insensitively, caps length, requires at least one. */
+function cleanNameList(raw, { max = 40, label }) {
+  if (!Array.isArray(raw)) throw badRequest(`${label} must be a list of names.`);
+  const seen = new Set();
+  const list = [];
+  for (const value of raw) {
+    const name = cleanText(value, 40);
+    if (!name || seen.has(name.toLowerCase())) continue;
+    seen.add(name.toLowerCase());
+    list.push(name);
+  }
+  if (!list.length) throw badRequest(`Keep at least one ${label.toLowerCase()}.`);
+  return list.slice(0, max);
+}
+
+get('/shop/kitchen-operations', async (ctx) => {
+  if (!verifyKitchenAuth(ctx)) throw unauthorized('Kitchen access required.');
+
+  const [settings, menuItems, settingRows] = await Promise.all([
+    shopSettings(),
+    col('menuItems'),
+    col('setting')
+  ]);
+  const stations = await namedList(settingRows, 'kdsStations', ['Expo', 'Grill', 'Fryer', 'Pantry']);
+  const tables = await namedList(settingRows, 'dineInTables', ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']);
+  const items = await menuItems
+    .find({ orderable: true })
+    .sort({ category: 1, sortOrder: 1, name: 1 })
+    .limit(300)
+    .toArray();
+
+  return {
+    settings,
+    stations,
+    tables,
+    items: items.map((item) => ({
+      id: item._id.toString(),
+      name: item.name,
+      category: item.category || 'Others',
+      available: item.available !== false,
+      station: cleanText(item.kdsStation, 40) || 'Expo',
+      trackInventory: Boolean(item.trackInventory),
+      stockCount: Number.isFinite(item.stockCount) ? item.stockCount : 0
+    }))
+  };
+});
+
+patch('/shop/kitchen-operations', async (ctx) => {
+  if (!verifyKitchenAuth(ctx)) throw unauthorized('Kitchen access required.');
+
+  const settings = await col('setting');
+  const now = new Date();
+  const updates = [];
+  const booleans = {
+    orderingEnabled: 'shopOrderingEnabled',
+    pickupEnabled: 'shopPickupEnabled',
+    deliveryEnabled: 'shopDeliveryEnabled'
+  };
+  for (const [inputKey, settingKey] of Object.entries(booleans)) {
+    if (typeof ctx.body?.[inputKey] === 'boolean') updates.push([settingKey, ctx.body[inputKey]]);
+  }
+  for (const [inputKey, settingKey] of [
+    ['pickupMinutes', 'shopPickupMinutes'],
+    ['deliveryMinutes', 'shopDeliveryMinutes']
+  ]) {
+    if (ctx.body?.[inputKey] !== undefined) {
+      const value = Number(ctx.body[inputKey]);
+      if (!Number.isInteger(value) || value < 10 || value > 180) {
+        throw badRequest(`${inputKey} must be a whole number between 10 and 180.`);
+      }
+      updates.push([settingKey, value]);
+    }
+  }
+  if (ctx.body?.closedMessage !== undefined) {
+    const value = cleanText(ctx.body.closedMessage, 300);
+    if (!value) throw badRequest('Closed message cannot be empty.');
+    updates.push(['shopClosedMessage', value]);
+  }
+
+  let stations;
+  if (ctx.body?.stations !== undefined) {
+    stations = cleanNameList(ctx.body.stations, { max: 20, label: 'Station' });
+    updates.push(['kdsStations', stations]);
+  }
+
+  let tables;
+  if (ctx.body?.tables !== undefined) {
+    tables = cleanNameList(ctx.body.tables, { max: 40, label: 'Table' });
+    updates.push(['dineInTables', tables]);
+  }
+
+  if (!updates.length) throw badRequest('No supported kitchen setting was provided.');
+
+  for (const [key, value] of updates) {
+    await settings.updateOne({ key }, { $set: { key, value, updatedAt: now } }, { upsert: true });
+  }
+  await logActivity(ctx, 'UPDATE', 'KITCHEN_SETTINGS', updates.map(([key]) => key).join(', '));
+  return {
+    ok: true,
+    settings: await shopSettings(),
+    ...(stations ? { stations } : {}),
+    ...(tables ? { tables } : {})
+  };
+});
+
+/**
+ * One row per configured table, showing at a glance whether it's empty,
+ * has food in progress, or is sitting on an unpaid bill. A table can have
+ * more than one order open at once (a second round while the first is still
+ * cooking) — those are summed into one row rather than picking just one.
+ */
+get('/shop/dine-in-tables', async (ctx) => {
+  if (!verifyKitchenAuth(ctx)) throw unauthorized('Kitchen access required.');
+
+  const settingRows = await col('setting');
+  const tableNames = await namedList(settingRows, 'dineInTables', ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']);
+
+  const orders = await col('order');
+  const unpaidSince = new Date(Date.now() - 12 * 60 * 60 * 1000);
+  const rows = await orders.find({
+    fulfilment: 'DINE_IN',
+    $or: [
+      { status: { $in: KDS_ACTIVE_STATUSES } },
+      { status: 'COMPLETED', 'payment.status': 'UNPAID', updatedAt: { $gte: unpaidSince } }
+    ]
+  }).sort({ createdAt: 1 }).toArray();
+
+  const byTable = new Map();
+  for (const order of rows) {
+    const table = order.tableNumber || '';
+    if (!byTable.has(table)) byTable.set(table, []);
+    byTable.get(table).push(order);
+  }
+
+  const tables = tableNames.map((table) => {
+    const tableOrders = byTable.get(table) || [];
+    if (!tableOrders.length) return { table, status: 'empty' };
+
+    const anyUnpaid = tableOrders.some((one) => one.status === 'COMPLETED' && one.payment?.status === 'UNPAID');
+    const itemCount = tableOrders.reduce((sum, one) => sum + (one.lines || []).reduce((s, line) => s + (Number(line.qty) || 0), 0), 0);
+    const totalCents = tableOrders.reduce((sum, one) => sum + (Number(one.totalCents) || 0), 0);
+    const oldest = tableOrders.reduce((min, one) => (one.createdAt < min ? one.createdAt : min), tableOrders[0].createdAt);
+
+    return {
+      table,
+      status: anyUnpaid ? 'unpaid' : 'active',
+      orderCount: tableOrders.length,
+      orderIds: tableOrders.map((one) => one._id.toString()),
+      itemCount,
+      totalCents,
+      oldestCreatedAt: oldest,
+      statuses: [...new Set(tableOrders.map((one) => one.status))]
+    };
+  });
+
+  return { tables };
+});
+
+/**
+ * A dine-in order is entered by staff for a guest sitting at a table in the
+ * restaurant. It skips checkout, payment gating and delivery/pickup timing
+ * entirely — it goes straight to the kitchen as RECEIVED, and payment is
+ * settled at the table afterward (see the payment endpoint below).
+ */
+post('/shop/dine-in-orders', async (ctx) => {
+  if (!verifyKitchenAuth(ctx)) throw unauthorized('Kitchen access required.');
+
+  const tableNumber = cleanText(ctx.body?.tableNumber, 40);
+  if (!tableNumber) throw badRequest('Choose a table for this order.');
+
+  const settingRows = await col('setting');
+  const tables = await namedList(settingRows, 'dineInTables', ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']);
+  if (!tables.includes(tableNumber)) throw badRequest('That table is not configured. Add it in KDS Settings first.');
+
+  const priced = await priceOrder({ fulfilment: 'DINE_IN', lines: ctx.body?.lines });
+  await reserveStock(await col('menuItems'), priced.lines);
+
+  // priceOrder() always prices online orders with zero gratuity — dine-in is
+  // the one channel where a guest actually tips, so it's applied here.
+  let tipCents = 0;
+  if (ctx.body?.tipCents !== undefined) {
+    tipCents = Number(ctx.body.tipCents);
+    if (!Number.isInteger(tipCents) || tipCents < 0 || tipCents > priced.subtotalCents) {
+      throw badRequest('Tip amount is invalid.');
+    }
+  }
+
+  const orders = await col('order');
+  const now = new Date();
+  const orderNumber = await nextOrderNumber();
+  const note = cleanText(ctx.body?.note, 300);
+  const actor = ctx.kitchenActor || 'kitchen-display';
+
+  const document = {
+    orderNumber,
+    fulfilment: 'DINE_IN',
+    tableNumber,
+    status: 'RECEIVED',
+    customer: { name: `Table ${tableNumber}`, phone: '', email: '', note },
+    lines: priced.lines,
+    subtotalCents: priced.subtotalCents,
+    deliveryCents: 0,
+    taxCents: priced.taxCents,
+    tipCents,
+    totalCents: priced.totalCents + tipCents,
+    payment: { provider: 'none', status: 'UNPAID', amountCents: priced.totalCents + tipCents, currency: 'usd' },
+    readyAt: readyAt(priced.settings, 'DINE_IN'),
+    estimatedReadyAt: readyAt(priced.settings, 'DINE_IN'),
+    isScheduled: false,
+    statusHistory: [{ status: 'RECEIVED', at: now, by: actor }],
+    statusChangedAt: now,
+    createdAt: now,
+    updatedAt: now
+  };
+
+  const inserted = await orders.insertOne(document);
+  await logActivity(ctx, 'CREATE', 'ORDER', `#${orderNumber} dine-in, table ${tableNumber} (by ${actor})`);
+  notifyKdsChange();
+  return { ok: true, orderId: inserted.insertedId.toString(), orderNumber };
+});
+
+patch('/shop/dine-in-orders/:id/payment', async (ctx) => {
+  if (!verifyKitchenAuth(ctx)) throw unauthorized('Kitchen access required.');
+
+  const orders = await col('order');
+  const id = asObjectId(ctx.params.id);
+  if (!id) throw badRequest('Invalid order ID.');
+  const order = await orders.findOne({ _id: id });
+  if (!order) throw notFound('Order not found.');
+  if (order.fulfilment !== 'DINE_IN') throw badRequest('This is not a dine-in order.');
+  if (order.payment?.status === 'PAID') throw badRequest('This order is already marked paid.');
+
+  const method = cleanText(ctx.body?.method, 20).toLowerCase();
+  if (!['cash', 'card'].includes(method)) throw badRequest('Choose a payment method: cash or card.');
+
+  const now = new Date();
+  await orders.updateOne(
+    { _id: id },
+    { $set: { 'payment.status': 'PAID', 'payment.provider': 'staff', 'payment.method': method, 'payment.paidAt': now, updatedAt: now } }
+  );
+  await logActivity(ctx, 'PAYMENT', 'ORDER', `#${order.orderNumber} table ${order.tableNumber || ''} marked paid (${method})`);
+  notifyKdsChange();
+  return { ok: true };
+});
+
+patch('/shop/kitchen-menu-items/:id', async (ctx) => {
+  if (!verifyKitchenAuth(ctx)) throw unauthorized('Kitchen access required.');
+
+  const menuItems = await col('menuItems');
+  const id = asObjectId(ctx.params.id);
+  if (!id) throw badRequest('Invalid menu item ID.');
+  const current = await menuItems.findOne({ _id: id });
+  if (!current) throw notFound('Menu item not found.');
+
+  const update = { updatedAt: new Date() };
+  if (typeof ctx.body?.available === 'boolean') update.available = ctx.body.available;
+  if (ctx.body?.station !== undefined) {
+    const station = cleanText(ctx.body.station, 40);
+    if (!station) throw badRequest('Station cannot be empty.');
+    update.kdsStation = station;
+  }
+  if (typeof ctx.body?.trackInventory === 'boolean') update.trackInventory = ctx.body.trackInventory;
+  if (ctx.body?.stockCount !== undefined) {
+    const count = Number(ctx.body.stockCount);
+    if (!Number.isInteger(count) || count < 0) throw badRequest('Stock count must be a whole number of 0 or more.');
+    update.stockCount = count;
+    // A manual restock implies the item is sellable again, unless the caller
+    // is also explicitly setting availability in this same request.
+    if (count > 0 && typeof ctx.body?.available !== 'boolean') update.available = true;
+  }
+  if (Object.keys(update).length === 1) { // only updatedAt
+    throw badRequest('Availability, station, or inventory is required.');
+  }
+
+  await menuItems.updateOne({ _id: id }, { $set: update });
+  await logActivity(ctx, 'UPDATE', 'MENU_ITEM', `${current.name}: kitchen controls`);
+  return {
+    ok: true,
+    item: {
+      id: id.toString(),
+      name: current.name,
+      available: update.available ?? current.available !== false,
+      station: update.kdsStation || current.kdsStation || 'Expo',
+      trackInventory: update.trackInventory ?? Boolean(current.trackInventory),
+      stockCount: update.stockCount ?? (Number.isFinite(current.stockCount) ? current.stockCount : 0)
+    }
+  };
+});
 
 post('/shop/quote', async ({ body }) => {
   // Used by the cart to show tax and delivery before the customer commits.
@@ -409,6 +761,7 @@ post('/shop/checkout', async ({ body, ip }) => {
 
   const orderNumber = await nextOrderNumber();
   const now = new Date();
+  const estimatedReadyAt = scheduledAt || readyAt(priced.settings, priced.fulfilment);
 
   const document = {
     orderNumber,
@@ -428,7 +781,10 @@ post('/shop/checkout', async ({ body, ip }) => {
       amountCents: priced.totalCents,
       currency: 'usd'
     },
-    readyAt: scheduledAt || readyAt(priced.settings, priced.fulfilment),
+    // Keep readyAt for existing clients while giving the estimate an explicit
+    // name. actualReadyAt is written only when the kitchen marks the order ready.
+    readyAt: estimatedReadyAt,
+    estimatedReadyAt,
     scheduledAt: scheduledAt || null,
     isScheduled: !!scheduledAt,
     statusHistory: [{ status: 'PENDING', at: now, by: 'customer' }],
@@ -459,6 +815,7 @@ post('/shop/checkout', async ({ body, ip }) => {
       {
         $set: {
           status: 'RECEIVED',
+          statusChangedAt: new Date(),
           payment: {
             provider: 'none',
             status: 'PAID',
@@ -475,7 +832,9 @@ post('/shop/checkout', async ({ body, ip }) => {
         }
       }
     );
+    await reserveStock(await col('menuItems'), priced.lines);
     await logActivity({ ip }, 'CREATE', 'ORDER', `#${orderNumber} (no-card test mode)`);
+    notifyKdsChange();
     const updatedOrder = await orders.findOne({ _id: inserted.insertedId });
     if (updatedOrder) {
       notifyNewOrder(updatedOrder).catch(err => console.error('[email] test order staff notify error:', err.message));
@@ -615,6 +974,8 @@ get('/shop/orders/:number', async ({ params }) => {
     tipCents: row.tipCents,
     totalCents: row.totalCents,
     readyAt: row.readyAt,
+    estimatedReadyAt: row.estimatedReadyAt || row.readyAt,
+    actualReadyAt: row.actualReadyAt || null,
     createdAt: row.createdAt,
     orderStatus: row.status,
     paymentStatus: row.payment?.status || 'UNPAID',

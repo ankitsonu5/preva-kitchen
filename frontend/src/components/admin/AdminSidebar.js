@@ -21,6 +21,7 @@ import {
   LogOut,
   MenuSquare,
   Settings,
+  Settings2,
   ShoppingCart,
   Tags,
   Sparkles,
@@ -57,7 +58,11 @@ const groups = [
     label: 'Online ordering',
     items: [
       { label: 'Orders', href: '/admin/orders', icon: ShoppingCart, permission: 'orders' },
-      { label: 'Kitchen Display (KDS)', href: '/admin/kds', icon: ChefHat, permission: 'orders' }
+      { label: 'KDS Live Display', href: '/admin/kds', icon: ChefHat, permission: 'orders' },
+      { label: 'Take Order (Dine-In)', href: '/admin/kds/take-order', icon: UtensilsCrossed, permission: 'orders' },
+      { label: 'Table Status', href: '/admin/kds/tables', icon: LayoutGrid, permission: 'orders' },
+      { label: 'KDS Orders', href: '/admin/kds/orders', icon: ListTree, permission: 'orders' },
+      { label: 'KDS Settings', href: '/admin/kds/settings', icon: Settings2, permission: 'orders' }
     ]
   },
   {

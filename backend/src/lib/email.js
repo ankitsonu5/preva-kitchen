@@ -506,6 +506,13 @@ export async function notifyCustomerOrderStatus(order, newStatus) {
     subject = `✨ Enjoy your meal! Order #${order.orderNumber} Completed`;
     heading = 'Order Completed!';
     message = 'Thank you for ordering with Preva Kitchen. We hope you enjoy your meal!';
+  } else if (newStatus === 'CANCELLED') {
+    icon = 'X';
+    subject = `Order #${order.orderNumber} Cancelled - Preva Kitchen`;
+    heading = 'Order Cancelled';
+    message = order.cancellationReason
+      ? `Your order was cancelled: ${escapeHtml(order.cancellationReason)}`
+      : 'Your order has been cancelled. Please contact Preva Kitchen if you need assistance.';
   } else {
     return false;
   }
