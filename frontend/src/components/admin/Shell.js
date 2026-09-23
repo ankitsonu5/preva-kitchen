@@ -13,8 +13,15 @@ const CAREERS_MANAGER_ROUTES = [
   '/admin/profile'
 ];
 
+const KDS_MANAGER_ROUTES = ['/admin/kds'];
+
 function isCareersManagerRoute(pathname) {
   return CAREERS_MANAGER_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
+}
+
+function isKdsManagerRoute(pathname, user) {
+  if (KDS_MANAGER_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))) return true;
+  return pathname === '/admin/profile' && !user?.isKitchenAccount;
 }
 
 export default function Shell({ children }) {
@@ -85,6 +92,8 @@ export default function Shell({ children }) {
             router.replace('/admin/profile?first=1');
           } else if (activeUser.role === 'CAREERS_MANAGER' && !isCareersManagerRoute(pathname)) {
             router.replace('/admin/careers');
+          } else if (activeUser.role === 'KDS_MANAGER' && !isKdsManagerRoute(pathname, activeUser)) {
+            router.replace('/admin/kds');
           }
         }
       })
@@ -112,13 +121,24 @@ export default function Shell({ children }) {
     const fetchCounts = async () => {
       try {
         const isCareersManager = user.role === 'CAREERS_MANAGER';
-        const res = await fetch(isCareersManager ? '/api/admin/careers/dashboard' : '/api/admin/dashboard');
+        const isKdsManager = user.role === 'KDS_MANAGER';
+        const endpoint = isCareersManager
+          ? '/api/admin/careers/dashboard'
+          : isKdsManager
+            ? '/api/admin/orders-summary'
+            : '/api/admin/dashboard';
+        const res = await fetch(endpoint);
         if (!res.ok) return;
         const data = await res.json();
         if (!active || !data) return;
 
         if (isCareersManager) {
           setBadges((prev) => ({ ...prev, careerApps: data.counts?.new ?? 0 }));
+          return;
+        }
+
+        if (isKdsManager) {
+          setBadges((prev) => ({ ...prev, openOrders: data.open ?? 0, activeOrders: data.open ?? 0 }));
           return;
         }
 
@@ -201,6 +221,7 @@ export default function Shell({ children }) {
 
   const role = user.role;
   const careersManager = role === 'CAREERS_MANAGER';
+  const kdsManager = role === 'KDS_MANAGER';
 
   if (careersManager && !isCareersManagerRoute(pathname)) {
     return (
@@ -210,11 +231,20 @@ export default function Shell({ children }) {
     );
   }
 
+  if (kdsManager && !isKdsManagerRoute(pathname, user)) {
+    return (
+      <div className="admin-auth-loading" aria-live="polite">
+        <div className="loader">Opening the Kitchen Displayâ€¦</div>
+      </div>
+    );
+  }
+
   const permissions = {
-    dashboard: !careersManager,
-    content: !careersManager,
-    media: !careersManager,
-    orders: !careersManager,
+    dashboard: !careersManager && !kdsManager,
+    content: !careersManager && !kdsManager,
+    media: !careersManager && !kdsManager,
+    orders: !careersManager && !kdsManager,
+    kds: !careersManager,
     careers: role === 'SUPER_ADMIN' || role === 'ADMIN' || careersManager,
     users: role === 'SUPER_ADMIN' || role === 'ADMIN',
     settings: role === 'SUPER_ADMIN' || role === 'ADMIN',
@@ -271,7 +301,7 @@ export default function Shell({ children }) {
             >
               <span>{newOrderToast}</span>
               <a
-                href="/admin/orders"
+                href={kdsManager ? '/admin/kds/orders' : '/admin/orders'}
                 style={{
                   background: '#C9A84C',
                   color: '#000',

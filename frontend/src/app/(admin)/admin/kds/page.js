@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, LayoutGrid, ListTree, Settings2, UtensilsCrossed } from 'lucide-react';
-import { api } from '@/lib/admin-api';
+import { api, getUser } from '@/lib/admin-api';
 import { useKdsBoard } from '@/lib/kds/useKdsBoard';
 import KdsBoard from '@/components/kds/KdsBoard';
 
@@ -23,15 +23,15 @@ function createAdminClient() {
 
   return {
     fetchActive: async () => {
-      let res = await api('/admin/orders?status=KDS&sort=fifo&limit=150');
-      if (!res.ok) res = await fetch('/api/shop/kitchen-tickets', { cache: 'no-store' });
+      let res = await fetch('/api/shop/kitchen-tickets', { cache: 'no-store' });
+      if (!res.ok) res = await api('/admin/orders?status=KDS&sort=fifo&limit=150');
       if (!res.ok) throw new Error('Could not fetch active orders');
       const data = await res.json();
       return Array.isArray(data) ? data : [];
     },
     fetchRecalls: async () => {
-      let res = await api('/admin/orders?status=COMPLETED&limit=20');
-      if (!res.ok) res = await fetch('/api/shop/kitchen-recalls', { cache: 'no-store' });
+      let res = await fetch('/api/shop/kitchen-recalls', { cache: 'no-store' });
+      if (!res.ok) res = await api('/admin/orders?status=COMPLETED&limit=20');
       if (!res.ok) return [];
       const data = await res.json();
       return Array.isArray(data) ? data : [];
@@ -49,6 +49,14 @@ function createAdminClient() {
         });
       }
       if (!res.ok) throw await parseError(res, 'Failed to update order');
+    },
+    fire: async (orderId) => {
+      const res = await fetch(`/api/shop/kitchen-tickets/${orderId}/fire`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!res.ok) throw await parseError(res, 'Could not fire scheduled order');
+      return res.json();
     },
     // The admin session cookie already satisfies verifyKitchenAuth() on the
     // terminal endpoints (see shop.js), so these can call them directly.
@@ -70,13 +78,21 @@ function createAdminClient() {
       const data = await res.json();
       return data.assignment;
     },
-    markPaid: async (orderId, method) => {
+    assignDriver: async (orderId, name, phone) => {
+      const res = await fetch(`/api/shop/kitchen-tickets/${orderId}/driver`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, phone })
+      });
+      if (!res.ok) throw await parseError(res, 'Could not assign driver');
+      return (await res.json()).driver;
+    },
+    markPaid: async (orderId, method, details) => {
       const res = await fetch(`/api/shop/dine-in-orders/${orderId}/payment`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ method })
+        body: JSON.stringify({ method, ...details })
       });
       if (!res.ok) throw await parseError(res, 'Could not mark this order paid');
+      return res.json();
     }
   };
 }
@@ -130,6 +146,7 @@ const KdsHeaderRight = (
 export default function AdminKdsPage() {
   const [client] = useState(createAdminClient);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isKdsManager, setIsKdsManager] = useState(null);
 
   const board = useKdsBoard({ client, soundStorageKey: 'preva_kds_sound', sseUrl: '/api/shop/kitchen-events' });
 
@@ -144,6 +161,10 @@ export default function AdminKdsPage() {
   };
 
   useEffect(() => {
+    getUser().then((user) => setIsKdsManager(user?.role === 'KDS_MANAGER'));
+  }, []);
+
+  useEffect(() => {
     const handleFsChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
     document.addEventListener('fullscreenchange', handleFsChange);
     return () => document.removeEventListener('fullscreenchange', handleFsChange);
@@ -153,7 +174,7 @@ export default function AdminKdsPage() {
     <KdsBoard
       board={board}
       badgeLabel="ADMIN KDS"
-      headerLeft={BackToAdminLink}
+      headerLeft={isKdsManager === false ? BackToAdminLink : null}
       headerRight={KdsHeaderRight}
       isFullscreen={isFullscreen}
       onToggleFullscreen={toggleFullscreen}

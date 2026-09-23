@@ -463,7 +463,7 @@ export default function ContactContent() {
                     </span>
                     <p style={{ margin: 0, color: '#d5d0c8', fontSize: '0.94rem', lineHeight: 1.6 }}>
                       Phone: <a href="tel:+13132863586" style={{ color: '#fff', textDecoration: 'none', fontWeight: 700 }}>(313) 286-3586</a><br />
-                      Email: <a href="mailto:info@prevaclub.com" style={{ color: '#c5a059', textDecoration: 'none' }}>info@prevaclub.com</a>
+                      Email: <a href="mailto:info@prevakitchen.com" style={{ color: '#c5a059', textDecoration: 'none' }}>info@prevakitchen.com</a>
                     </p>
                   </div>
                 </div>

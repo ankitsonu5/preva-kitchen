@@ -1,10 +1,13 @@
 import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 import { col } from './db.js';
 
 /* ══════════════════════════════════════════════════════════════════════════
    Email notifications — Preva Kitchen Staff Alerts + Customer Confirmations
    ──────────────────────────────────────────────────────────────────────────
-   Sends through Resend (https://resend.com) — free 3,000 emails/month.
+   Transports:
+   1. Nodemailer via Gmail SMTP (Zero DNS setup) when SMTP_USER + SMTP_PASS are set
+   2. Resend (https://resend.com) when RESEND_API_KEY is set
    All provider errors are recorded and returned as a false result so a
    notification outage never rolls back a saved submission.
    ══════════════════════════════════════════════════════════════════════════ */
@@ -18,10 +21,13 @@ function getResendKey() {
   return String(process.env.RESEND_API_KEY || '').trim();
 }
 function getFromAddress() {
-  const configured = String(process.env.FROM_EMAIL || process.env.STAFF_EMAIL_FROM || '').trim();
+  const configured = String(
+    process.env.FROM_EMAIL || process.env.RESEND_FROM_EMAIL || process.env.STAFF_EMAIL_FROM || ''
+  ).trim();
   if (configured) return configured;
-  // Dev fallback: Resend's onboarding address works without domain setup
-  return isProduction() ? '' : 'Preva Kitchen <onboarding@resend.dev>';
+  const smtpUser = String(process.env.SMTP_USER || process.env.GMAIL_USER || '').trim();
+  if (smtpUser) return `Preva Kitchen <${smtpUser}>`;
+  return 'Preva Kitchen <info@prevakitchen.com>';
 }
 function getSiteUrl() {
   return String(process.env.STOREFRONT_URL || 'https://prevakitchen.com').trim();
@@ -34,21 +40,25 @@ function parseRecipients(raw) {
 
 function getAdminRecipients() {
   return parseRecipients(
-    process.env.ADMIN_EMAIL || process.env.ADMIN_EMAILS || process.env.STAFF_ALERT_EMAIL
+    process.env.ADMIN_EMAIL || process.env.ADMIN_EMAILS || process.env.STAFF_ALERT_EMAIL || 'reservations@prevakitchen.com'
+  );
+}
+
+function getContactRecipients() {
+  return parseRecipients(
+    process.env.CONTACT_EMAIL || 'info@prevakitchen.com'
   );
 }
 
 function getReservationRecipients() {
   return parseRecipients(
-    process.env.RESERVATION_ADMIN_EMAIL || process.env.ADMIN_EMAIL ||
-    process.env.ADMIN_EMAILS || process.env.STAFF_ALERT_EMAIL
+    process.env.RESERVATION_EMAIL || process.env.RESERVATION_ADMIN_EMAIL || 'reservations@prevakitchen.com'
   );
 }
 
 function getCareerRecipients() {
   return parseRecipients(
-    process.env.CAREER_ADMIN_EMAIL || process.env.HR_EMAIL || process.env.ADMIN_EMAIL ||
-    process.env.ADMIN_EMAILS || process.env.STAFF_ALERT_EMAIL
+    process.env.CAREER_EMAIL || process.env.CAREER_ADMIN_EMAIL || process.env.HR_EMAIL || 'donnaw@prevaclub.com'
   );
 }
 
@@ -85,10 +95,42 @@ async function logEmailAttempt({ formType, recipientType, to, subject, status, p
   }
 }
 
-/* ── Resend transport ─────────────────────────────────────────────────────
-   Free 3,000 emails/month. Get API key at https://resend.com
-   Domain verification needed for custom FROM address in production.
-   In dev, onboarding@resend.dev works without any domain setup.           */
+/* ── Transports: Nodemailer (Gmail SMTP) & Resend ──────────────────────────
+   1. Nodemailer: Zero DNS setup. Send from your Gmail account via App Password.
+   2. Resend: API-based delivery (free 3,000 emails/month).                  */
+
+function getSmtpConfig() {
+  const user = String(process.env.SMTP_USER || process.env.GMAIL_USER || '').trim();
+  const pass = String(process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, '').trim();
+  const host = String(process.env.SMTP_HOST || 'smtp.gmail.com').trim();
+  const port = Number(process.env.SMTP_PORT) || 465;
+  const secure = process.env.SMTP_SECURE !== undefined
+    ? String(process.env.SMTP_SECURE).toLowerCase() === 'true'
+    : port === 465;
+  return { user, pass, host, port, secure };
+}
+
+let _transporter = null;
+let _cachedSmtpKey = null;
+function getTransporter() {
+  const { user, pass, host, port, secure } = getSmtpConfig();
+  const key = `${user}:${pass}:${host}:${port}:${secure}`;
+  if (!_transporter || _cachedSmtpKey !== key) {
+    _cachedSmtpKey = key;
+    _transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure,
+      auth: { user, pass }
+    });
+  }
+  return _transporter;
+}
+
+function isSmtpConfigured() {
+  const { user, pass } = getSmtpConfig();
+  return Boolean(user && pass);
+}
 
 /** Lazily created so a missing key does not make module import fail. */
 let _resend = null;
@@ -103,16 +145,16 @@ function getResendClient() {
 }
 
 function configured() {
-  return Boolean(getResendKey() && getFromAddress());
+  return isSmtpConfigured() || Boolean(getResendKey() && getFromAddress());
 }
 
 /**
- * Send one email via Resend.
+ * Send one email via Nodemailer (Gmail SMTP) or Resend.
  * Returns true on success, false (+ console.error) on failure.
  * `to` may be a single address or an array. In non-production, when
  * MAIL_CATCH_ALL is set, every recipient is replaced so real inboxes stay clean.
  */
-async function send({ to, subject, html, text, replyTo, formType, recipientType, referenceId }) {
+async function send({ to, subject, html, text, replyTo, attachments, formType, recipientType, referenceId }) {
   const requested = (Array.isArray(to) ? to : [to]).filter(Boolean);
   const recipients = requested.length ? requested : getAdminRecipients();
 
@@ -129,8 +171,8 @@ async function send({ to, subject, html, text, replyTo, formType, recipientType,
   }
 
   if (!configured()) {
-    console.warn('[email] RESEND_API_KEY / FROM_EMAIL not configured; skipping email.', { formType, recipientType });
-    await logEmailAttempt({ formType, recipientType, to: recipients, subject, status: 'skipped', error: 'RESEND_API_KEY/FROM_EMAIL not configured', referenceId });
+    console.warn('[email] Neither SMTP (Gmail) nor RESEND_API_KEY / FROM_EMAIL configured; skipping email.', { formType, recipientType });
+    await logEmailAttempt({ formType, recipientType, to: recipients, subject, status: 'skipped', error: 'SMTP/RESEND not configured', referenceId });
     return false;
   }
 
@@ -142,13 +184,30 @@ async function send({ to, subject, html, text, replyTo, formType, recipientType,
   }
 
   try {
+    if (isSmtpConfigured()) {
+      const info = await getTransporter().sendMail({
+        from: getFromAddress(),
+        to: finalRecipients.join(', '),
+        subject,
+        html,
+        ...(text ? { text } : {}),
+        ...(replyTo ? { replyTo } : {}),
+        ...(attachments && attachments.length ? { attachments } : {})
+      });
+
+      console.log('[email] sent via Gmail SMTP to:', finalRecipients.join(', '), 'Subject:', subject, 'messageId:', info?.messageId);
+      await logEmailAttempt({ formType, recipientType, to: finalRecipients, subject, status: 'sent', providerMessageId: info?.messageId, referenceId });
+      return true;
+    }
+
     const { data, error } = await getResendClient().emails.send({
       from: getFromAddress(),
       to: finalRecipients,
       subject,
       html,
       ...(text ? { text } : {}),
-      ...(replyTo ? { replyTo } : {})
+      ...(replyTo ? { replyTo } : {}),
+      ...(attachments && attachments.length ? { attachments } : {})
     });
 
     if (error) {
@@ -635,7 +694,7 @@ export async function notifyVipRequest(data) {
 export async function notifyContactEnquiry(data) {
   const adminUrl = String(process.env.ADMIN_URL || 'https://prevakitchen.com/admin').trim();
   return send({
-    to: getAdminRecipients(),
+    to: getContactRecipients(),
     replyTo: data.email || undefined,
     subject: `✉️ Contact Enquiry — ${data.name} · Preva Kitchen`,
     html: wrap({
@@ -669,6 +728,19 @@ export async function notifyCareerApplication(data) {
   return send({
     to: getCareerRecipients(),
     replyTo: data.email || undefined,
+    attachments: (() => {
+      if (!data.resume?.data) return undefined;
+      const raw = String(data.resume.data);
+      const base64Index = raw.indexOf(';base64,');
+      const buffer = base64Index !== -1
+        ? Buffer.from(raw.slice(base64Index + 8), 'base64')
+        : (Buffer.isBuffer(data.resume.data) ? data.resume.data : Buffer.from(raw, 'base64'));
+      return [{
+        filename: data.resume.name || 'resume.pdf',
+        content: buffer,
+        contentType: data.resume.mimeType || data.resume.type || 'application/pdf'
+      }];
+    })(),
     subject: 'New Career Application Received - PREVA Kitchen',
     html: wrap({
       icon: 'C',

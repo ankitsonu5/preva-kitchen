@@ -6,6 +6,7 @@ import { showError, showSuccess, showWarning } from '../../lib/swal';
 
 const API = '/api';
 const TODAY = new Date().toISOString().split('T')[0];
+const TOMORROW = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 
 const SERVICE_TYPES = {
   group: { label: 'Group Dining', min: 8, defaultGuests: 10 },
@@ -26,8 +27,8 @@ function formatTime(dateTime) {
 export default function ReservationsSection({ activeTab: controlledTab, setActiveTab, visible }) {
   const [localTab, setLocalTab] = useState('dining');
   const activeTab = controlledTab || localTab;
-  const [dining, setDining] = useState({ date: '', time: '', guests: 2, seating: 'any', occasion: '', notes: '', name: '', phone: '', email: '' });
-  const [event, setEvent] = useState({ service: 'group', date: '', time: '', guests: 10, menu: 'family-style', venue: 'preva', notes: '', name: '', phone: '', email: '' });
+  const [dining, setDining] = useState({ date: TOMORROW, time: '19:00', guests: 2, seating: 'any', occasion: '', notes: '', name: '', phone: '', email: '' });
+  const [event, setEvent] = useState({ service: 'group', date: TOMORROW, time: '18:00', guests: 10, menu: 'family-style', venue: 'preva', notes: '', name: '', phone: '', email: '' });
   const [diningSubmitting, setDiningSubmitting] = useState(false);
   const [eventSubmitting, setEventSubmitting] = useState(false);
 
@@ -68,7 +69,18 @@ export default function ReservationsSection({ activeTab: controlledTab, setActiv
       const response = await fetch(`${API}/reservations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fullName: dining.name, mobile: dining.phone, email: dining.email, reservationDate: dateTime, guests: dining.guests, occasion: details })
+        body: JSON.stringify({
+          name: dining.name,
+          fullName: dining.name,
+          phone: dining.phone,
+          mobile: dining.phone,
+          email: dining.email,
+          date: dining.date,
+          time: dining.time,
+          reservationDate: dateTime,
+          guests: dining.guests,
+          occasion: details
+        })
       });
       if (!response.ok) throw new Error('Reservation request failed');
       const requestNumber = `PK-${Math.floor(1000 + Math.random() * 9000)}-TABLE`;
@@ -99,7 +111,18 @@ export default function ReservationsSection({ activeTab: controlledTab, setActiv
       const response = await fetch(`${API}/reservations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fullName: event.name, mobile: event.phone, email: event.email, reservationDate: dateTime, guests: event.guests, occasion: details })
+        body: JSON.stringify({
+          name: event.name,
+          fullName: event.name,
+          phone: event.phone,
+          mobile: event.phone,
+          email: event.email,
+          date: event.date,
+          time: event.time,
+          reservationDate: dateTime,
+          guests: event.guests,
+          occasion: details
+        })
       });
       if (!response.ok) throw new Error('Event request failed');
       const requestNumber = `PK-${Math.floor(1000 + Math.random() * 9000)}-EVENT`;

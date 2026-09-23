@@ -52,6 +52,11 @@ function createKitchenClient(authToken, onUnauthorized) {
       });
       if (!res.ok) throw await parseError(res, 'Status update failed');
     },
+    fire: async (orderId) => {
+      const res = await request(`/shop/kitchen-tickets/${orderId}/fire`, { method: 'PATCH' });
+      if (!res.ok) throw await parseError(res, 'Could not fire scheduled order');
+      return res.json();
+    },
     toggleItem: async (orderId, idx, checked) => {
       const res = await request(`/shop/kitchen-tickets/${orderId}/items/${idx}`, {
         method: 'PATCH',
@@ -68,12 +73,18 @@ function createKitchenClient(authToken, onUnauthorized) {
       const data = await res.json();
       return data.assignment;
     },
-    markPaid: async (orderId, method) => {
+    assignDriver: async (orderId, name, phone) => {
+      const res = await request(`/shop/kitchen-tickets/${orderId}/driver`, { method: 'PATCH', body: JSON.stringify({ name, phone }) });
+      if (!res.ok) throw await parseError(res, 'Could not assign driver');
+      return (await res.json()).driver;
+    },
+    markPaid: async (orderId, method, details) => {
       const res = await request(`/shop/dine-in-orders/${orderId}/payment`, {
         method: 'PATCH',
-        body: JSON.stringify({ method })
+        body: JSON.stringify({ method, ...details })
       });
       if (!res.ok) throw await parseError(res, 'Could not mark this order paid');
+      return res.json();
     }
   };
 }

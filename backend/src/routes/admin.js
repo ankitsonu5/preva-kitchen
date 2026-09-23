@@ -677,7 +677,7 @@ get('/admin/users', { auth: true, roles: MANAGE }, async ({ user }) => {
 post('/admin/users', { auth: true, roles: MANAGE }, async (ctx) => {
   const email = cleanEmail(ctx.body?.email);
   const password = String(ctx.body?.password || '');
-  const role = ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'AUTHOR', 'CAREERS_MANAGER'].includes(ctx.body?.role) ? ctx.body.role : 'AUTHOR';
+  const role = ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'AUTHOR', 'CAREERS_MANAGER', 'KDS_MANAGER'].includes(ctx.body?.role) ? ctx.body.role : 'AUTHOR';
 
   if (!email) throw badRequest('An email address is required.');
   if (password.length < 12) throw badRequest('Use at least 12 characters for the password.');
@@ -719,7 +719,7 @@ put('/admin/users/:id', { auth: true, roles: MANAGE }, async (ctx) => {
     if (clash) throw badRequest('That email address is already registered.');
     update.email = nextEmail;
   }
-  if (ctx.body?.role && ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'AUTHOR', 'CAREERS_MANAGER'].includes(ctx.body.role)) {
+  if (ctx.body?.role && ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'AUTHOR', 'CAREERS_MANAGER', 'KDS_MANAGER'].includes(ctx.body.role)) {
     if (ctx.user.role !== 'SUPER_ADMIN' && ctx.body.role === 'SUPER_ADMIN') throw forbidden('Only the site owner can grant Super Admin access.');
     update.role = ctx.body.role;
   }

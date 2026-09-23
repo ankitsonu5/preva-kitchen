@@ -3,6 +3,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 let audioCtx = null;
+const KDS_ACTION_QUEUE_KEY = 'preva-kds-action-queue';
+
+function readActionQueue() {
+  try {
+    const queue = JSON.parse(window.localStorage.getItem(KDS_ACTION_QUEUE_KEY) || '[]');
+    return Array.isArray(queue) ? queue : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeActionQueue(queue) {
+  try { window.localStorage.setItem(KDS_ACTION_QUEUE_KEY, JSON.stringify(queue)); } catch { /* storage unavailable */ }
+}
+
+function shouldQueueAction(error) {
+  return typeof navigator !== 'undefined' && (!navigator.onLine || error?.name === 'TypeError');
+}
 
 export function playKitchenChime() {
   try {
@@ -89,6 +107,7 @@ export function msUntilFire(order) {
 }
 
 export function isHeldForLater(order) {
+  if (order?.kdsFiredAt) return false;
   const remaining = msUntilFire(order);
   return remaining !== null && remaining > 0;
 }
@@ -175,10 +194,18 @@ export function useKdsBoard({ client, soundStorageKey, pollMs = 3500, onNewOrder
   const [printingOrder, setPrintingOrder] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState('connected');
   const [firedIds, setFiredIds] = useState(() => new Set());
+  const [pendingActionCount, setPendingActionCount] = useState(0);
 
   const previousOrderIdsRef = useRef(new Set());
   const isInitialLoadRef = useRef(true);
   const consecutiveFailuresRef = useRef(0);
+
+  const enqueueAction = useCallback((type, args) => {
+    const queue = [...readActionQueue(), { id: `${Date.now()}-${Math.random()}`, type, args }];
+    writeActionQueue(queue);
+    setPendingActionCount(queue.length);
+    setConnectionStatus('offline');
+  }, []);
 
   useEffect(() => {
     if (!printingOrder) return;
@@ -257,6 +284,35 @@ export function useKdsBoard({ client, soundStorageKey, pollMs = 3500, onNewOrder
     }
   }, [active, client, soundEnabled, onNewOrder]);
 
+  const flushActionQueue = useCallback(async () => {
+    const queue = readActionQueue();
+    if (!queue.length || (typeof navigator !== 'undefined' && !navigator.onLine)) return;
+    const remaining = [];
+    for (const action of queue) {
+      try {
+        if (action.type === 'status') await client.updateStatus(...action.args);
+        if (action.type === 'item') await client.toggleItem(...action.args);
+      } catch (error) {
+        remaining.push(action);
+        if (error?.unauthorized || !shouldQueueAction(error)) break;
+      }
+    }
+    writeActionQueue(remaining);
+    setPendingActionCount(remaining.length);
+    if (!remaining.length) fetchOrders({ silent: true });
+  }, [client, fetchOrders]);
+
+  useEffect(() => {
+    if (!active) return undefined;
+    const flush = () => flushActionQueue();
+    window.addEventListener('online', flush);
+    const interval = setInterval(flush, 2000);
+    return () => {
+      window.removeEventListener('online', flush);
+      clearInterval(interval);
+    };
+  }, [active, flushActionQueue]);
+
   const fetchRecalls = useCallback(async () => {
     if (!active) return;
     try {
@@ -299,6 +355,11 @@ export function useKdsBoard({ client, soundStorageKey, pollMs = 3500, onNewOrder
       }
       fetchOrders({ silent: true });
     } catch (err) {
+      if (shouldQueueAction(err)) {
+        enqueueAction('status', [order.id, targetStatus, details]);
+        setOrders((prev) => prev.map((o) => (o.id === order.id ? { ...o, status: targetStatus } : o)));
+        return;
+      }
       if (!err?.unauthorized) setErrorNotice(err.message || 'Could not update status.');
     } finally {
       setProcessingId(null);
@@ -306,7 +367,10 @@ export function useKdsBoard({ client, soundStorageKey, pollMs = 3500, onNewOrder
   }, [client, fetchOrders]);
 
   const restoreOrder = useCallback(async (order) => {
-    await updateStatus(order, 'READY');
+    const target = order.status === 'DELIVERED' || (order.status === 'COMPLETED' && order.fulfilment === 'DELIVERY')
+      ? 'ON_THE_WAY'
+      : 'READY';
+    await updateStatus(order, target);
     setCompletedOrders((prev) => prev.filter((o) => o.id !== order.id));
   }, [updateStatus]);
 
@@ -317,10 +381,14 @@ export function useKdsBoard({ client, soundStorageKey, pollMs = 3500, onNewOrder
     try {
       await client.toggleItem(orderId, idx, checked);
     } catch (err) {
+      if (shouldQueueAction(err)) {
+        enqueueAction('item', [orderId, idx, checked]);
+        return;
+      }
       setCheckedItems((prev) => ({ ...prev, [key]: !checked }));
       if (!err?.unauthorized) setErrorNotice(err.message || 'Could not update kitchen item.');
     }
-  }, [client, checkedItems]);
+  }, [client, checkedItems, enqueueAction]);
 
   const assignTicket = useCallback(async (order) => {
     const station = window.prompt('Assign station:', order.kdsAssignment?.station || 'Expo');
@@ -335,16 +403,39 @@ export function useKdsBoard({ client, soundStorageKey, pollMs = 3500, onNewOrder
     }
   }, [client]);
 
-  const fireOrderNow = useCallback((orderId) => {
-    setFiredIds((prev) => new Set(prev).add(orderId));
-  }, []);
+  const assignDriver = useCallback(async (order) => {
+    const name = window.prompt('Driver name:', order.kdsDriver?.name || '');
+    if (!name?.trim()) return;
+    const phone = window.prompt('Driver phone (optional):', order.kdsDriver?.phone || '');
+    if (phone === null) return;
+    try {
+      const driver = await client.assignDriver(order.id, name.trim(), phone.trim());
+      setOrders((current) => current.map((one) => (one.id === order.id ? { ...one, kdsDriver: driver } : one)));
+    } catch (err) {
+      if (!err?.unauthorized) setErrorNotice(err.message || 'Could not assign driver.');
+    }
+  }, [client]);
 
-  const markDineInPaid = useCallback(async (order, method) => {
+  const fireOrderNow = useCallback(async (orderId) => {
+    try {
+      const result = await client.fire(orderId);
+      setFiredIds((prev) => new Set(prev).add(orderId));
+      setOrders((current) => current.map((order) => (
+        order.id === orderId
+          ? { ...order, kdsFiredAt: result.firedAt, kdsFiredBy: result.firedBy }
+          : order
+      )));
+    } catch (err) {
+      if (!err?.unauthorized) setErrorNotice(err.message || 'Could not fire scheduled order.');
+    }
+  }, [client]);
+
+  const markDineInPaid = useCallback(async (order, method, details = {}) => {
     setProcessingId(order.id);
     setErrorNotice('');
     try {
-      await client.markPaid(order.id, method);
-      setOrders((current) => current.map((one) => (one.id === order.id ? { ...one, paymentStatus: 'PAID' } : one)));
+      const result = await client.markPaid(order.id, method, details);
+      setOrders((current) => current.map((one) => (one.id === order.id ? { ...one, paymentStatus: result.status, paymentPaidCents: result.paidCents, paymentRemainingCents: result.remainingCents } : one)));
     } catch (err) {
       if (!err?.unauthorized) setErrorNotice(err.message || 'Could not mark this order paid.');
     } finally {
@@ -434,6 +525,7 @@ export function useKdsBoard({ client, soundStorageKey, pollMs = 3500, onNewOrder
     printingOrder,
     setPrintingOrder,
     connectionStatus,
+    pendingActionCount,
     scheduledHoldOrders,
     fireOrderNow,
     counts,
@@ -444,6 +536,7 @@ export function useKdsBoard({ client, soundStorageKey, pollMs = 3500, onNewOrder
     restoreOrder,
     toggleItemCheck,
     assignTicket,
+    assignDriver,
     markDineInPaid
   };
 }

@@ -23,12 +23,18 @@ export default function Login() {
       });
       if (!r.ok) {
         const body = await r.json().catch(() => null);
-        setErr(r.status === 401 ? 'Email or password does not match. Check the password with Show and try again.' : (body?.message || 'Login failed'));
+        setErr(r.status === 401 ? 'Email/Kitchen ID or password does not match. Check the password with Show and try again.' : (body?.message || 'Login failed'));
         setLoading(false);
         return;
       }
       const payload = await r.json();
-      window.location.href = payload?.user?.mustChangePassword ? '/admin/profile?first=1' : payload?.user?.role === 'CAREERS_MANAGER' ? '/admin/careers' : '/admin';
+      window.location.href = payload?.user?.mustChangePassword
+        ? '/admin/profile?first=1'
+        : payload?.user?.role === 'CAREERS_MANAGER'
+          ? '/admin/careers'
+          : payload?.user?.role === 'KDS_MANAGER'
+            ? '/admin/kds'
+            : '/admin';
     } catch (err) {
       setErr('Could not connect to the admin service. Make sure the API server is running.');
       setLoading(false);
@@ -39,8 +45,8 @@ export default function Login() {
     <div className="login-page">
       <form className="login" onSubmit={go}>
         <h1>Preva Admin Login</h1>
-        <label>Email</label>
-        <input className="input" name="email" type="email" autoComplete="username" required />
+        <label>Email or Kitchen ID</label>
+        <input className="input" name="email" type="text" autoComplete="username" required />
         <label>Password</label>
         <div className="login-password-field">
           <input className="input" name="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" spellCheck="false" onKeyUp={(event) => setCapsLock(event.getModifierState('CapsLock'))} required />

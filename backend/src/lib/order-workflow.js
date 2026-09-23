@@ -1,7 +1,7 @@
 import { badRequest } from '../router.js';
 import { notifyCustomerOrderStatus } from './email.js';
 import { col } from './db.js';
-import { releaseStock } from './inventory.js';
+import { releaseOrderStock } from './inventory.js';
 import { notifyKdsChange } from './events.js';
 
 export const ORDER_STATUSES = [
@@ -30,7 +30,7 @@ export function allowedOrderTransitions(order = {}) {
       : ['COMPLETED', 'PREPARING'],
     ON_THE_WAY: ['DELIVERED', 'READY'],
     DELIVERED: ['COMPLETED', 'ON_THE_WAY'],
-    COMPLETED: ['READY']
+    COMPLETED: order.fulfilment === 'DELIVERY' ? ['ON_THE_WAY'] : ['READY']
   };
 }
 
@@ -86,7 +86,13 @@ export async function transitionOrderStatus({ orders, order, targetStatus, actor
   // reserves for a still-PENDING/unpaid order), so only give it back here.
   if (status === 'CANCELLED' && order.status !== 'PENDING') {
     try {
-      await releaseStock(await col('menuItems'), order.lines || []);
+      await releaseOrderStock({
+        orders,
+        menuItems: await col('menuItems'),
+        order,
+        reason: 'order-cancelled',
+        now
+      });
     } catch (error) {
       console.error('[inventory] stock release error:', error.message);
     }

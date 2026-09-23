@@ -2,7 +2,7 @@ import slugify from 'slugify';
 import { col, serialize, asObjectId } from '../lib/db.js';
 import { cleanText, cleanEmail } from '../lib/sanitize.js';
 import {
-  SESSION_COOKIE, signSession, sessionCookieOptions, verifyPassword, hashPassword,
+  SESSION_COOKIE, signSession, signKitchenAdminSession, sessionCookieOptions, verifyPassword, hashPassword,
   loginBlocked, noteFailedLogin, clearLoginAttempts
 } from '../lib/auth.js';
 import { get, post, result, badRequest, notFound, unauthorized } from '../router.js';
@@ -247,24 +247,56 @@ get('/health', async () => ({ ok: true, service: 'preva-platform' }));
    ══════════════════════════════════════════════════════════════════════════ */
 
 post('/auth/login', async ({ body, ip }) => {
-  const email = cleanEmail(body?.email);
+  const identifier = cleanText(body?.email || body?.username || body?.id, 254).toLowerCase();
   const password = String(body?.password || '');
-  const key = `${ip}:${email}`;
+  const key = `${ip}:${identifier}`;
 
-  if (!email || !password) throw badRequest('Email and password are required.');
+  if (!identifier || !password) throw badRequest('Email/Kitchen ID and password are required.');
   if (await loginBlocked(key)) throw badRequest('Too many attempts. Try again in a few minutes.');
 
   const users = await col('users');
-  const user = await users.findOne({ email });
+  const user = await users.findOne({ email: cleanEmail(identifier) });
+  const validUser = Boolean(
+    user &&
+    user.status !== 'DISABLED' &&
+    await verifyPassword(password, user.passwordHash)
+  );
+  const kitchenId = String(process.env.KITCHEN_ID || '').trim();
+  const kitchenPassword = String(process.env.KITCHEN_PASSWORD || '').trim();
+  const validKitchen = Boolean(
+    !validUser &&
+    kitchenId &&
+    kitchenPassword &&
+    identifier === kitchenId.toLowerCase() &&
+    password === kitchenPassword
+  );
 
   // The same message for a missing account and a wrong password, so the form
   // cannot be used to find out which addresses exist.
-  if (!user || user.status === 'DISABLED' || !(await verifyPassword(password, user.passwordHash))) {
+  if (!validUser && !validKitchen) {
     await noteFailedLogin(key);
-    throw unauthorized('Email or password is incorrect.');
+    throw unauthorized('Email/Kitchen ID or password is incorrect.');
   }
 
   await clearLoginAttempts(key);
+
+  if (validKitchen) {
+    const token = signKitchenAdminSession(kitchenId);
+    const kitchenUser = {
+      id: `kitchen:${kitchenId.toLowerCase()}`,
+      email: kitchenId,
+      name: 'Kitchen Display',
+      role: 'KDS_MANAGER',
+      mustChangePassword: false,
+      isKitchenAccount: true
+    };
+    await logActivity({ ip }, 'LOGIN', 'KITCHEN', `KDS admin login by ${kitchenId}`);
+    return result(
+      { user: kitchenUser },
+      { cookies: [{ name: SESSION_COOKIE, value: token, options: sessionCookieOptions }] }
+    );
+  }
+
   await users.updateOne({ _id: user._id }, { $set: { lastLoginAt: new Date() } });
 
   const token = signSession(user);
@@ -734,7 +766,7 @@ get('/preview/:token', async ({ params }) => {
  * successful form result, while awaiting it prevents work from being dropped
  * if the process or deployment is recycled immediately after the response.
  */
-async function storeEnquiry(collectionName, refPrefix, document, { action, entity, name, ip, pageUrl }, { notifyAdmin, notifyCustomer } = {}) {
+async function storeEnquiry(collectionName, refPrefix, document, { action, entity, name, ip, pageUrl, skipEmail }, { notifyAdmin, notifyCustomer } = {}) {
   const target = await col(collectionName);
   const now = new Date();
   const { insertedId } = await target.insertOne({ ...document, status: 'NEW', createdAt: now, pageUrl: pageUrl || null });
@@ -743,10 +775,12 @@ async function storeEnquiry(collectionName, refPrefix, document, { action, entit
   const referenceId = buildReferenceId(refPrefix, insertedId);
   const enriched = { ...document, referenceId, submittedAt: now, pageUrl: pageUrl || null };
 
-  await Promise.allSettled([
-    notifyAdmin ? notifyAdmin(enriched) : null,
-    notifyCustomer ? notifyCustomer(enriched) : null
-  ].filter(Boolean));
+  if (!skipEmail) {
+    await Promise.allSettled([
+      notifyAdmin ? notifyAdmin(enriched) : null,
+      notifyCustomer ? notifyCustomer(enriched) : null
+    ].filter(Boolean));
+  }
 
   return { ok: true, referenceId };
 }
@@ -789,9 +823,14 @@ post('/reservations', async ({ body, ip, request }) => {
   if (cached) return cached;
 
   const pageUrl = cleanText(body?.pageUrl, 300) || request?.headers?.referer || '';
+  const skipEmail = Boolean(
+    body?.skipEmail ||
+    request?.headers?.['x-internal-forward'] ||
+    request?.headers?.get?.('x-internal-forward')
+  );
   const response = await storeEnquiry(
     'reservation', 'RES', doc,
-    { action: 'CREATE', entity: 'RESERVATION', name, ip, pageUrl },
+    { action: 'CREATE', entity: 'RESERVATION', name, ip, pageUrl, skipEmail },
     { notifyAdmin: notifyReservation, notifyCustomer: notifyReservationCustomer }
   );
   rememberIdempotentResponse('reservations', ip, idempotencyKey, response);
@@ -839,9 +878,14 @@ post('/contact', async ({ body, ip, request }) => {
   if (cached) return cached;
 
   const pageUrl = cleanText(body?.pageUrl, 300) || request?.headers?.referer || '';
+  const skipEmail = Boolean(
+    body?.skipEmail ||
+    request?.headers?.['x-internal-forward'] ||
+    request?.headers?.get?.('x-internal-forward')
+  );
   const response = await storeEnquiry(
     'contactEnquiry', 'CON', doc,
-    { action: 'CREATE', entity: 'CONTACT', name, ip, pageUrl },
+    { action: 'CREATE', entity: 'CONTACT', name, ip, pageUrl, skipEmail },
     { notifyAdmin: notifyContactEnquiry, notifyCustomer: notifyContactCustomer }
   );
   rememberIdempotentResponse('contact', ip, idempotencyKey, response);
@@ -964,10 +1008,17 @@ post('/career-applications', async ({ body, ip, request }) => {
   };
   // Both attempts finish before the response, but allSettled ensures email
   // failure cannot turn a successfully stored application into an API error.
-  await Promise.allSettled([
-    notifyCareerApplication(emailData),
-    notifyCareerApplicationCustomer(emailData)
-  ]);
+  const skipEmail = Boolean(
+    body?.skipEmail ||
+    request?.headers?.['x-internal-forward'] ||
+    request?.headers?.get?.('x-internal-forward')
+  );
+  if (!skipEmail) {
+    await Promise.allSettled([
+      notifyCareerApplication(emailData),
+      notifyCareerApplicationCustomer(emailData)
+    ]);
+  }
 
   const response = result({ ok: true, referenceId }, { status: 201 });
   rememberIdempotentResponse('career-applications', ip, idempotencyKey, response);

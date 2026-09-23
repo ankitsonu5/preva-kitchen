@@ -24,6 +24,21 @@ export function signSession(user) {
   );
 }
 
+export function signKitchenAdminSession(username) {
+  const kitchenId = String(username || '').trim();
+  return jwt.sign(
+    {
+      sub: `kitchen:${kitchenId.toLowerCase()}`,
+      email: kitchenId,
+      name: 'Kitchen Display',
+      role: 'KDS_MANAGER',
+      kind: 'KITCHEN'
+    },
+    jwtSecret(),
+    { expiresIn: SESSION_MAX_AGE }
+  );
+}
+
 export const sessionCookieOptions = {
   httpOnly: true,
   sameSite: 'lax',
@@ -53,6 +68,23 @@ export async function currentUser(request) {
     return null;
   }
 
+  // The dedicated KDS credentials live in deployment configuration rather
+  // than the users collection. Keep that session narrowly identifiable so it
+  // can be revoked by changing KITCHEN_ID/JWT_SECRET and can never be confused
+  // with a database-backed administrator.
+  if (payload.role === 'KDS_MANAGER' && payload.kind === 'KITCHEN') {
+    const kitchenId = String(process.env.KITCHEN_ID || '').trim();
+    if (!kitchenId || payload.sub !== `kitchen:${kitchenId.toLowerCase()}`) return null;
+    return {
+      id: payload.sub,
+      email: kitchenId,
+      role: 'KDS_MANAGER',
+      name: 'Kitchen Display',
+      mustChangePassword: false,
+      isKitchenAccount: true
+    };
+  }
+
   const users = await col('users');
   const user = await users.findOne({ _id: asObjectId(payload.sub) });
   if (!user || user.status === 'DISABLED') return null;
@@ -60,7 +92,7 @@ export async function currentUser(request) {
   return { id: user._id.toString(), email: user.email, role: user.role, name: user.name || '', mustChangePassword: user.mustChangePassword === true };
 }
 
-export const ROLES = ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'AUTHOR', 'CAREERS_MANAGER'];
+export const ROLES = ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'AUTHOR', 'CAREERS_MANAGER', 'KDS_MANAGER'];
 
 export function hasRole(user, ...allowed) {
   return Boolean(user && allowed.includes(user.role));

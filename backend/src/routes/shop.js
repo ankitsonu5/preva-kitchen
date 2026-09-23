@@ -8,7 +8,7 @@ import { notifyNewOrder, notifyCustomerOrder } from '../lib/email.js';
 import { getKitchenOperatingStatus } from '../lib/operatingHours.js';
 import { clearLoginAttempts, jwtSecret, loginBlocked, noteFailedLogin, verifyPassword } from '../lib/auth.js';
 import { assignOrderTicket, KDS_ACTIVE_STATUSES, setOrderItemChecked, transitionOrderStatus } from '../lib/order-workflow.js';
-import { reserveStock } from '../lib/inventory.js';
+import { reserveOrderStock, reserveStock, releaseOrderStock } from '../lib/inventory.js';
 import { notifyKdsChange } from '../lib/events.js';
 import jwt from 'jsonwebtoken';
 
@@ -146,8 +146,9 @@ get('/shop/display-board', async () => {
 
 function verifyKitchenAuth(ctx) {
   if (ctx?.user) {
+    if (!['SUPER_ADMIN', 'ADMIN', 'KDS_MANAGER'].includes(ctx.user.role)) return false;
     ctx.kitchenActor = ctx.user.email || ctx.user.name || 'admin';
-    return true; // Logged in admin/staff has access
+    return true;
   }
 
   const req = ctx?.request;
@@ -187,12 +188,28 @@ post('/shop/kitchen-login', async ({ body, ip }) => {
     username.toLowerCase() === configuredUser.toLowerCase() &&
     password === configuredPass
   );
+  let cookName = username;
+
+  // Optional per-cook credentials: KITCHEN_COOKS=[{"name":"Alex","id":"alex","pinHash":"$2b$..."}]
+  // PINs are bcrypt hashes and never leave the backend.
+  if (!isValid) {
+    try {
+      const cooks = JSON.parse(process.env.KITCHEN_COOKS || '[]');
+      const cook = Array.isArray(cooks) && cooks.find((entry) => String(entry.id || '').toLowerCase() === username.toLowerCase());
+      if (cook && await verifyPassword(password, cook.pinHash)) {
+        isValid = true;
+        cookName = cleanText(cook.name || username, 80);
+      }
+    } catch {
+      // Invalid optional configuration must not break the primary kitchen login.
+    }
+  }
 
   // Also check if matches an admin in users table
   if (!isValid) {
     const users = await col('users');
     const adminUser = await users.findOne({ email: username.toLowerCase() });
-    if (adminUser && adminUser.status !== 'DISABLED' && ['SUPER_ADMIN', 'ADMIN'].includes(adminUser.role)) {
+    if (adminUser && adminUser.status !== 'DISABLED' && ['SUPER_ADMIN', 'ADMIN', 'KDS_MANAGER'].includes(adminUser.role)) {
       if (await verifyPassword(password, adminUser.passwordHash)) {
         isValid = true;
       }
@@ -207,7 +224,7 @@ post('/shop/kitchen-login', async ({ body, ip }) => {
   await clearLoginAttempts(attemptKey);
 
   const token = jwt.sign(
-    { role: 'kitchen', username: username || 'chef' },
+    { role: 'kitchen', username: cookName || 'chef', cookName: cookName || 'chef' },
     jwtSecret(),
     { expiresIn: process.env.KITCHEN_TOKEN_TTL || '12h' }
   );
@@ -235,6 +252,8 @@ get('/shop/kitchen-tickets', async (ctx) => {
       fulfilment: safe.fulfilment,
       tableNumber: safe.tableNumber || '',
       paymentStatus: safe.payment?.status || '',
+      paymentPaidCents: safe.payment?.paidCents || 0,
+      paymentRemainingCents: safe.payment?.remainingCents ?? safe.totalCents ?? 0,
       customer: {
         name: safe.customer?.name || 'Walk-in Guest',
         phone: safe.customer?.phone || '',
@@ -252,6 +271,11 @@ get('/shop/kitchen-tickets', async (ctx) => {
       actualReadyAt: safe.actualReadyAt || null,
       kdsItemStates: safe.kdsItemStates || [],
       kdsAssignment: safe.kdsAssignment || null,
+      kdsDriver: safe.kdsDriver || null,
+      kdsFiredAt: safe.kdsFiredAt || null,
+      kdsFiredBy: safe.kdsFiredBy || '',
+      inventoryStatus: safe.inventory?.status || '',
+      inventoryAlert: safe.inventory?.alert || '',
       statusChangedAt: safe.statusChangedAt || safe.createdAt,
       createdAt: safe.createdAt,
       updatedAt: safe.updatedAt
@@ -304,6 +328,27 @@ patch('/shop/kitchen-tickets/:id/assignment', async (ctx) => {
   return { ok: true, assignment: updated.kdsAssignment };
 });
 
+patch('/shop/kitchen-tickets/:id/fire', async (ctx) => {
+  if (!verifyKitchenAuth(ctx)) throw unauthorized('Kitchen access required.');
+
+  const orders = await col('order');
+  const id = asObjectId(ctx.params.id);
+  if (!id) throw badRequest('Invalid order ID.');
+  const order = await orders.findOne({ _id: id });
+  if (!order) throw notFound('Order not found.');
+  if (!order.isScheduled || !order.scheduledAt) throw badRequest('Only a scheduled order can be fired early.');
+
+  const now = new Date();
+  const actor = ctx.kitchenActor || 'kitchen-display';
+  await orders.updateOne(
+    { _id: id },
+    { $set: { kdsFiredAt: order.kdsFiredAt || now, kdsFiredBy: order.kdsFiredBy || actor, updatedAt: now } }
+  );
+  await logActivity(ctx, 'UPDATE', 'ORDER_FIRE', `#${order.orderNumber} fired to kitchen by ${actor}`);
+  notifyKdsChange();
+  return { ok: true, firedAt: order.kdsFiredAt || now, firedBy: order.kdsFiredBy || actor };
+});
+
 patch('/shop/kitchen-tickets/:id/status', async (ctx) => {
   if (!verifyKitchenAuth(ctx)) {
     throw unauthorized('Kitchen access required.');
@@ -328,6 +373,26 @@ patch('/shop/kitchen-tickets/:id/status', async (ctx) => {
 
   await logActivity({ ip }, 'UPDATE', 'ORDER', `#${order.orderNumber} -> ${targetStatus} (Kitchen KDS)`);
   return { ok: true, status: targetStatus, orderNumber: order.orderNumber };
+});
+
+patch('/shop/kitchen-tickets/:id/driver', async (ctx) => {
+  if (!verifyKitchenAuth(ctx)) throw unauthorized('Kitchen access required.');
+  const orders = await col('order');
+  const id = asObjectId(ctx.params.id);
+  if (!id) throw badRequest('Invalid order ID.');
+  const order = await orders.findOne({ _id: id });
+  if (!order) throw notFound('Order not found.');
+  if (order.fulfilment !== 'DELIVERY') throw badRequest('Only delivery orders can have a driver.');
+
+  const name = cleanText(ctx.body?.name, 80);
+  const phone = cleanText(ctx.body?.phone, 40);
+  if (!name) throw badRequest('Driver name is required.');
+  const now = new Date();
+  const driver = { name, phone, assignedAt: now, assignedBy: ctx.kitchenActor || 'kitchen-display' };
+  await orders.updateOne({ _id: id }, { $set: { kdsDriver: driver, updatedAt: now } });
+  await logActivity(ctx, 'UPDATE', 'ORDER_DRIVER', `#${order.orderNumber} driver assigned: ${name}`);
+  notifyKdsChange();
+  return { ok: true, driver };
 });
 
 get('/shop/kitchen-recalls', async (ctx) => {
@@ -443,12 +508,17 @@ patch('/shop/kitchen-operations', async (ctx) => {
   }
   for (const [inputKey, settingKey] of [
     ['pickupMinutes', 'shopPickupMinutes'],
-    ['deliveryMinutes', 'shopDeliveryMinutes']
+    ['deliveryMinutes', 'shopDeliveryMinutes'],
+    ['capacityBufferMinutes', 'shopCapacityBufferMinutes'],
+    ['capacityBufferMaxMinutes', 'shopCapacityBufferMaxMinutes']
   ]) {
     if (ctx.body?.[inputKey] !== undefined) {
       const value = Number(ctx.body[inputKey]);
-      if (!Number.isInteger(value) || value < 10 || value > 180) {
-        throw badRequest(`${inputKey} must be a whole number between 10 and 180.`);
+      const valid = inputKey.startsWith('capacity')
+        ? Number.isInteger(value) && value >= 0 && value <= 60
+        : Number.isInteger(value) && value >= 10 && value <= 180;
+      if (!valid) {
+        throw badRequest(`${inputKey} has an invalid value.`);
       }
       updates.push([settingKey, value]);
     }
@@ -548,14 +618,16 @@ post('/shop/dine-in-orders', async (ctx) => {
   if (!verifyKitchenAuth(ctx)) throw unauthorized('Kitchen access required.');
 
   const tableNumber = cleanText(ctx.body?.tableNumber, 40);
-  if (!tableNumber) throw badRequest('Choose a table for this order.');
+  const customerName = cleanText(ctx.body?.customerName, 120);
+  if (!tableNumber && !customerName) throw badRequest('Enter the guest name for this order.');
 
   const settingRows = await col('setting');
-  const tables = await namedList(settingRows, 'dineInTables', ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']);
-  if (!tables.includes(tableNumber)) throw badRequest('That table is not configured. Add it in KDS Settings first.');
+  if (tableNumber) {
+    const tables = await namedList(settingRows, 'dineInTables', ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']);
+    if (!tables.includes(tableNumber)) throw badRequest('That table is not configured. Add it in KDS Settings first.');
+  }
 
   const priced = await priceOrder({ fulfilment: 'DINE_IN', lines: ctx.body?.lines });
-  await reserveStock(await col('menuItems'), priced.lines);
 
   // priceOrder() always prices online orders with zero gratuity — dine-in is
   // the one channel where a guest actually tips, so it's applied here.
@@ -576,9 +648,9 @@ post('/shop/dine-in-orders', async (ctx) => {
   const document = {
     orderNumber,
     fulfilment: 'DINE_IN',
-    tableNumber,
+    ...(tableNumber ? { tableNumber } : {}),
     status: 'RECEIVED',
-    customer: { name: `Table ${tableNumber}`, phone: '', email: '', note },
+    customer: { name: customerName || `Table ${tableNumber}`, phone: '', email: '', note },
     lines: priced.lines,
     subtotalCents: priced.subtotalCents,
     deliveryCents: 0,
@@ -586,8 +658,9 @@ post('/shop/dine-in-orders', async (ctx) => {
     tipCents,
     totalCents: priced.totalCents + tipCents,
     payment: { provider: 'none', status: 'UNPAID', amountCents: priced.totalCents + tipCents, currency: 'usd' },
-    readyAt: readyAt(priced.settings, 'DINE_IN'),
-    estimatedReadyAt: readyAt(priced.settings, 'DINE_IN'),
+    inventory: { status: 'UNRESERVED' },
+    readyAt: readyAt(priced.settings, 'DINE_IN', priced.lines),
+    estimatedReadyAt: readyAt(priced.settings, 'DINE_IN', priced.lines),
     isScheduled: false,
     statusHistory: [{ status: 'RECEIVED', at: now, by: actor }],
     statusChangedAt: now,
@@ -596,7 +669,17 @@ post('/shop/dine-in-orders', async (ctx) => {
   };
 
   const inserted = await orders.insertOne(document);
-  await logActivity(ctx, 'CREATE', 'ORDER', `#${orderNumber} dine-in, table ${tableNumber} (by ${actor})`);
+  const savedOrder = { ...document, _id: inserted.insertedId };
+  try {
+    await reserveOrderStock({ orders, menuItems: await col('menuItems'), order: savedOrder });
+  } catch (error) {
+    await orders.updateOne(
+      { _id: inserted.insertedId },
+      { $set: { status: 'CANCELLED', 'inventory.status': 'RESERVATION_FAILED', updatedAt: new Date() } }
+    );
+    throw error;
+  }
+  await logActivity(ctx, 'CREATE', 'ORDER', `#${orderNumber} dine-in, ${customerName || `table ${tableNumber}`} (by ${actor})`);
   notifyKdsChange();
   return { ok: true, orderId: inserted.insertedId.toString(), orderNumber };
 });
@@ -615,14 +698,51 @@ patch('/shop/dine-in-orders/:id/payment', async (ctx) => {
   const method = cleanText(ctx.body?.method, 20).toLowerCase();
   if (!['cash', 'card'].includes(method)) throw badRequest('Choose a payment method: cash or card.');
 
+  const totalCents = Number(order.totalCents) || 0;
+  const paidCents = Number(order.payment?.paidCents) || 0;
+  const remainingCents = Math.max(0, totalCents - paidCents);
+  const requestedCents = ctx.body?.amountCents === undefined ? remainingCents : Number(ctx.body.amountCents);
+  if (!Number.isInteger(requestedCents) || requestedCents <= 0 || requestedCents > remainingCents) {
+    throw badRequest(`Payment amount must be between 1 and ${remainingCents} cents.`);
+  }
+
+  let cashTenderedCents = null;
+  let changeCents = 0;
+  if (method === 'cash') {
+    cashTenderedCents = ctx.body?.cashTenderedCents === undefined ? requestedCents : Number(ctx.body.cashTenderedCents);
+    if (!Number.isInteger(cashTenderedCents) || cashTenderedCents < requestedCents) {
+      throw badRequest('Cash tendered must cover this payment amount.');
+    }
+    changeCents = cashTenderedCents - requestedCents;
+  }
+
   const now = new Date();
+  const newPaidCents = paidCents + requestedCents;
+  const allocation = {
+    amountCents: requestedCents,
+    method,
+    ...(cashTenderedCents === null ? {} : { cashTenderedCents, changeCents }),
+    paidAt: now,
+    by: ctx.kitchenActor || 'kitchen-display'
+  };
   await orders.updateOne(
     { _id: id },
-    { $set: { 'payment.status': 'PAID', 'payment.provider': 'staff', 'payment.method': method, 'payment.paidAt': now, updatedAt: now } }
+    {
+      $set: {
+        'payment.status': newPaidCents >= totalCents ? 'PAID' : 'PARTIAL',
+        'payment.provider': 'staff',
+        'payment.method': method,
+        'payment.paidCents': newPaidCents,
+        'payment.remainingCents': Math.max(0, totalCents - newPaidCents),
+        ...(newPaidCents >= totalCents ? { 'payment.paidAt': now } : {}),
+        updatedAt: now
+      },
+      $push: { 'payment.allocations': allocation }
+    }
   );
-  await logActivity(ctx, 'PAYMENT', 'ORDER', `#${order.orderNumber} table ${order.tableNumber || ''} marked paid (${method})`);
+  await logActivity(ctx, 'PAYMENT', 'ORDER', `#${order.orderNumber} table ${order.tableNumber || ''} payment ${requestedCents} cents (${method})`);
   notifyKdsChange();
-  return { ok: true };
+  return { ok: true, status: newPaidCents >= totalCents ? 'PAID' : 'PARTIAL', paidCents: newPaidCents, remainingCents: Math.max(0, totalCents - newPaidCents), changeCents };
 });
 
 patch('/shop/kitchen-menu-items/:id', async (ctx) => {
@@ -761,7 +881,7 @@ post('/shop/checkout', async ({ body, ip }) => {
 
   const orderNumber = await nextOrderNumber();
   const now = new Date();
-  const estimatedReadyAt = scheduledAt || readyAt(priced.settings, priced.fulfilment);
+  const estimatedReadyAt = scheduledAt || readyAt(priced.settings, priced.fulfilment, priced.lines);
 
   const document = {
     orderNumber,

@@ -7,7 +7,7 @@ import './env.js';
 import { MongoClient } from 'mongodb';
 import bcrypt from 'bcryptjs';
 
-const allowedRoles = ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'AUTHOR', 'CAREERS_MANAGER'];
+const allowedRoles = ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'AUTHOR', 'CAREERS_MANAGER', 'KDS_MANAGER'];
 const email = String(process.env.ADMIN_EMAIL || '').trim().toLowerCase();
 const password = String(process.env.ADMIN_PASSWORD || '');
 const role = String(process.env.ADMIN_ROLE || 'ADMIN').trim().toUpperCase();

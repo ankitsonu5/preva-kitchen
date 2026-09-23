@@ -28,6 +28,15 @@ import {
 import KdsOperationsPanel from '@/components/kds/KdsOperationsPanel';
 import { formatCountdown, formatElapsed, getStageInfo, getUrgency, msUntilFire } from '@/lib/kds/useKdsBoard';
 
+const CANCELLATION_REASONS = [
+  'Guest requested cancellation',
+  'Payment issue',
+  'Item out of stock',
+  'Duplicate order',
+  'Delivery unavailable',
+  'Other operational reason'
+];
+
 /**
  * Shared ticket board rendered by both the admin KDS and the standalone
  * kitchen terminal. Page-specific concerns (login screen, fullscreen kiosk
@@ -74,6 +83,7 @@ export default function KdsBoard({
     printingOrder,
     setPrintingOrder,
     connectionStatus,
+    pendingActionCount,
     scheduledHoldOrders,
     fireOrderNow,
     counts,
@@ -84,6 +94,7 @@ export default function KdsBoard({
     restoreOrder,
     toggleItemCheck,
     assignTicket,
+    assignDriver,
     markDineInPaid
   } = board;
 
@@ -124,6 +135,23 @@ export default function KdsBoard({
           >
             DISMISS
           </button>
+        </div>
+      )}
+
+      {filteredOrders.some((order) => order.inventoryAlert === 'PAID_BUT_OVERSOLD') && (
+        <div style={{
+          background: '#7f1d1d',
+          color: '#fee2e2',
+          padding: '10px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          borderBottom: '2px solid #ef4444',
+          fontWeight: 900,
+          letterSpacing: '0.3px'
+        }}>
+          <PackageCheck size={18} />
+          <span>PAID BUT OVERSOLD: resolve the highlighted order before service.</span>
         </div>
       )}
 
@@ -219,6 +247,11 @@ export default function KdsBoard({
           <div style={{ width: '1px', height: '22px', background: 'rgba(255,255,255,0.12)', margin: '0 4px' }} />
 
           <ConnectionPill status={connectionStatus} refreshing={refreshing} />
+          {pendingActionCount > 0 && (
+            <span style={{ color: '#fbbf24', fontSize: '11px', fontWeight: 800 }}>
+              {pendingActionCount} action{pendingActionCount === 1 ? '' : 's'} queued
+            </span>
+          )}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
             <Clock size={14} style={{ display: 'inline', color: '#c9a84c', flexShrink: 0 }} />
@@ -715,18 +748,30 @@ export default function KdsBoard({
               <OrderTicketCard
                 key={order.id}
                 order={order}
+                stationFilter={filterStation}
                 isProcessing={processingId === order.id}
                 checkedItems={checkedItems}
                 onToggleItem={toggleItemCheck}
                 onUpdateStatus={updateStatus}
                 onAssign={assignTicket}
+                onAssignDriver={assignDriver}
                 onPrint={() => setPrintingOrder(order)}
                 onMarkPaid={(one) => {
                   const method = window.prompt('Payment method for this table (cash or card):', 'cash');
                   if (!method) return;
                   const clean = method.trim().toLowerCase();
                   if (!['cash', 'card'].includes(clean)) return window.alert('Enter "cash" or "card".');
-                  markDineInPaid(one, clean);
+                  const amount = window.prompt('Payment amount in dollars:', ((one.totalCents - (one.paymentPaidCents || 0)) / 100).toFixed(2));
+                  const amountCents = Math.round(Number(amount) * 100);
+                  if (!Number.isInteger(amountCents) || amountCents <= 0) return;
+                  const details = { amountCents };
+                  if (clean === 'cash') {
+                    const tendered = window.prompt('Cash tendered in dollars:', (amountCents / 100).toFixed(2));
+                    const cashTenderedCents = Math.round(Number(tendered) * 100);
+                    if (!Number.isInteger(cashTenderedCents)) return;
+                    details.cashTenderedCents = cashTenderedCents;
+                  }
+                  markDineInPaid(one, clean, details);
                 }}
               />
             ))}
@@ -882,7 +927,7 @@ function StageStepper({ status, fulfilment }) {
 
 const SLA_COLORS = { ok: '#64748b', warning: '#f59e0b', breach: '#ef4444' };
 
-function OrderTicketCard({ order, isProcessing, checkedItems, onToggleItem, onUpdateStatus, onAssign, onPrint, onMarkPaid }) {
+function OrderTicketCard({ order, stationFilter = 'ALL', isProcessing, checkedItems, onToggleItem, onUpdateStatus, onAssign, onAssignDriver, onPrint, onMarkPaid }) {
   const elapsed = formatElapsed(order.createdAt);
   const urgency = getUrgency(order.createdAt, order.isScheduled, order.scheduledAt);
   const stageInfo = getStageInfo(order);
@@ -894,9 +939,13 @@ function OrderTicketCard({ order, isProcessing, checkedItems, onToggleItem, onUp
   const isOnTheWay = order.status === 'ON_THE_WAY';
   const isDelivery = order.fulfilment === 'DELIVERY';
   const isDineIn = order.fulfilment === 'DINE_IN';
-  const isUnpaid = isDineIn && order.paymentStatus === 'UNPAID';
+  const isOpenPayment = isDineIn && ['UNPAID', 'PARTIAL'].includes(order.paymentStatus);
+  const isOversold = order.inventoryAlert === 'PAID_BUT_OVERSOLD';
+  const displayLines = (order.lines || [])
+    .map((line, lineIndex) => ({ ...line, lineIndex }))
+    .filter((line) => stationFilter === 'ALL' || (line.station || 'Expo') === stationFilter);
 
-  let cardBorder = '1px solid #2c2c38';
+  let cardBorder = isOversold ? '3px solid #ef4444' : '1px solid #2c2c38';
   let timerBg = '#22222e';
   let timerColor = '#ddd';
   if (urgency === 'urgent') {
@@ -916,6 +965,9 @@ function OrderTicketCard({ order, isProcessing, checkedItems, onToggleItem, onUp
     timerBg = 'rgba(16, 185, 129, 0.2)';
     timerColor = '#10b981';
   }
+  if (isOversold) {
+    cardBorder = '3px solid #ef4444';
+  }
 
   const prevStatus = isOnTheWay ? 'READY' : isReady ? 'PREPARING' : 'RECEIVED';
 
@@ -934,15 +986,20 @@ function OrderTicketCard({ order, isProcessing, checkedItems, onToggleItem, onUp
                 {isDelivery ? '🚗 Delivery' : '🏃 Pickup'}
               </span>
             )}
-            {isUnpaid && (
+            {isOpenPayment && (
               <button
                 type="button"
                 onClick={() => onMarkPaid(order)}
-                title="Mark this table's order as paid (cash)"
+                title="Record a full or partial payment"
                 style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', padding: '3px 8px', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.2)', color: '#fca5a5', border: '1px solid #ef4444', cursor: 'pointer' }}
               >
-                Unpaid · Mark Paid
+                {order.paymentStatus === 'PARTIAL' ? 'Partial · Add Payment' : 'Unpaid · Add Payment'}
               </button>
+            )}
+            {isOversold && (
+              <span style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', padding: '3px 8px', borderRadius: '6px', background: '#7f1d1d', color: '#fee2e2', border: '1px solid #ef4444' }}>
+                Paid but oversold
+              </span>
             )}
             {isOnTheWay && (
               <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', padding: '3px 8px', borderRadius: '6px', background: 'rgba(139, 92, 246, 0.25)', color: '#c4b5fd', border: '1px solid #8b5cf6' }}>
@@ -956,6 +1013,12 @@ function OrderTicketCard({ order, isProcessing, checkedItems, onToggleItem, onUp
               <ChefHat size={13} />
               <span>{order.kdsAssignment?.assignee || order.kdsAssignment?.station || 'Assign'}</span>
             </button>
+            {isDelivery && (
+              <button type="button" onClick={() => onAssignDriver(order)} title="Assign delivery driver" style={{ background: 'rgba(16,185,129,.12)', border: '1px solid rgba(16,185,129,.35)', color: '#6ee7b7', height: '30px', padding: '0 9px', borderRadius: '7px', display: 'inline-flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontSize: '11px', fontWeight: 800 }}>
+                <Truck size={13} />
+                <span>{order.kdsDriver?.name || 'Driver'}</span>
+              </button>
+            )}
             <button type="button" onClick={onPrint} title="Print 80mm Kitchen Packing Slip / KOT" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.18)', color: '#f1f5f9', height: '30px', padding: '0 9px', borderRadius: '7px', display: 'inline-flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}>
               <Printer size={13} />
               <span>Print</span>
@@ -1008,12 +1071,12 @@ function OrderTicketCard({ order, isProcessing, checkedItems, onToggleItem, onUp
       )}
 
       <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, minHeight: '140px' }}>
-        {(order.lines || []).map((line, idx) => {
-          const isChecked = Boolean(checkedItems[`${order.id}-${idx}`]);
+        {displayLines.map((line) => {
+          const isChecked = Boolean(checkedItems[`${order.id}-${line.lineIndex}`]);
           return (
             <div
-              key={idx}
-              onClick={() => onToggleItem(order.id, idx)}
+              key={line.lineIndex}
+              onClick={() => onToggleItem(order.id, line.lineIndex)}
               style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer', padding: '8px 10px', borderRadius: '8px', background: isChecked ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)', opacity: isChecked ? 0.45 : 1, transition: 'all 0.15s ease' }}
             >
               <div style={{ width: '24px', height: '24px', borderRadius: '6px', border: `2px solid ${isChecked ? '#10b981' : '#f0d080'}`, background: isChecked ? '#10b981' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px' }}>
@@ -1067,8 +1130,11 @@ function OrderTicketCard({ order, isProcessing, checkedItems, onToggleItem, onUp
             disabled={isProcessing}
             title="Cancel order with a reason"
             onClick={() => {
-              const reason = window.prompt('Why is this order being cancelled?');
-              if (reason?.trim()) onUpdateStatus(order, 'CANCELLED', { reason: reason.trim() });
+              const choice = window.prompt(`Select cancellation reason:\n${CANCELLATION_REASONS.map((reason, index) => `${index + 1}. ${reason}`).join('\n')}`, '1');
+              const index = Number(choice) - 1;
+              if (Number.isInteger(index) && CANCELLATION_REASONS[index]) {
+                onUpdateStatus(order, 'CANCELLED', { reason: CANCELLATION_REASONS[index] });
+              }
             }}
             style={{ width: '44px', height: '46px', borderRadius: '10px', background: '#3a1c22', border: '1px solid #7f1d1d', color: '#fca5a5', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
           >

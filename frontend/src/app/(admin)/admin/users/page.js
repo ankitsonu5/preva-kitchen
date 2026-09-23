@@ -149,6 +149,10 @@ export default function UsersManager() {
           <strong>Careers Manager</strong>
           <span>Only sees the Hiring Dashboard, career jobs, applications and their own profile.</span>
         </div>
+        <div className="role-guide-card">
+          <strong>KDS Manager</strong>
+          <span>Only sees the kitchen display, dine-in order entry, tables, KDS orders and KDS settings.</span>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '30px' }} className="editor-layout">
@@ -195,6 +199,7 @@ export default function UsersManager() {
             <option value="EDITOR">Editor</option>
             <option value="AUTHOR">Author</option>
             <option value="CAREERS_MANAGER">Careers Manager (careers only)</option>
+            <option value="KDS_MANAGER">KDS Manager (kitchen only)</option>
           </select>
 
           <label>Account Status</label>
@@ -312,6 +317,7 @@ export default function UsersManager() {
               <option value="EDITOR">Editor</option>
               <option value="AUTHOR">Author</option>
               <option value="CAREERS_MANAGER">Careers Manager (careers only)</option>
+              <option value="KDS_MANAGER">KDS Manager (kitchen only)</option>
             </select>
 
             <label>Account Status</label>

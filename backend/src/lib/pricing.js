@@ -34,6 +34,8 @@ export async function shopSettings() {
     minOrderCents: num(flat.shopMinOrderCents, 1500),
     pickupMinutes: num(flat.shopPickupMinutes, 25),
     deliveryMinutes: num(flat.shopDeliveryMinutes, 45),
+    capacityBufferMinutes: num(flat.shopCapacityBufferMinutes, 0),
+    capacityBufferMaxMinutes: num(flat.shopCapacityBufferMaxMinutes, 30),
     pickupEnabled: flat.shopPickupEnabled !== false,
     deliveryEnabled: flat.shopDeliveryEnabled !== false,
     orderingEnabled: flat.shopOrderingEnabled !== false,
@@ -166,7 +168,12 @@ export async function priceOrder(input) {
 }
 
 /** When the kitchen should have it ready. */
-export function readyAt(settings, fulfilment) {
+export function readyAt(settings, fulfilment, lines = []) {
   const minutes = fulfilment === 'DELIVERY' ? settings.deliveryMinutes : settings.pickupMinutes;
-  return new Date(Date.now() + minutes * 60 * 1000);
+  const itemCount = (lines || []).reduce((sum, line) => sum + (Number(line.qty) || 0), 0);
+  const capacityBuffer = Math.min(
+    Math.max(0, Number(settings.capacityBufferMinutes) || 0) * Math.max(0, itemCount - 3),
+    Math.max(0, Number(settings.capacityBufferMaxMinutes) || 0)
+  );
+  return new Date(Date.now() + (minutes + capacityBuffer) * 60 * 1000);
 }

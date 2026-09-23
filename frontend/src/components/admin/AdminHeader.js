@@ -19,6 +19,8 @@ const labelMap = {
   'activity-logs': 'Activity Logs',
   settings: 'Settings',
   careers: 'Hiring Dashboard',
+  kds: 'KDS',
+  'take-order': 'Take Order',
   'career-jobs': 'Career Jobs',
   'career-applications': 'Career Applications',
   profile: 'Account Security'
@@ -26,6 +28,8 @@ const labelMap = {
 
 export default function AdminHeader({ user, pathname, onMobileOpen, onLogout }) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://prevakitchen.com';
+  const isKdsManager = user.role === 'KDS_MANAGER';
+  const homeHref = isKdsManager ? '/admin/kds' : '/admin';
   const [profileOpen, setProfileOpen] = useState(false);
   const searchRef = useRef(null);
 
@@ -50,7 +54,7 @@ export default function AdminHeader({ user, pathname, onMobileOpen, onLogout }) 
             <Menu size={16} />
           </button>
 
-          <Link href="/admin" className="wp-admin-brand-link">
+          <Link href={homeHref} className="wp-admin-brand-link">
             <Home size={15} />
             <span>Preva Kitchen</span>
           </Link>
@@ -83,8 +87,8 @@ export default function AdminHeader({ user, pathname, onMobileOpen, onLogout }) 
                     <span>{user.role?.replace('_', ' ')}</span>
                   </div>
                 </div>
-                <Link href="/admin/profile" onClick={() => setProfileOpen(false)}><User size={14} /><span>Change password</span></Link>
-                {user.role !== 'CAREERS_MANAGER' && <Link href="/admin/settings" onClick={() => setProfileOpen(false)}><Settings size={14} /><span>Site settings</span></Link>}
+                {!user.isKitchenAccount && <Link href="/admin/profile" onClick={() => setProfileOpen(false)}><User size={14} /><span>Change password</span></Link>}
+                {!['CAREERS_MANAGER', 'KDS_MANAGER'].includes(user.role) && <Link href="/admin/settings" onClick={() => setProfileOpen(false)}><Settings size={14} /><span>Site settings</span></Link>}
                 <button type="button" onClick={() => { setProfileOpen(false); onLogout(); }}>
                   <LogOut size={14} />
                   <span>Sign out</span>

@@ -15,7 +15,7 @@ import { currentUser, jwtSecret } from './src/lib/auth.js';
 import { handleStripeWebhook } from './src/webhook.js';
 import { stripeConfigured, stripeMode, storefrontUrl, webhookSecret } from './src/lib/stripe.js';
 import { connectDatabase } from './src/lib/db.js';
-import { kdsEvents } from './src/lib/events.js';
+import { kdsEvents, latestKdsEvent } from './src/lib/events.js';
 
 /**
  * The Preva API server.
@@ -227,6 +227,18 @@ app.get('/api/shop/kitchen-events', async (req, res) => {
 
   const onChange = () => res.write('event: change\ndata: {}\n\n');
   kdsEvents.on('change', onChange);
+  let lastEventAt = new Date();
+  const sharedPoll = setInterval(async () => {
+    try {
+      const event = await latestKdsEvent(lastEventAt);
+      if (event?.createdAt) {
+        lastEventAt = event.createdAt;
+        onChange();
+      }
+    } catch {
+      // Polling remains best-effort; the browser's regular refresh is authoritative.
+    }
+  }, 1500);
 
   // Keeps intermediary proxies from timing out an idle connection, and lets
   // the client detect a dead connection instead of hanging forever.
@@ -234,6 +246,7 @@ app.get('/api/shop/kitchen-events', async (req, res) => {
 
   req.on('close', () => {
     clearInterval(heartbeat);
+    clearInterval(sharedPoll);
     kdsEvents.off('change', onChange);
   });
 });

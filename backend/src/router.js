@@ -110,6 +110,9 @@ export async function dispatch({ method = 'GET', path, query = {}, body = null, 
       throw forbidden('This account can only access careers management.');
     }
     const scopedAdminPrefixes = {
+      KDS_MANAGER: [
+        '/admin/orders', '/admin/orders-summary'
+      ],
       EDITOR: [
         '/admin/dashboard', '/admin/profile', '/admin/content', '/admin/media',
         '/admin/categories', '/admin/tags', '/admin/galleries', '/admin/services',

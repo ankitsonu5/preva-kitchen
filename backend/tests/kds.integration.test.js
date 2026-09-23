@@ -11,6 +11,7 @@ process.env.KITCHEN_TOKEN_TTL = '15m';
 
 const { dispatch } = await import('../src/index.js');
 const { col, asObjectId } = await import('../src/lib/db.js');
+const { currentUser, SESSION_COOKIE } = await import('../src/lib/auth.js');
 
 const adminUser = {
   id: '000000000000000000000001',
@@ -100,6 +101,46 @@ test('kitchen routes require a valid terminal token', async () => {
   assert.ok(Array.isArray(authorized.body));
 });
 
+test('editor and author sessions cannot access kitchen APIs', async () => {
+  for (const role of ['EDITOR', 'AUTHOR']) {
+    const response = await dispatch({
+      method: 'GET',
+      path: '/shop/kitchen-tickets',
+      user: { id: `role-${role.toLowerCase()}`, email: `${role.toLowerCase()}@example.com`, role }
+    });
+    assert.equal(response.status, 401, `${role} must not access KDS routes`);
+  }
+});
+
+test('Kitchen ID can open the admin KDS but cannot access other admin areas', async () => {
+  const login = await dispatch({
+    method: 'POST',
+    path: '/auth/login',
+    body: { email: process.env.KITCHEN_ID, password: process.env.KITCHEN_PASSWORD },
+    ip: 'kds-admin-login'
+  });
+  assert.equal(login.status, 200);
+  assert.equal(login.body.user.role, 'KDS_MANAGER');
+  assert.equal(login.body.user.isKitchenAccount, true);
+
+  const session = login.cookies.find((cookie) => cookie.name === SESSION_COOKIE)?.value;
+  assert.ok(session);
+  const user = await currentUser({
+    headers: { get: () => null },
+    cookies: { get: () => ({ value: session }) }
+  });
+  assert.equal(user.role, 'KDS_MANAGER');
+
+  const kdsOrders = await dispatch({ method: 'GET', path: '/admin/orders-summary', user });
+  assert.equal(kdsOrders.status, 200);
+
+  const dashboard = await dispatch({ method: 'GET', path: '/admin/dashboard', user });
+  assert.equal(dashboard.status, 403);
+
+  const users = await dispatch({ method: 'GET', path: '/admin/users', user });
+  assert.equal(users.status, 403);
+});
+
 test('pickup orders follow the validated kitchen workflow and record actual timestamps', async () => {
   const orders = await col('order');
   const token = await kitchenToken();
@@ -146,6 +187,22 @@ test('delivery tickets remain in the admin KDS until they are delivered', async 
   const delivered = await orders.findOne({ _id: order._id });
   assert.ok(delivered.deliveredAt instanceof Date);
   assert.ok(delivered.completedAt instanceof Date);
+});
+
+test('delivery tickets support audited driver assignment', async () => {
+  const token = await kitchenToken();
+  const order = await createOrder({ fulfilment: 'DELIVERY' });
+  const assigned = await dispatch({
+    method: 'PATCH',
+    path: `/shop/kitchen-tickets/${order.id}/driver`,
+    body: { name: 'Alex Driver', phone: '313-555-0188' },
+    request: kitchenRequest(token)
+  });
+  assert.equal(assigned.status, 200);
+  assert.equal(assigned.body.driver.name, 'Alex Driver');
+  const saved = await col('order').then((orders) => orders.findOne({ _id: order._id }));
+  assert.equal(saved.kdsDriver.phone, '313-555-0188');
+  assert.equal(saved.kdsDriver.assignedBy, 'test-chef');
 });
 
 test('completed tickets can be recalled and quantity summaries use line qty', async () => {
@@ -515,6 +572,37 @@ test('dine-in orders skip the ordering-pause and minimum-order gates', async () 
     body: { orderingEnabled: true },
     request: authRequest
   });
+});
+
+test('dine-in payments support partial cash with change and final card settlement', async () => {
+  const token = await kitchenToken();
+  const order = await createOrder({
+    fulfilment: 'DINE_IN',
+    tableNumber: '10',
+    totalCents: 3000,
+    payment: { provider: 'none', status: 'UNPAID', amountCents: 3000, currency: 'usd' }
+  });
+
+  const first = await dispatch({
+    method: 'PATCH',
+    path: `/shop/dine-in-orders/${order.id}/payment`,
+    body: { method: 'cash', amountCents: 1000, cashTenderedCents: 1500 },
+    request: kitchenRequest(token)
+  });
+  assert.equal(first.status, 200);
+  assert.equal(first.body.status, 'PARTIAL');
+  assert.equal(first.body.remainingCents, 2000);
+  assert.equal(first.body.changeCents, 500);
+
+  const final = await dispatch({
+    method: 'PATCH',
+    path: `/shop/dine-in-orders/${order.id}/payment`,
+    body: { method: 'card', amountCents: 2000 },
+    request: kitchenRequest(token)
+  });
+  assert.equal(final.status, 200);
+  assert.equal(final.body.status, 'PAID');
+  assert.equal(final.body.remainingCents, 0);
 });
 
 test('a dine-in order can include a tip, added on top of the subtotal', async () => {

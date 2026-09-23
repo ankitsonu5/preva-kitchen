@@ -2,12 +2,11 @@
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import {
   ChefHat, Check, ClipboardList, Minus, Monitor, Plus, Search, Send, Settings2, Trash2, UtensilsCrossed, X
 } from 'lucide-react';
 import Shell from '@/components/admin/Shell';
-import { EmptyState, InlineLoader, PageHeader } from '@/components/admin/AdminUI';
+import { InlineLoader, PageHeader } from '@/components/admin/AdminUI';
 import { api } from '@/lib/admin-api';
 
 const money = (cents) =>
@@ -18,14 +17,11 @@ function cartKey(itemId, optionIds) {
 }
 
 function TakeOrderScreen() {
-  const searchParams = useSearchParams();
-  const presetTable = searchParams.get('table') || '';
-  const [tables, setTables] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState(null);
-  const [table, setTable] = useState('');
+  const [guestName, setGuestName] = useState('');
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('ALL');
   const [cart, setCart] = useState([]);
@@ -42,9 +38,6 @@ function TakeOrderScreen() {
     const [opsRes, productsRes] = await Promise.all([api('/shop/kitchen-operations'), api('/shop/products')]);
     if (opsRes.ok) {
       const ops = await opsRes.json();
-      setTables(ops.tables || []);
-      const preferred = presetTable && ops.tables?.includes(presetTable) ? presetTable : ops.tables?.[0];
-      setTable((current) => current || preferred || '');
     }
     if (productsRes.ok) setProducts(await productsRes.json());
     if (!opsRes.ok || !productsRes.ok) setError('Could not load the menu. Refresh to try again.');
@@ -140,7 +133,7 @@ function TakeOrderScreen() {
     : Math.round(subtotalCents * tipMode / 100);
 
   const submit = async () => {
-    if (!table) return setError('Choose a table first.');
+    if (!guestName.trim()) return setError('Enter the guest name first.');
     if (!cart.length) return setError('Add at least one item to the order.');
     if (overStockedLines.length) return setError(`${overStockedLines[0].name} only has ${productsById.get(overStockedLines[0].itemId)?.stockRemaining} left — lower the quantity.`);
     setSubmitting(true);
@@ -148,7 +141,7 @@ function TakeOrderScreen() {
     const response = await api('/shop/dine-in-orders', {
       method: 'POST',
       body: JSON.stringify({
-        tableNumber: table,
+        customerName: guestName.trim(),
         lines: cart.map((line) => ({ itemId: line.itemId, qty: line.qty, optionIds: line.optionIds })),
         note: orderNote.trim(),
         tipCents
@@ -158,8 +151,9 @@ function TakeOrderScreen() {
     if (!response.ok) {
       setError(data?.message || 'Could not send this order to the kitchen.');
     } else {
-      setNotice({ orderNumber: data.orderNumber, table });
+      setNotice({ orderNumber: data.orderNumber, guestName: guestName.trim() });
       setCart([]);
+      setGuestName('');
       setOrderNote('');
       setTipMode('none');
       setCustomTip('');
@@ -173,7 +167,7 @@ function TakeOrderScreen() {
         icon={UtensilsCrossed}
         eyebrow="Kitchen Display"
         title="Take Order"
-        description="Enter a dine-in order for a guest at a table — it goes straight to the kitchen, no online checkout needed."
+        description="Enter a dine-in order for a guest — it goes straight to the kitchen, no online checkout needed."
         actions={<>
           <Link href="/admin/kds" className="btn" style={{ background: 'linear-gradient(135deg, #f0d080 0%, #c9a96e 100%)', color: '#000', fontWeight: 800, textDecoration: 'none' }}>
             <Monitor size={16} /> Live Display
@@ -187,7 +181,7 @@ function TakeOrderScreen() {
       {notice && (
         <div className="alert order-alert" role="status">
           <Check size={15} style={{ verticalAlign: 'middle', marginRight: 6 }} />
-          Order #{notice.orderNumber} sent to the kitchen for Table {notice.table}.
+          Order #{notice.orderNumber} sent to the kitchen for {notice.guestName}.
           <Link href="/admin/kds" style={{ marginLeft: 10, fontWeight: 700 }}>View on Live Display</Link>
           <button type="button" onClick={() => setNotice(null)} style={{ float: 'right', background: 'transparent', border: 'none', cursor: 'pointer' }}><X size={14} /></button>
         </div>
@@ -195,13 +189,6 @@ function TakeOrderScreen() {
 
       {loading ? (
         <div className="panel"><InlineLoader label="Loading the menu…" /></div>
-      ) : !tables.length ? (
-        <EmptyState
-          icon={UtensilsCrossed}
-          title="No tables configured yet"
-          description="Add at least one table in KDS Settings before taking dine-in orders."
-          action={<Link href="/admin/kds/settings" className="btn">Go to KDS Settings</Link>}
-        />
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 340px', gap: 20, alignItems: 'start' }}>
           <div className="panel" style={{ padding: 18 }}>
@@ -260,10 +247,8 @@ function TakeOrderScreen() {
           <div className="panel" style={{ padding: 18, position: 'sticky', top: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
               <label className="field">
-                Table
-                <select className="input" value={table} onChange={(event) => setTable(event.target.value)}>
-                  {tables.map((name) => <option key={name} value={name}>Table {name}</option>)}
-                </select>
+                Guest name
+                <input className="input" value={guestName} onChange={(event) => setGuestName(event.target.value)} maxLength={120} placeholder="Name for this order" />
               </label>
             </div>
 

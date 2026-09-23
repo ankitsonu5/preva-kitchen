@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events';
+import { col } from './db.js';
 
 /**
  * A single in-process bus that tells every open KDS screen "something on the
@@ -15,4 +16,16 @@ kdsEvents.setMaxListeners(100); // many kitchen screens/terminals can be open at
 
 export function notifyKdsChange() {
   kdsEvents.emit('change');
+  // Best-effort durable signal for deployments with more than one backend.
+  // The local emitter remains the low-latency path; Mongo polling bridges processes.
+  col('kdsEvents').then(async (events) => {
+    const now = new Date();
+    await events.insertOne({ type: 'change', createdAt: now });
+    await events.deleteMany({ createdAt: { $lt: new Date(now.getTime() - 24 * 60 * 60 * 1000) } });
+  }).catch(() => {});
+}
+
+export async function latestKdsEvent(since) {
+  const events = await col('kdsEvents');
+  return events.findOne({ createdAt: { $gt: since } }, { sort: { createdAt: 1 } });
 }

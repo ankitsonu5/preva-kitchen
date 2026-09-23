@@ -2,7 +2,7 @@ import { col, asObjectId } from './lib/db.js';
 import { stripe, stripeConfigured, webhookSecret } from './lib/stripe.js';
 import { logActivity } from './lib/activity.js';
 import { notifyNewOrder, notifyCustomerOrder } from './lib/email.js';
-import { releaseStock, reserveStock } from './lib/inventory.js';
+import { releaseStock, reserveOrderStock } from './lib/inventory.js';
 import { notifyKdsChange } from './lib/events.js';
 
 /**
@@ -180,9 +180,24 @@ async function markPaid(orders, order, payment) {
   // only be logged for the kitchen to catch and call the customer.
   if (advance) {
     try {
-      await reserveStock(await col('menuItems'), order.lines || []);
+      await reserveOrderStock({
+        orders,
+        menuItems: await col('menuItems'),
+        order
+      });
     } catch (error) {
       console.error(`[stripe] stock reservation failed for order #${order.orderNumber}: ${error.message}`);
+      await orders.updateOne(
+        { _id: order._id },
+        {
+          $set: {
+            'inventory.status': 'OVERSOLD',
+            'inventory.alert': 'PAID_BUT_OVERSOLD',
+            'inventory.lastError': String(error?.message || error).slice(0, 300),
+            updatedAt: new Date()
+          }
+        }
+      );
       await logActivity({}, 'UPDATE', 'ORDER', `#${order.orderNumber} paid but oversold — ${error.message}`);
     }
     notifyKdsChange();
