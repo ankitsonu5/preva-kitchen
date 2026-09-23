@@ -1,13 +1,10 @@
-import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
 import { col } from './db.js';
 
 /* ══════════════════════════════════════════════════════════════════════════
    Email notifications — Preva Kitchen Staff Alerts + Customer Confirmations
    ──────────────────────────────────────────────────────────────────────────
-   Transports:
-   1. Nodemailer via Gmail SMTP (Zero DNS setup) when SMTP_USER + SMTP_PASS are set
-   2. Resend (https://resend.com) when RESEND_API_KEY is set
+   Transport: Official Nodemailer via Gmail SMTP when SMTP_USER + SMTP_PASS are set.
    All provider errors are recorded and returned as a false result so a
    notification outage never rolls back a saved submission.
    ══════════════════════════════════════════════════════════════════════════ */
@@ -17,12 +14,9 @@ const BRAND_NAME   = 'Preva Kitchen';
 const BRAND_ADDRESS = '13090 Inkster Rd, Redford Township, MI 48239';
 const BRAND_PHONE  = '(313) 286-3586';
 
-function getResendKey() {
-  return String(process.env.RESEND_API_KEY || '').trim();
-}
 function getFromAddress() {
   const configured = String(
-    process.env.FROM_EMAIL || process.env.RESEND_FROM_EMAIL || process.env.STAFF_EMAIL_FROM || ''
+    process.env.FROM_EMAIL || process.env.STAFF_EMAIL_FROM || ''
   ).trim();
   if (configured) return configured;
   const smtpUser = String(process.env.SMTP_USER || process.env.GMAIL_USER || '').trim();
@@ -121,7 +115,12 @@ function getTransporter() {
       host,
       port,
       secure,
-      auth: { user, pass }
+      auth: { user, pass },
+      pool: true,
+      maxConnections: 3,
+      maxMessages: 100,
+      rateDelta: 1000,
+      rateLimit: 5
     });
   }
   return _transporter;
@@ -132,27 +131,13 @@ function isSmtpConfigured() {
   return Boolean(user && pass);
 }
 
-/** Lazily created so a missing key does not make module import fail. */
-let _resend = null;
-let _cachedKey = null;
-function getResendClient() {
-  const key = getResendKey();
-  if (!_resend || _cachedKey !== key) {
-    _cachedKey = key;
-    _resend = new Resend(key);
-  }
-  return _resend;
-}
-
 function configured() {
-  return isSmtpConfigured() || Boolean(getResendKey() && getFromAddress());
+  return isSmtpConfigured();
 }
 
 /**
- * Send one email via Nodemailer (Gmail SMTP) or Resend.
+ * Send one email via Nodemailer (Gmail SMTP).
  * Returns true on success, false (+ console.error) on failure.
- * `to` may be a single address or an array. In non-production, when
- * MAIL_CATCH_ALL is set, every recipient is replaced so real inboxes stay clean.
  */
 async function send({ to, subject, html, text, replyTo, attachments, formType, recipientType, referenceId }) {
   const requested = (Array.isArray(to) ? to : [to]).filter(Boolean);
@@ -171,8 +156,8 @@ async function send({ to, subject, html, text, replyTo, attachments, formType, r
   }
 
   if (!configured()) {
-    console.warn('[email] Neither SMTP (Gmail) nor RESEND_API_KEY / FROM_EMAIL configured; skipping email.', { formType, recipientType });
-    await logEmailAttempt({ formType, recipientType, to: recipients, subject, status: 'skipped', error: 'SMTP/RESEND not configured', referenceId });
+    console.warn('[email] SMTP credentials (SMTP_USER / SMTP_PASS) not configured; skipping email.', { formType, recipientType });
+    await logEmailAttempt({ formType, recipientType, to: recipients, subject, status: 'skipped', error: 'SMTP not configured', referenceId });
     return false;
   }
 
@@ -184,25 +169,9 @@ async function send({ to, subject, html, text, replyTo, attachments, formType, r
   }
 
   try {
-    if (isSmtpConfigured()) {
-      const info = await getTransporter().sendMail({
-        from: getFromAddress(),
-        to: finalRecipients.join(', '),
-        subject,
-        html,
-        ...(text ? { text } : {}),
-        ...(replyTo ? { replyTo } : {}),
-        ...(attachments && attachments.length ? { attachments } : {})
-      });
-
-      console.log('[email] sent via Gmail SMTP to:', finalRecipients.join(', '), 'Subject:', subject, 'messageId:', info?.messageId);
-      await logEmailAttempt({ formType, recipientType, to: finalRecipients, subject, status: 'sent', providerMessageId: info?.messageId, referenceId });
-      return true;
-    }
-
-    const { data, error } = await getResendClient().emails.send({
+    const info = await getTransporter().sendMail({
       from: getFromAddress(),
-      to: finalRecipients,
+      to: finalRecipients.join(', '),
       subject,
       html,
       ...(text ? { text } : {}),
@@ -210,15 +179,8 @@ async function send({ to, subject, html, text, replyTo, attachments, formType, r
       ...(attachments && attachments.length ? { attachments } : {})
     });
 
-    if (error) {
-      const message = error.message || JSON.stringify(error);
-      console.error('[email] Resend rejected send:', message, { formType, recipientType });
-      await logEmailAttempt({ formType, recipientType, to: finalRecipients, subject, status: 'failed', error: message, referenceId });
-      return false;
-    }
-
-    console.log('[email] sent via Resend to:', finalRecipients.join(', '), 'Subject:', subject, 'id:', data?.id);
-    await logEmailAttempt({ formType, recipientType, to: finalRecipients, subject, status: 'sent', providerMessageId: data?.id, referenceId });
+    console.log('[email] sent via Gmail SMTP to:', finalRecipients.join(', '), 'Subject:', subject, 'messageId:', info?.messageId);
+    await logEmailAttempt({ formType, recipientType, to: finalRecipients, subject, status: 'sent', providerMessageId: info?.messageId, referenceId });
     return true;
   } catch (err) {
     console.error('[email] send failed:', err.message, { formType, recipientType });
