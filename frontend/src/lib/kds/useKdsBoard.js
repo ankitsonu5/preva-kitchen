@@ -400,13 +400,11 @@ export function useKdsBoard({ client, soundStorageKey, pollMs = 3500, onNewOrder
     }
   }, [client]);
 
-  const assignDriver = useCallback(async (order) => {
-    const name = window.prompt('Driver name:', order.kdsDriver?.name || '');
+  const assignDriver = useCallback(async (order, { name, phone } = {}) => {
+    // Called by KdsBoard's DriverModal with resolved name/phone
     if (!name?.trim()) return;
-    const phone = window.prompt('Driver phone (optional):', order.kdsDriver?.phone || '');
-    if (phone === null) return;
     try {
-      const driver = await client.assignDriver(order.id, name.trim(), phone.trim());
+      const driver = await client.assignDriver(order.id, name.trim(), (phone || '').trim());
       setOrders((current) => current.map((one) => (one.id === order.id ? { ...one, kdsDriver: driver } : one)));
     } catch (err) {
       if (!err?.unauthorized) setErrorNotice(err.message || 'Could not assign driver.');

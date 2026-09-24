@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import {
+  AlertTriangle,
   Bell,
   BellOff,
   Calendar,
@@ -17,6 +18,7 @@ import {
   Maximize2,
   Minimize2,
   PackageCheck,
+  Phone,
   Printer,
   RefreshCw,
   Truck,
@@ -200,6 +202,100 @@ function CancelModal({ order, onConfirm, onClose }) {
   );
 }
 
+/* ─── Driver assignment modal ───────────────────────────────────────────── */
+function DriverModal({ order, onSave, onClose }) {
+  const [name, setName] = useState(order.kdsDriver?.name || '');
+  const [phone, setPhone] = useState(order.kdsDriver?.phone || '');
+
+  const handleSave = () => {
+    if (!name.trim()) return;
+    onSave(order, { name: name.trim(), phone: phone.trim() });
+    onClose();
+  };
+
+  return (
+    <ModalBackdrop onClose={onClose}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Truck size={20} color="#34d399" />
+          <strong style={{ fontSize: '16px', fontWeight: 900, color: '#fff' }}>Assign Driver — #{order.orderNumber}</strong>
+        </div>
+        <button type="button" onClick={onClose} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid #333', color: '#aaa', borderRadius: '8px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <X size={16} />
+        </button>
+      </div>
+
+      <div style={{ display: 'grid', gap: '16px' }}>
+        <div>
+          <label style={modalLabel}>Driver Name <span style={{ color: '#ef4444', fontWeight: 900 }}>*</span></label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Marcus"
+            style={modalInput}
+            autoFocus
+          />
+        </div>
+        <div>
+          <label style={modalLabel}>
+            <Phone size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} />
+            Driver Phone <span style={{ color: '#555', fontWeight: 400, textTransform: 'none' }}>(optional)</span>
+          </label>
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="e.g. (313) 555-0100"
+            style={modalInput}
+          />
+        </div>
+      </div>
+
+      <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '9px', padding: '10px 14px', fontSize: '12px', color: '#6ee7b7', marginTop: '16px' }}>
+        🚗 Delivery to: <strong>{order.customer?.address || 'N/A'}</strong>
+      </div>
+
+      <div style={{ display: 'flex', gap: '10px', marginTop: '22px' }}>
+        <button type="button" onClick={onClose} style={{ ...modalBtn('rgba(255,255,255,0.06)'), border: '1px solid #333' }}>Cancel</button>
+        <button type="button" onClick={handleSave} style={{ ...modalBtn('linear-gradient(135deg,#10b981,#059669)'), opacity: name.trim() ? 1 : 0.4 }}>
+          <Truck size={16} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+          Assign Driver
+        </button>
+      </div>
+    </ModalBackdrop>
+  );
+}
+
+/* ─── Sold-out (86) confirmation modal ─────────────────────────────────── */
+function SoldOutModal({ item, onConfirm, onClose }) {
+  return (
+    <ModalBackdrop onClose={onClose}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <AlertTriangle size={20} color="#fb923c" />
+          <strong style={{ fontSize: '16px', fontWeight: 900, color: '#fff' }}>Mark as 86&apos;d (Sold Out)</strong>
+        </div>
+        <button type="button" onClick={onClose} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid #333', color: '#aaa', borderRadius: '8px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <X size={16} />
+        </button>
+      </div>
+
+      <div style={{ background: 'rgba(251,146,60,0.1)', border: '1px solid rgba(251,146,60,0.3)', borderRadius: '10px', padding: '16px', marginBottom: '20px' }}>
+        <div style={{ fontSize: '14px', color: '#fdba74', fontWeight: 800, marginBottom: '4px' }}>Item: {item.name}</div>
+        <div style={{ fontSize: '12px', color: '#aaa' }}>This will mark the item as sold-out on the menu immediately. Customers will not be able to order it. You can un-86 from the Kitchen Operations panel.</div>
+      </div>
+
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <button type="button" onClick={onClose} style={{ ...modalBtn('rgba(255,255,255,0.06)'), border: '1px solid #333' }}>Cancel</button>
+        <button type="button" onClick={() => { onConfirm(item); onClose(); }} style={{ ...modalBtn('linear-gradient(135deg,#f97316,#c2410c)') }}>
+          <AlertTriangle size={16} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+          Confirm 86 This Item
+        </button>
+      </div>
+    </ModalBackdrop>
+  );
+}
+
 /* ─── Mark Paid modal (dine-in) ─────────────────────────────────────────── */
 function MarkPaidModal({ order, onConfirm, onClose }) {
   const unpaidCents = order.totalCents - (order.paymentPaidCents || 0);
@@ -315,10 +411,26 @@ export default function KdsBoard({
 }) {
   // Modals
   const [assigningOrder, setAssigningOrder] = useState(null);
+  const [driverOrder, setDriverOrder] = useState(null);
   const [cancelingOrder, setCancelingOrder] = useState(null);
   const [payingOrder, setPayingOrder] = useState(null);
+  const [soldOutItem, setSoldOutItem] = useState(null); // { name, menuItemId }
   // Stations list fetched lazily from operations panel data — held here so all tickets share it
   const [availableStations, setAvailableStations] = useState(['Expo', 'Grill', 'Fryer', 'Pantry']);
+
+  const handleSoldOut = useCallback(async (item) => {
+    // Mark item as 86'd via kitchen menu items API
+    try {
+      if (!item?.itemId) return;
+      await fetch(`/api/shop/kitchen-menu-items/${item.itemId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...(authToken ? { 'x-kitchen-token': authToken } : {}) },
+        body: JSON.stringify({ available: false })
+      });
+    } catch {
+      // Non-critical; board continues regardless
+    }
+  }, [authToken]);
 
   const {
     filteredOrders,
@@ -372,6 +484,13 @@ export default function KdsBoard({
           onClose={() => setAssigningOrder(null)}
         />
       )}
+      {driverOrder && (
+        <DriverModal
+          order={driverOrder}
+          onSave={assignDriver}
+          onClose={() => setDriverOrder(null)}
+        />
+      )}
       {cancelingOrder && (
         <CancelModal
           order={cancelingOrder}
@@ -384,6 +503,13 @@ export default function KdsBoard({
           order={payingOrder}
           onConfirm={markDineInPaid}
           onClose={() => setPayingOrder(null)}
+        />
+      )}
+      {soldOutItem && (
+        <SoldOutModal
+          item={soldOutItem}
+          onConfirm={handleSoldOut}
+          onClose={() => setSoldOutItem(null)}
         />
       )}
 
@@ -1077,10 +1203,11 @@ export default function KdsBoard({
                 onToggleItem={toggleItemCheck}
                 onUpdateStatus={updateStatus}
                 onAssign={(o) => setAssigningOrder(o)}
-                onAssignDriver={assignDriver}
+                onAssignDriver={(o) => setDriverOrder(o)}
                 onPrint={() => setPrintingOrder(order)}
                 onCancel={(o) => setCancelingOrder(o)}
                 onMarkPaid={(o) => setPayingOrder(o)}
+                onSoldOut={(item) => setSoldOutItem(item)}
               />
             ))}
           </div>
@@ -1245,7 +1372,7 @@ function StageStepper({ status, fulfilment }) {
 
 const SLA_COLORS = { ok: '#64748b', warning: '#f59e0b', breach: '#ef4444' };
 
-function OrderTicketCard({ order, stationFilter = 'ALL', isProcessing, checkedItems, onToggleItem, onUpdateStatus, onAssign, onAssignDriver, onPrint, onCancel, onMarkPaid }) {
+function OrderTicketCard({ order, stationFilter = 'ALL', isProcessing, checkedItems, onToggleItem, onUpdateStatus, onAssign, onAssignDriver, onPrint, onCancel, onMarkPaid, onSoldOut }) {
   const elapsed = formatElapsed(order.createdAt);
   const urgency = getUrgency(order.createdAt, order.isScheduled, order.scheduledAt);
   const stageInfo = getStageInfo(order);
@@ -1394,14 +1521,17 @@ function OrderTicketCard({ order, stationFilter = 'ALL', isProcessing, checkedIt
           return (
             <div
               key={line.lineIndex}
-              onClick={() => onToggleItem(order.id, line.lineIndex)}
-              style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer', padding: '10px 12px', borderRadius: '8px', background: isChecked ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)', opacity: isChecked ? 0.45 : 1, transition: 'all 0.15s ease', touchAction: 'manipulation' }}
+              style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '10px 12px', borderRadius: '8px', background: isChecked ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)', opacity: isChecked ? 0.45 : 1, transition: 'all 0.15s ease' }}
             >
-              <div style={{ width: '26px', height: '26px', borderRadius: '6px', border: `2px solid ${isChecked ? '#10b981' : '#f0d080'}`, background: isChecked ? '#10b981' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px' }}>
+              {/* Tap checkbox to toggle prep state */}
+              <div
+                onClick={() => onToggleItem(order.id, line.lineIndex)}
+                style={{ width: '26px', height: '26px', borderRadius: '6px', border: `2px solid ${isChecked ? '#10b981' : '#f0d080'}`, background: isChecked ? '#10b981' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px', cursor: 'pointer', touchAction: 'manipulation' }}
+              >
                 {isChecked && <Check size={16} color="#000" strokeWidth={3} />}
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+              <div style={{ flex: 1, cursor: 'pointer', touchAction: 'manipulation' }} onClick={() => onToggleItem(order.id, line.lineIndex)}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                   <span style={{ background: 'linear-gradient(135deg, #f0d080 0%, #c9a84c 100%)', color: '#000', fontWeight: 900, fontSize: '14px', padding: '1px 6px', borderRadius: '4px' }}>
                     {line.qty}x
                   </span>
@@ -1410,11 +1540,13 @@ function OrderTicketCard({ order, stationFilter = 'ALL', isProcessing, checkedIt
                   </span>
                 </div>
 
-                {line.station && (
-                  <span style={{ display: 'inline-block', marginTop: '5px', padding: '2px 7px', borderRadius: '999px', background: '#25253a', color: '#93c5fd', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' }}>
-                    {line.station}
-                  </span>
-                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '5px', flexWrap: 'wrap' }}>
+                  {line.station && (
+                    <span style={{ padding: '2px 7px', borderRadius: '999px', background: '#25253a', color: '#93c5fd', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' }}>
+                      {line.station}
+                    </span>
+                  )}
+                </div>
 
                 {line.options && (
                   <div style={{ fontSize: '13px', color: '#f0d080', marginTop: '4px', paddingLeft: '4px' }}>• {line.options}</div>
@@ -1424,6 +1556,35 @@ function OrderTicketCard({ order, stationFilter = 'ALL', isProcessing, checkedIt
                   <div style={{ fontSize: '12px', color: '#f59e0b', fontStyle: 'italic', marginTop: '2px', paddingLeft: '4px' }}>Note: {line.note}</div>
                 )}
               </div>
+              {/* 86 / Sold-Out quick toggle */}
+              {onSoldOut && line.itemId && (
+                <button
+                  type="button"
+                  title="Mark this item as 86'd / Sold Out"
+                  onClick={(e) => { e.stopPropagation(); onSoldOut({ name: line.name, itemId: line.itemId }); }}
+                  style={{
+                    flexShrink: 0,
+                    height: '26px',
+                    padding: '0 8px',
+                    borderRadius: '6px',
+                    background: 'rgba(251,146,60,0.12)',
+                    border: '1px solid rgba(251,146,60,0.35)',
+                    color: '#fb923c',
+                    fontSize: '10px',
+                    fontWeight: 900,
+                    cursor: 'pointer',
+                    touchAction: 'manipulation',
+                    letterSpacing: '0.3px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '3px',
+                    marginTop: '2px'
+                  }}
+                >
+                  <AlertTriangle size={10} />
+                  86
+                </button>
+              )}
             </div>
           );
         })}
