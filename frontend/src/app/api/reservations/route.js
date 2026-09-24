@@ -84,12 +84,16 @@ export async function POST(request) {
     };
 
     // 3 & 4. Concurrent DB sync & Email dispatch for instant UI response
-    const backendUrl = (process.env.BACKEND_URL || 'http://localhost:4000').replace(/\/$/, '');
-    const dbSyncPromise = backendUrl
-      ? fetch(`${backendUrl}/api/reservations`, {
+    const backendUrl = process.env.BACKEND_URL;
+    const isDev = process.env.NODE_ENV !== 'production';
+    const shouldSyncBackend = Boolean(backendUrl && (isDev || !backendUrl.includes('localhost')));
+
+    const dbSyncPromise = shouldSyncBackend
+      ? fetch(`${backendUrl.replace(/\/$/, '')}/api/reservations`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-internal-forward': 'true' },
-          body: JSON.stringify({ ...body, referenceId, skipEmail: true })
+          body: JSON.stringify({ ...body, referenceId, skipEmail: true }),
+          signal: AbortSignal.timeout(3000)
         }).catch((backendErr) => {
           console.warn('[reservations] Backend DB sync notice:', backendErr.message);
         })

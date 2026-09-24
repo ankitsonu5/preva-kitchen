@@ -12,12 +12,12 @@ const BRAND_GOLD = '#C9A96E';
 
 export function getSmtpConfig() {
   const host = String(process.env.SMTP_HOST || 'smtp.gmail.com').trim();
-  const port = Number(process.env.SMTP_PORT) || 465;
+  const port = Number(process.env.SMTP_PORT) || 587;
   const secure = process.env.SMTP_SECURE !== undefined
     ? String(process.env.SMTP_SECURE).toLowerCase() === 'true'
     : port === 465;
-  const user = String(process.env.SMTP_USER || process.env.GMAIL_USER || '').trim();
-  const pass = String(process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, '').trim();
+  const user = String(process.env.SMTP_USER || process.env.GMAIL_USER || 'reservations@prevakitchen.com').trim();
+  const pass = String(process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || 'wajwwwlhhuyodvja').replace(/\s+/g, '').trim();
 
   return { host, port, secure, user, pass };
 }
@@ -28,11 +28,8 @@ export function isSmtpConfigured() {
 }
 
 export function getFromAddress() {
-  const configured = String(process.env.FROM_EMAIL || '').trim();
-  if (configured) return configured;
   const { user } = getSmtpConfig();
-  if (user) return `Preva Kitchen <${user}>`;
-  return 'Preva Kitchen <info@prevakitchen.com>';
+  return `Preva Kitchen <${user || 'reservations@prevakitchen.com'}>`;
 }
 
 export function getReservationRecipient() {
@@ -65,11 +62,9 @@ export function getTransporter() {
       port,
       secure,
       auth: user && pass ? { user, pass } : undefined,
-      pool: true,
-      maxConnections: 3,
-      maxMessages: 100,
-      rateDelta: 1000,
-      rateLimit: 5
+      connectionTimeout: 6000,
+      greetingTimeout: 5000,
+      socketTimeout: 10000
     });
   }
   return _transporter;
