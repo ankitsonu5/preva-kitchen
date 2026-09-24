@@ -17,6 +17,7 @@ import {
 import {
   isHoneypotTripped, enforceRateLimit, getIdempotentResponse, rememberIdempotentResponse
 } from '../lib/formGuard.js';
+import { rewriteLegacyBlogLinks, blogCanonical } from '../lib/blog-links.js';
 
 /* ══════════════════════════════════════════════════════════════════════════
    Helpers
@@ -47,7 +48,10 @@ export async function loadContentInclude(items) {
     const out = serialize(item);
     // The admin editor and public React pages use `content`; Mongo keeps the
     // canonical HTML in `body` for backwards compatibility.
-    out.content = out.body || '';
+    out.content = rewriteLegacyBlogLinks(out.body || '');
+    if (item.type === 'POST') {
+      out.canonicalUrl = blogCanonical(item.slug);
+    }
     out.categories = (item.categoryIds || []).map((id) => ({ category: categoryMap.get(String(id)) || { id: String(id) } }));
     out.tags = (item.tagIds || []).map((id) => ({ tag: tagMap.get(String(id)) || { id: String(id) } }));
     out.author = item.authorId ? authorMap.get(String(item.authorId)) || null : null;

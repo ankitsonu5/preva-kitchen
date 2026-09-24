@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import {
   Bell,
@@ -37,6 +39,260 @@ const CANCELLATION_REASONS = [
   'Other operational reason'
 ];
 
+/* ─── Shared modal backdrop ─────────────────────────────────────────────── */
+function ModalBackdrop({ onClose, children }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
+  if (!mounted || typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 60000,
+        background: 'rgba(0, 0, 0, 0.85)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+        touchAction: 'manipulation'
+      }}
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div
+        style={{
+          background: '#14141e',
+          border: '1px solid rgba(201, 168, 76, 0.3)',
+          borderRadius: '16px',
+          padding: '24px',
+          width: '100%',
+          maxWidth: '460px',
+          boxShadow: '0 24px 64px rgba(0, 0, 0, 0.8)'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {children}
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+const modalLabel = { display: 'block', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px', color: '#888', marginBottom: '6px' };
+const modalInput = { width: '100%', background: '#0d0d14', border: '1px solid #343445', color: '#fff', borderRadius: '9px', padding: '11px 14px', fontSize: '14px', boxSizing: 'border-box', outline: 'none' };
+const modalBtn = (accent) => ({ flex: 1, height: '48px', borderRadius: '10px', background: accent, border: 'none', color: '#fff', fontSize: '14px', fontWeight: 900, cursor: 'pointer', touchAction: 'manipulation' });
+
+/* ─── Station / Cook assignment modal ──────────────────────────────────── */
+function AssignModal({ order, stations, onSave, onClose }) {
+  const [station, setStation] = useState(order.kdsAssignment?.station || (stations[0] || 'Expo'));
+  const [assignee, setAssignee] = useState(order.kdsAssignment?.assignee || '');
+
+  const handleSave = () => {
+    if (!station.trim()) return;
+    onSave(order, station.trim(), assignee.trim());
+    onClose();
+  };
+
+  return (
+    <ModalBackdrop onClose={onClose}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <ChefHat size={20} color="#f0d080" />
+          <strong style={{ fontSize: '16px', fontWeight: 900, color: '#fff' }}>Assign Ticket #{order.orderNumber}</strong>
+        </div>
+        <button type="button" onClick={onClose} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid #333', color: '#aaa', borderRadius: '8px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <X size={16} />
+        </button>
+      </div>
+
+      <div style={{ display: 'grid', gap: '16px' }}>
+        <div>
+          <label style={modalLabel}>Select Station (Tap)</label>
+          {stations.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
+              {stations.map((s) => {
+                const isSelected = station.toLowerCase() === s.toLowerCase();
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setStation(s)}
+                    style={{
+                      height: '38px',
+                      padding: '0 14px',
+                      borderRadius: '8px',
+                      background: isSelected ? 'rgba(240, 208, 128, 0.25)' : '#1a1a24',
+                      border: `1px solid ${isSelected ? '#f0d080' : 'rgba(255,255,255,0.12)'}`,
+                      color: isSelected ? '#f0d080' : '#ddd',
+                      fontWeight: 800,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      touchAction: 'manipulation'
+                    }}
+                  >
+                    {s}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <input
+            value={station}
+            onChange={(e) => setStation(e.target.value)}
+            placeholder="Or type custom station (e.g. Grill, Fryer, Expo)"
+            style={modalInput}
+          />
+        </div>
+        <div>
+          <label style={modalLabel}>Cook Name <span style={{ color: '#555', fontWeight: 400, textTransform: 'none' }}>(optional)</span></label>
+          <input value={assignee} onChange={(e) => setAssignee(e.target.value)} placeholder="e.g. Marcus" style={modalInput} />
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: '10px', marginTop: '22px' }}>
+        <button type="button" onClick={onClose} style={{ ...modalBtn('rgba(255,255,255,0.06)'), border: '1px solid #333' }}>Cancel</button>
+        <button type="button" onClick={handleSave} style={{ ...modalBtn('linear-gradient(135deg,#f0d080,#c9a84c)'), color: '#000' }}>
+          <ChefHat size={16} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+          Assign
+        </button>
+      </div>
+    </ModalBackdrop>
+  );
+}
+
+/* ─── Cancel reason modal ───────────────────────────────────────────────── */
+function CancelModal({ order, onConfirm, onClose }) {
+  const [reason, setReason] = useState(CANCELLATION_REASONS[0]);
+
+  return (
+    <ModalBackdrop onClose={onClose}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <strong style={{ fontSize: '16px', fontWeight: 900, color: '#fca5a5' }}>Cancel Order #{order.orderNumber}</strong>
+        <button type="button" onClick={onClose} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid #333', color: '#aaa', borderRadius: '8px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <X size={16} />
+        </button>
+      </div>
+
+      <label style={modalLabel}>Reason for cancellation</label>
+      <div style={{ display: 'grid', gap: '8px', margin: '6px 0 22px' }}>
+        {CANCELLATION_REASONS.map((r) => (
+          <button
+            key={r}
+            type="button"
+            onClick={() => setReason(r)}
+            style={{ padding: '11px 16px', borderRadius: '9px', border: `1px solid ${reason === r ? '#ef4444' : '#333'}`, background: reason === r ? 'rgba(239,68,68,0.18)' : '#171720', color: reason === r ? '#fca5a5' : '#aaa', textAlign: 'left', fontSize: '13px', fontWeight: reason === r ? 800 : 500, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            {reason === r && <X size={13} />}
+            {r}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <button type="button" onClick={onClose} style={{ ...modalBtn('rgba(255,255,255,0.06)'), border: '1px solid #333' }}>Back</button>
+        <button type="button" onClick={() => { onConfirm(order, 'CANCELLED', { reason }); onClose(); }} style={{ ...modalBtn('linear-gradient(135deg,#ef4444,#b91c1c)') }}>
+          Confirm Cancel
+        </button>
+      </div>
+    </ModalBackdrop>
+  );
+}
+
+/* ─── Mark Paid modal (dine-in) ─────────────────────────────────────────── */
+function MarkPaidModal({ order, onConfirm, onClose }) {
+  const unpaidCents = order.totalCents - (order.paymentPaidCents || 0);
+  const [method, setMethod] = useState('cash');
+  const [amount, setAmount] = useState((unpaidCents / 100).toFixed(2));
+  const [tendered, setTendered] = useState((unpaidCents / 100).toFixed(2));
+  const [err, setErr] = useState('');
+
+  const handleSave = () => {
+    const amountCents = Math.round(Number(amount) * 100);
+    if (!Number.isInteger(amountCents) || amountCents <= 0) { setErr('Enter a valid amount.'); return; }
+    const details = { amountCents };
+    if (method === 'cash') {
+      const cashCents = Math.round(Number(tendered) * 100);
+      if (!Number.isInteger(cashCents) || cashCents < amountCents) { setErr('Cash tendered must be ≥ payment amount.'); return; }
+      details.cashTenderedCents = cashCents;
+    }
+    onConfirm(order, method, details);
+    onClose();
+  };
+
+  return (
+    <ModalBackdrop onClose={onClose}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <strong style={{ fontSize: '16px', fontWeight: 900, color: '#fff' }}>Record Payment — Table {order.tableNumber || '?'}</strong>
+        <button type="button" onClick={onClose} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid #333', color: '#aaa', borderRadius: '8px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <X size={16} />
+        </button>
+      </div>
+
+      <div style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.25)', borderRadius: '9px', padding: '10px 14px', fontSize: '13px', color: '#f0d080', marginBottom: '18px' }}>
+        Outstanding: <strong>${(unpaidCents / 100).toFixed(2)}</strong>
+      </div>
+
+      <label style={modalLabel}>Payment Method</label>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', margin: '6px 0 16px' }}>
+        {['cash', 'card'].map((m) => (
+          <button key={m} type="button" onClick={() => setMethod(m)}
+            style={{ padding: '12px', borderRadius: '9px', border: `1px solid ${method === m ? '#f0d080' : '#333'}`, background: method === m ? 'rgba(240,208,128,0.15)' : '#171720', color: method === m ? '#f0d080' : '#aaa', fontWeight: 800, fontSize: '14px', textTransform: 'capitalize', cursor: 'pointer' }}
+          >{m === 'cash' ? '💵 Cash' : '💳 Card'}</button>
+        ))}
+      </div>
+
+      <label style={modalLabel}>Amount Received ($)</label>
+      <input type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} style={{ ...modalInput, marginBottom: '14px' }} />
+
+      {method === 'cash' && (
+        <>
+          <label style={modalLabel}>Cash Tendered ($)</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+            {['Exact', '20', '50', '100'].map((preset) => {
+              const val = preset === 'Exact' ? amount : preset;
+              return (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setTendered(val)}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    background: tendered === val ? 'rgba(16,185,129,0.2)' : '#1a1a24',
+                    border: `1px solid ${tendered === val ? '#10b981' : 'rgba(255,255,255,0.1)'}`,
+                    color: tendered === val ? '#34d399' : '#ddd',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    touchAction: 'manipulation'
+                  }}
+                >
+                  {preset === 'Exact' ? 'Exact' : `$${preset}`}
+                </button>
+              );
+            })}
+          </div>
+          <input type="number" min="0" step="0.01" value={tendered} onChange={(e) => setTendered(e.target.value)} style={{ ...modalInput, marginBottom: '14px' }} />
+          {Number(tendered) >= Number(amount) && (
+            <div style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', color: '#34d399', marginBottom: '14px' }}>
+              Change: <strong>${Math.max(0, Math.round((Number(tendered) - Number(amount)) * 100) / 100).toFixed(2)}</strong>
+            </div>
+          )}
+        </>
+      )}
+
+      {err && <p style={{ color: '#fca5a5', fontSize: '12px', margin: '0 0 12px' }}>{err}</p>}
+
+      <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+        <button type="button" onClick={onClose} style={{ ...modalBtn('rgba(255,255,255,0.06)'), border: '1px solid #333' }}>Cancel</button>
+        <button type="button" onClick={handleSave} style={{ ...modalBtn('linear-gradient(135deg,#10b981,#059669)') }}>Record Payment</button>
+      </div>
+    </ModalBackdrop>
+  );
+}
+
 /**
  * Shared ticket board rendered by both the admin KDS and the standalone
  * kitchen terminal. Page-specific concerns (login screen, fullscreen kiosk
@@ -57,6 +313,13 @@ export default function KdsBoard({
   audioNeedsUnlock = false,
   onUnlockAudio
 }) {
+  // Modals
+  const [assigningOrder, setAssigningOrder] = useState(null);
+  const [cancelingOrder, setCancelingOrder] = useState(null);
+  const [payingOrder, setPayingOrder] = useState(null);
+  // Stations list fetched lazily from operations panel data — held here so all tickets share it
+  const [availableStations, setAvailableStations] = useState(['Expo', 'Grill', 'Fryer', 'Pantry']);
+
   const {
     filteredOrders,
     completedOrders,
@@ -99,12 +362,37 @@ export default function KdsBoard({
   } = board;
 
   return (
-    <div style={{
-      background: '#0a0a0c',
-      color: '#f4f0e6',
-      minHeight: '100vh',
-      fontFamily: "'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif",
-      display: 'flex',
+    <>
+      {/* ── MODALS ────────────────────────────────────────────────────────── */}
+      {assigningOrder && (
+        <AssignModal
+          order={assigningOrder}
+          stations={availableStations}
+          onSave={assignTicket}
+          onClose={() => setAssigningOrder(null)}
+        />
+      )}
+      {cancelingOrder && (
+        <CancelModal
+          order={cancelingOrder}
+          onConfirm={updateStatus}
+          onClose={() => setCancelingOrder(null)}
+        />
+      )}
+      {payingOrder && (
+        <MarkPaidModal
+          order={payingOrder}
+          onConfirm={markDineInPaid}
+          onClose={() => setPayingOrder(null)}
+        />
+      )}
+
+      <div style={{
+        background: '#0a0a0c',
+        color: '#f4f0e6',
+        minHeight: '100vh',
+        fontFamily: "'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif",
+        display: 'flex',
       flexDirection: 'column',
       userSelect: 'none'
     }}>
@@ -370,6 +658,41 @@ export default function KdsBoard({
           {headerRight}
         </div>
       </header>
+
+      {/* ── OFFLINE / RECONNECTING BANNER ──────────────────────────────────── */}
+      {connectionStatus !== 'connected' && (
+        <div style={{
+          background: connectionStatus === 'offline'
+            ? 'linear-gradient(90deg,#7f1d1d,#991b1b,#7f1d1d)'
+            : 'linear-gradient(90deg,#78350f,#92400e,#78350f)',
+          color: connectionStatus === 'offline' ? '#fecaca' : '#fef3c7',
+          padding: '10px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+          fontSize: '14px',
+          fontWeight: 800,
+          letterSpacing: '0.4px',
+          animation: 'pulse 1.5s infinite',
+          flexShrink: 0,
+          borderBottom: connectionStatus === 'offline' ? '2px solid #ef4444' : '2px solid #f59e0b'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <WifiOff size={18} />
+            <span>
+              {connectionStatus === 'offline'
+                ? '⚠️ BOARD IS OFFLINE — tickets may be stale. Check network connection.'
+                : '⏳ RECONNECTING TO SERVER — board is retrying...'}
+            </span>
+          </div>
+          {pendingActionCount > 0 && (
+            <span style={{ background: 'rgba(0,0,0,0.35)', padding: '3px 12px', borderRadius: '20px', whiteSpace: 'nowrap', fontSize: '12px' }}>
+              {pendingActionCount} action{pendingActionCount === 1 ? '' : 's'} queued
+            </span>
+          )}
+        </div>
+      )}
 
       {/* ── TIER 2: STATION CONTROLS & FILTER COMMAND BAR ───────────────────── */}
       <div style={{
@@ -753,26 +1076,11 @@ export default function KdsBoard({
                 checkedItems={checkedItems}
                 onToggleItem={toggleItemCheck}
                 onUpdateStatus={updateStatus}
-                onAssign={assignTicket}
+                onAssign={(o) => setAssigningOrder(o)}
                 onAssignDriver={assignDriver}
                 onPrint={() => setPrintingOrder(order)}
-                onMarkPaid={(one) => {
-                  const method = window.prompt('Payment method for this table (cash or card):', 'cash');
-                  if (!method) return;
-                  const clean = method.trim().toLowerCase();
-                  if (!['cash', 'card'].includes(clean)) return window.alert('Enter "cash" or "card".');
-                  const amount = window.prompt('Payment amount in dollars:', ((one.totalCents - (one.paymentPaidCents || 0)) / 100).toFixed(2));
-                  const amountCents = Math.round(Number(amount) * 100);
-                  if (!Number.isInteger(amountCents) || amountCents <= 0) return;
-                  const details = { amountCents };
-                  if (clean === 'cash') {
-                    const tendered = window.prompt('Cash tendered in dollars:', (amountCents / 100).toFixed(2));
-                    const cashTenderedCents = Math.round(Number(tendered) * 100);
-                    if (!Number.isInteger(cashTenderedCents)) return;
-                    details.cashTenderedCents = cashTenderedCents;
-                  }
-                  markDineInPaid(one, clean, details);
-                }}
+                onCancel={(o) => setCancelingOrder(o)}
+                onMarkPaid={(o) => setPayingOrder(o)}
               />
             ))}
           </div>
@@ -837,8 +1145,18 @@ export default function KdsBoard({
           background-size: 800px 100%;
           animation: shimmer 1.6s infinite linear;
         }
+        * {
+          -webkit-tap-highlight-color: transparent;
+        }
+        button, select, input, [role="button"] {
+          touch-action: manipulation;
+        }
+        main, aside {
+          -webkit-overflow-scrolling: touch;
+        }
       `}</style>
     </div>
+    </>
   );
 }
 
@@ -927,7 +1245,7 @@ function StageStepper({ status, fulfilment }) {
 
 const SLA_COLORS = { ok: '#64748b', warning: '#f59e0b', breach: '#ef4444' };
 
-function OrderTicketCard({ order, stationFilter = 'ALL', isProcessing, checkedItems, onToggleItem, onUpdateStatus, onAssign, onAssignDriver, onPrint, onMarkPaid }) {
+function OrderTicketCard({ order, stationFilter = 'ALL', isProcessing, checkedItems, onToggleItem, onUpdateStatus, onAssign, onAssignDriver, onPrint, onCancel, onMarkPaid }) {
   const elapsed = formatElapsed(order.createdAt);
   const urgency = getUrgency(order.createdAt, order.isScheduled, order.scheduledAt);
   const stageInfo = getStageInfo(order);
@@ -1009,22 +1327,22 @@ function OrderTicketCard({ order, stationFilter = 'ALL', isProcessing, checkedIt
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <button type="button" onClick={() => onAssign(order)} title="Assign station or cook" style={{ background: 'rgba(59,130,246,.12)', border: '1px solid rgba(59,130,246,.35)', color: '#93c5fd', height: '30px', padding: '0 9px', borderRadius: '7px', display: 'inline-flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontSize: '11px', fontWeight: 800 }}>
-              <ChefHat size={13} />
+            <button type="button" onClick={() => onAssign(order)} title="Assign station or cook" style={{ background: 'rgba(59,130,246,.12)', border: '1px solid rgba(59,130,246,.35)', color: '#93c5fd', height: '34px', padding: '0 11px', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontSize: '12px', fontWeight: 800, touchAction: 'manipulation' }}>
+              <ChefHat size={14} />
               <span>{order.kdsAssignment?.assignee || order.kdsAssignment?.station || 'Assign'}</span>
             </button>
             {isDelivery && (
-              <button type="button" onClick={() => onAssignDriver(order)} title="Assign delivery driver" style={{ background: 'rgba(16,185,129,.12)', border: '1px solid rgba(16,185,129,.35)', color: '#6ee7b7', height: '30px', padding: '0 9px', borderRadius: '7px', display: 'inline-flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontSize: '11px', fontWeight: 800 }}>
-                <Truck size={13} />
+              <button type="button" onClick={() => onAssignDriver(order)} title="Assign delivery driver" style={{ background: 'rgba(16,185,129,.12)', border: '1px solid rgba(16,185,129,.35)', color: '#6ee7b7', height: '34px', padding: '0 11px', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontSize: '12px', fontWeight: 800, touchAction: 'manipulation' }}>
+                <Truck size={14} />
                 <span>{order.kdsDriver?.name || 'Driver'}</span>
               </button>
             )}
-            <button type="button" onClick={onPrint} title="Print 80mm Kitchen Packing Slip / KOT" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.18)', color: '#f1f5f9', height: '30px', padding: '0 9px', borderRadius: '7px', display: 'inline-flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}>
-              <Printer size={13} />
+            <button type="button" onClick={onPrint} title="Print 80mm Kitchen Packing Slip / KOT" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.18)', color: '#f1f5f9', height: '34px', padding: '0 11px', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontSize: '12px', fontWeight: 700, touchAction: 'manipulation' }}>
+              <Printer size={14} />
               <span>Print</span>
             </button>
-            <div style={{ background: timerBg, color: timerColor, height: '30px', padding: '0 9px', borderRadius: '7px', fontSize: '14px', fontWeight: 900, fontFamily: 'monospace', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-              <Clock size={13} />
+            <div style={{ background: timerBg, color: timerColor, height: '34px', padding: '0 10px', borderRadius: '8px', fontSize: '14px', fontWeight: 900, fontFamily: 'monospace', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+              <Clock size={14} />
               <span>{elapsed}</span>
             </div>
           </div>
@@ -1077,9 +1395,9 @@ function OrderTicketCard({ order, stationFilter = 'ALL', isProcessing, checkedIt
             <div
               key={line.lineIndex}
               onClick={() => onToggleItem(order.id, line.lineIndex)}
-              style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer', padding: '8px 10px', borderRadius: '8px', background: isChecked ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)', opacity: isChecked ? 0.45 : 1, transition: 'all 0.15s ease' }}
+              style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer', padding: '10px 12px', borderRadius: '8px', background: isChecked ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)', opacity: isChecked ? 0.45 : 1, transition: 'all 0.15s ease', touchAction: 'manipulation' }}
             >
-              <div style={{ width: '24px', height: '24px', borderRadius: '6px', border: `2px solid ${isChecked ? '#10b981' : '#f0d080'}`, background: isChecked ? '#10b981' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px' }}>
+              <div style={{ width: '26px', height: '26px', borderRadius: '6px', border: `2px solid ${isChecked ? '#10b981' : '#f0d080'}`, background: isChecked ? '#10b981' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px' }}>
                 {isChecked && <Check size={16} color="#000" strokeWidth={3} />}
               </div>
               <div style={{ flex: 1 }}>
@@ -1118,7 +1436,7 @@ function OrderTicketCard({ order, stationFilter = 'ALL', isProcessing, checkedIt
             onClick={() => onUpdateStatus(order, prevStatus)}
             disabled={isProcessing}
             title="Revert back one step"
-            style={{ width: '44px', height: '46px', borderRadius: '10px', background: '#1a1a24', border: '1px solid #333', color: '#aaa', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            style={{ width: '48px', height: '48px', borderRadius: '10px', background: '#1a1a24', border: '1px solid #333', color: '#aaa', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', touchAction: 'manipulation' }}
           >
             <Undo2 size={18} />
           </button>
@@ -1129,14 +1447,8 @@ function OrderTicketCard({ order, stationFilter = 'ALL', isProcessing, checkedIt
             type="button"
             disabled={isProcessing}
             title="Cancel order with a reason"
-            onClick={() => {
-              const choice = window.prompt(`Select cancellation reason:\n${CANCELLATION_REASONS.map((reason, index) => `${index + 1}. ${reason}`).join('\n')}`, '1');
-              const index = Number(choice) - 1;
-              if (Number.isInteger(index) && CANCELLATION_REASONS[index]) {
-                onUpdateStatus(order, 'CANCELLED', { reason: CANCELLATION_REASONS[index] });
-              }
-            }}
-            style={{ width: '44px', height: '46px', borderRadius: '10px', background: '#3a1c22', border: '1px solid #7f1d1d', color: '#fca5a5', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            onClick={() => onCancel(order)}
+            style={{ width: '48px', height: '48px', borderRadius: '10px', background: '#3a1c22', border: '1px solid #7f1d1d', color: '#fca5a5', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', touchAction: 'manipulation' }}
           >
             <X size={18} />
           </button>

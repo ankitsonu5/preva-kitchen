@@ -11,24 +11,28 @@ try {
   const db = client.db(process.env.MONGODB_DB || undefined);
   const content = db.collection('content');
   const posts = await content.find({ type: 'POST' }).toArray();
-  const operations = posts.map((post) => ({
-    updateOne: {
-      filter: { _id: post._id },
-      update: {
-        $set: {
-          body: rewriteLegacyBlogLinks(post.body || ''),
-          canonicalUrl: blogCanonical(post.slug),
-          updatedAt: new Date()
+  const operations = posts.map((post) => {
+    const cleanedHtml = rewriteLegacyBlogLinks(post.body || post.content || '');
+    return {
+      updateOne: {
+        filter: { _id: post._id },
+        update: {
+          $set: {
+            body: cleanedHtml,
+            content: cleanedHtml,
+            canonicalUrl: blogCanonical(post.slug),
+            updatedAt: new Date()
+          }
         }
       }
-    }
-  }));
+    };
+  });
 
   if (!operations.length) {
     console.log('No blog posts found.');
   } else {
     const result = await content.bulkWrite(operations);
-    console.log(`Updated ${result.modifiedCount} of ${operations.length} blog posts.`);
+    console.log(`Updated ${result.modifiedCount} of ${operations.length} blog posts in MongoDB.`);
   }
 } finally {
   await client.close();

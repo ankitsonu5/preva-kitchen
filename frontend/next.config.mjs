@@ -30,6 +30,16 @@ const nextConfig = {
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }
         ]
+      },
+      {
+        // Nginx reverse-proxy buffering must be disabled for Server-Sent Events.
+        // Without this, nginx buffers the stream until the buffer fills and the
+        // KDS board never receives real-time push events (silently falls back to polling).
+        source: '/api/shop/kitchen-events',
+        headers: [
+          { key: 'X-Accel-Buffering', value: 'no' },
+          { key: 'Cache-Control', value: 'no-cache, no-transform' }
+        ]
       }
     ];
   },

@@ -1,25 +1,27 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import PageBuilder from '@/components/PageBuilder';
 import { cmsFetch } from '@/lib/cms';
-import { rewriteLegacyBlogLinks } from '@/lib/blog-links';
 import { getCanonicalOrigin } from '@/lib/site-url';
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const siteOrigin = getCanonicalOrigin();
-  let page = await cmsFetch(`/pages/${encodeURIComponent(slug)}`);
-  let isPost = false;
+  const page = await cmsFetch(`/pages/${encodeURIComponent(slug)}`);
+
   if (!page) {
-    page = await cmsFetch(`/posts/${encodeURIComponent(slug)}`);
-    isPost = true;
+    // If slug is a blog post, permanently redirect to /blog/:slug
+    const post = await cmsFetch(`/posts/${encodeURIComponent(slug)}`);
+    if (post) {
+      permanentRedirect(`/blog/${encodeURIComponent(slug)}`);
+    }
+    return { title: 'Not Found' };
   }
-  if (!page) return { title: 'Not Found' };
 
   const title = page.seoTitle || page.title || 'Preva Kitchen';
   const description = page.seoDescription || page.excerpt || String(page.content || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160);
   const ogImage = page.ogImage || page.featuredImage || '/asset/home-reference/preva-restaurant-hero.png';
-  const canonical = page.canonicalUrl || `${siteOrigin}/${isPost ? 'blog/' : ''}${page.slug}`;
+  const canonical = page.canonicalUrl || `${siteOrigin}/${encodeURIComponent(page.slug)}`;
 
   return {
     title,
@@ -51,15 +53,15 @@ export async function generateMetadata({ params }) {
 
 export default async function DynamicPage({ params }) {
   const { slug } = await params;
-  let page = await cmsFetch(`/pages/${encodeURIComponent(slug)}`);
-  let contentKind = 'page';
+  const page = await cmsFetch(`/pages/${encodeURIComponent(slug)}`);
 
   if (!page) {
-    page = await cmsFetch(`/posts/${encodeURIComponent(slug)}`);
-    contentKind = 'post';
-  }
-
-  if (!page) {
+    // Blog posts must NEVER render at the root level (creates duplicate URLs).
+    // Permanently 301 redirect to /blog/:slug so Google and users only ever see the real blog URL.
+    const post = await cmsFetch(`/posts/${encodeURIComponent(slug)}`);
+    if (post) {
+      permanentRedirect(`/blog/${encodeURIComponent(slug)}`);
+    }
     notFound();
   }
 
@@ -67,11 +69,11 @@ export default async function DynamicPage({ params }) {
   const siteOrigin = getCanonicalOrigin();
   const schemaData = {
     '@context': 'https://schema.org',
-    '@type': contentKind === 'post' ? 'BlogPosting' : 'WebPage',
+    '@type': 'WebPage',
     name: page.seoTitle || page.title,
     headline: page.seoTitle || page.title,
     description: page.seoDescription || page.excerpt || '',
-    url: `${siteOrigin}/${contentKind === 'post' ? 'blog/' : ''}${page.slug}`,
+    url: `${siteOrigin}/${encodeURIComponent(page.slug)}`,
     image: page.ogImage || page.featuredImage || `${siteOrigin}/asset/home-reference/preva-restaurant-hero.png`,
     publisher: {
       '@type': 'Organization',
@@ -99,12 +101,6 @@ export default async function DynamicPage({ params }) {
             <div className="blog-breadcrumbs">
               <Link href="/">HOME</Link>
               <span className="sep">/</span>
-              {contentKind === 'post' && (
-                <>
-                  <Link href="/blog">BLOG</Link>
-                  <span className="sep">/</span>
-                </>
-              )}
               <span>{(page.title || '').toUpperCase()}</span>
             </div>
             <h1 className="blog-title-large" style={{ color: '#fff', fontSize: '3rem', margin: '20px 0', fontWeight: 'bold' }}>
@@ -121,7 +117,7 @@ export default async function DynamicPage({ params }) {
             <div className="blog-main-content" style={{ maxWidth: '900px', margin: '0 auto' }}>
               <article className="post-content-inner">
                 <div className="luxury-divider" style={{ width: '60px', height: '2px', background: '#c5a059', margin: '20px auto 40px' }}></div>
-                <div className="post-main-content" style={{ color: '#ccc', fontSize: '1.1rem', lineHeight: '1.8' }} dangerouslySetInnerHTML={{ __html: contentKind === 'post' ? rewriteLegacyBlogLinks(page.content) : page.content || '' }} />
+                <div className="post-main-content" style={{ color: '#ccc', fontSize: '1.1rem', lineHeight: '1.8' }} dangerouslySetInnerHTML={{ __html: page.content || '' }} />
               </article>
             </div>
           </div>

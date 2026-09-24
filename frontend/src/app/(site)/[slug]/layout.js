@@ -1,23 +1,37 @@
 import { cmsFetch, contentMetadata } from '@/lib/cms';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const page = await cmsFetch(`/pages/${encodeURIComponent(slug)}`);
-  const post = page ? null : await cmsFetch(`/posts/${encodeURIComponent(slug)}`);
-  const content = page || post;
+  
+  if (!page) {
+    // If this slug belongs to a blog post, permanently 301 redirect to canonical /blog/:slug
+    const post = await cmsFetch(`/posts/${encodeURIComponent(slug)}`);
+    if (post) {
+      permanentRedirect(`/blog/${encodeURIComponent(slug)}`);
+    }
+    notFound();
+  }
 
-  if (!content) notFound();
-
-  return contentMetadata(content, {
+  return contentMetadata(page, {
     alternates: {
-      canonical: page
-        ? `/${encodeURIComponent(slug)}`
-        : `/blog/${encodeURIComponent(slug)}`
+      canonical: `/${encodeURIComponent(slug)}`
     }
   });
 }
 
-export default function DynamicPageLayout({ children }) {
+export default async function DynamicPageLayout({ params, children }) {
+  const { slug } = await params;
+  const page = await cmsFetch(`/pages/${encodeURIComponent(slug)}`);
+
+  if (!page) {
+    const post = await cmsFetch(`/posts/${encodeURIComponent(slug)}`);
+    if (post) {
+      permanentRedirect(`/blog/${encodeURIComponent(slug)}`);
+    }
+    notFound();
+  }
+
   return children;
 }

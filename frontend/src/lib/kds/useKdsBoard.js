@@ -390,13 +390,10 @@ export function useKdsBoard({ client, soundStorageKey, pollMs = 3500, onNewOrder
     }
   }, [client, checkedItems, enqueueAction]);
 
-  const assignTicket = useCallback(async (order) => {
-    const station = window.prompt('Assign station:', order.kdsAssignment?.station || 'Expo');
-    if (station === null || !station.trim()) return;
-    const assignee = window.prompt('Cook name (optional):', order.kdsAssignment?.assignee || '');
-    if (assignee === null) return;
+  const assignTicket = useCallback(async (order, station, assignee) => {
+    if (!station?.trim()) return;
     try {
-      const assignment = await client.assign(order.id, station.trim(), assignee.trim());
+      const assignment = await client.assign(order.id, station.trim(), (assignee || '').trim());
       setOrders((current) => current.map((one) => (one.id === order.id ? { ...one, kdsAssignment: assignment } : one)));
     } catch (err) {
       if (!err?.unauthorized) setErrorNotice(err.message || 'Could not assign ticket.');
