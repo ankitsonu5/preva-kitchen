@@ -11,6 +11,7 @@ import { careerJobsCollection } from '../lib/career-jobs.js';
 import {
   notifyReservation, notifyVipRequest, notifyContactEnquiry, notifyCareerApplication,
   notifyReservationCustomer, notifyContactCustomer, notifyCareerApplicationCustomer,
+  notifyVipRequestCustomer, notifyGuestList, notifyGuestListCustomer,
   buildReferenceId
 } from '../lib/email.js';
 import {
@@ -851,7 +852,11 @@ post('/vip-requests', async ({ body, ip }) => {
     occasion: cleanText(body?.occasion, 80),
     notes: cleanText(body?.notes, 1000)
   };
-  return storeEnquiry('vipRequest', 'VIP', doc, { action: 'CREATE', entity: 'VIP_REQUEST', name, ip }, { notifyAdmin: notifyVipRequest });
+  return storeEnquiry(
+    'vipRequest', 'VIP', doc,
+    { action: 'CREATE', entity: 'VIP_REQUEST', name, ip },
+    { notifyAdmin: notifyVipRequest, notifyCustomer: notifyVipRequestCustomer }
+  );
 });
 
 post('/contact', async ({ body, ip, request }) => {
@@ -908,7 +913,8 @@ post('/guest-list', async ({ body, ip }) => {
       eventDate: cleanText(body?.eventDate, 40),
       notes: cleanText(body?.notes, 1000)
     },
-    { action: 'CREATE', entity: 'GUEST_LIST', name, ip }
+    { action: 'CREATE', entity: 'GUEST_LIST', name, ip },
+    { notifyAdmin: notifyGuestList, notifyCustomer: notifyGuestListCustomer }
   );
 });
 

@@ -91,7 +91,7 @@ export function isStaffEmail(email) {
     'donnaw@prevaclub.com',
     'admin@prevakitchen.com'
   ];
-  return staffAddresses.includes(clean) || clean.endsWith('@prevakitchen.com') || clean.endsWith('@prevaclub.com');
+  return staffAddresses.includes(clean);
 }
 
 function escapeHtml(value) {
@@ -385,6 +385,9 @@ export async function sendReservationEmail(data) {
       footerNote: `Reply directly to this email to contact ${data.name} (${data.email})`
     }),
     text: `New Table Reservation Request\n\nName: ${data.name}\nPhone: ${data.phone}\nEmail: ${data.email}\nGuests: ${data.guests}\nDate: ${data.date}\nTime: ${data.time}\nOccasion: ${data.occasion || 'N/A'}\nNotes: ${data.notes || 'None'}\nReference: ${data.referenceId}\nSubmitted: ${submitted}`
+  }).catch((err) => {
+    console.error('[nodemailer] Admin reservation email delivery failed:', err.message);
+    return { ok: false, error: err.message };
   });
 
   // 2. Customer confirmation: goes ONLY to customer's personal email
@@ -450,6 +453,9 @@ export async function sendContactEmail(data) {
       footerNote: `Reply directly to this email to contact ${data.name} (${data.email})`
     }),
     text: `New Contact Form Enquiry\n\nName: ${data.name}\nEmail: ${data.email}\nPhone: ${data.phone || 'N/A'}\nSubject: ${data.subject || 'General'}\nMessage: ${data.message}\nReference: ${data.referenceId}\nSubmitted: ${submitted}`
+  }).catch((err) => {
+    console.error('[nodemailer] Admin contact email delivery failed:', err.message);
+    return { ok: false, error: err.message };
   });
 
   // 2. Customer confirmation: goes ONLY to sender's personal email (skipped for staff emails)
@@ -536,6 +542,9 @@ export async function sendCareerEmail(data) {
       footerNote: `Reply directly to this email to contact ${candidateName} (${data.email})`
     }),
     text: `New Career Application\n\nCandidate: ${candidateName}\nEmail: ${data.email}\nPhone: ${data.phone}\nPosition: ${position}\nAvailability: ${data.availability || 'N/A'}\nStart Date: ${data.startDate || 'N/A'}\nMessage: ${data.message || 'None'}\nResume: ${data.resume?.name || 'None'}\nReference: ${data.referenceId}\nSubmitted: ${submitted}`
+  }).catch((err) => {
+    console.error('[nodemailer] Admin career email delivery failed:', err.message);
+    return { ok: false, error: err.message };
   });
 
   // 2. Applicant confirmation: goes ONLY to candidate's personal email (skipped for staff emails)

@@ -118,19 +118,25 @@ export async function POST(request) {
       submittedAt
     };
 
-    // 4. Send email via Nodemailer SMTP to CAREER_EMAIL (donnaw@prevaclub.com) with resume attached
-    await sendCareerEmail(applicationData);
-
-    // 5. Synchronize with backend MongoDB storage if available (for Admin career applications)
+    // 4. Synchronize with backend MongoDB storage if available (for Admin career applications)
     const backendUrl = (process.env.BACKEND_URL || 'http://localhost:4000').replace(/\/$/, '');
     if (backendUrl) {
-      fetch(`${backendUrl}/api/career-applications`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-internal-forward': 'true' },
-        body: JSON.stringify({ ...body, referenceId, skipEmail: true })
-      }).catch((backendErr) => {
+      try {
+        await fetch(`${backendUrl}/api/career-applications`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-internal-forward': 'true' },
+          body: JSON.stringify({ ...body, referenceId, skipEmail: true })
+        });
+      } catch (backendErr) {
         console.warn('[career-applications] Backend DB sync notice:', backendErr.message);
-      });
+      }
+    }
+
+    // 5. Send email via Nodemailer SMTP to CAREER_EMAIL with resume attached
+    try {
+      await sendCareerEmail(applicationData);
+    } catch (emailErr) {
+      console.warn('[career-applications] Email dispatch notice:', emailErr.message);
     }
 
     return NextResponse.json({ ok: true, referenceId }, { status: 201 });

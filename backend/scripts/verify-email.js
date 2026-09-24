@@ -13,8 +13,17 @@ import nodemailer from 'nodemailer';
 import {
   notifyReservation,
   notifyReservationCustomer,
+  notifyContactEnquiry,
+  notifyContactCustomer,
   notifyCareerApplication,
-  notifyCareerApplicationCustomer
+  notifyCareerApplicationCustomer,
+  notifyVipRequest,
+  notifyVipRequestCustomer,
+  notifyGuestList,
+  notifyGuestListCustomer,
+  notifyNewOrder,
+  notifyCustomerOrder,
+  notifyCustomerOrderStatus
 } from '../src/lib/email.js';
 
 const GREEN = '\x1b[32m';
@@ -57,6 +66,17 @@ const reservation = {
   pageUrl: 'https://prevakitchen.com/reservations'
 };
 
+const contact = {
+  name: 'Alex Johnson',
+  email: 'alex@example.com',
+  phone: '3135550188',
+  subject: 'Private Party Inquiry',
+  message: 'Looking to host a private birthday party for 25 people next month.',
+  referenceId: 'CON-TEST0001',
+  submittedAt: new Date(),
+  pageUrl: 'https://prevakitchen.com/contact'
+};
+
 const application = {
   firstName: 'Marcus',
   lastName: 'Cole',
@@ -73,12 +93,64 @@ const application = {
   pageUrl: 'https://prevakitchen.com/careers/apply'
 };
 
+const vip = {
+  name: 'Elena Rostova',
+  phone: '3135550299',
+  email: 'elena@example.com',
+  guests: 6,
+  date: '2026-11-15',
+  occasion: 'VIP Celebration',
+  notes: 'Champagne service preferred',
+  referenceId: 'VIP-TEST0001'
+};
+
+const guestList = {
+  name: 'Jordan Lee',
+  phone: '3135550344',
+  email: 'jordan@example.com',
+  guests: 2,
+  eventDate: '2026-10-31',
+  notes: 'Weekend lounge visit',
+  referenceId: 'GST-TEST0001'
+};
+
+const order = {
+  orderNumber: 'PK-9876',
+  totalCents: 4850,
+  subtotalCents: 4200,
+  taxCents: 250,
+  deliveryCents: 400,
+  fulfilment: 'DELIVERY',
+  lines: [
+    { qty: 2, name: 'Preva Wings', options: 'Honey Hot', unitCents: 1650 },
+    { qty: 1, name: 'Preva Mac and Cheese', options: 'Extra Cheese', unitCents: 900 }
+  ],
+  customer: {
+    name: 'Jordan Smith',
+    phone: '3135550388',
+    email: 'jordan@example.com',
+    address: '123 Main St, Detroit, MI 48201',
+    note: 'Ring bell on arrival'
+  }
+};
+
 process.env.EMAIL_DRY_RUN = 'true';
 const checks = [
   ['reservation admin (→ reservations@prevakitchen.com)', () => notifyReservation(reservation)],
   ['reservation customer (→ customer confirmation)', () => notifyReservationCustomer(reservation)],
+  ['contact admin (→ info@prevakitchen.com)', () => notifyContactEnquiry(contact)],
+  ['contact customer (→ customer confirmation)', () => notifyContactCustomer(contact)],
   ['career admin (→ donnaw@prevaclub.com)', () => notifyCareerApplication(application)],
-  ['career applicant (→ applicant confirmation)', () => notifyCareerApplicationCustomer(application)]
+  ['career applicant (→ applicant confirmation)', () => notifyCareerApplicationCustomer(application)],
+  ['vip request admin (→ reservations@prevakitchen.com)', () => notifyVipRequest(vip)],
+  ['vip request customer (→ customer confirmation)', () => notifyVipRequestCustomer(vip)],
+  ['guest list admin (→ reservations@prevakitchen.com)', () => notifyGuestList(guestList)],
+  ['guest list customer (→ customer confirmation)', () => notifyGuestListCustomer(guestList)],
+  ['order staff alert (→ reservations@prevakitchen.com)', () => notifyNewOrder(order)],
+  ['order customer confirmation (→ customer receipt)', () => notifyCustomerOrder(order)],
+  ['order customer status (→ ready for pickup)', () => notifyCustomerOrderStatus({ ...order, fulfilment: 'PICKUP' }, 'READY')],
+  ['order customer status (→ out for delivery)', () => notifyCustomerOrderStatus(order, 'ON_THE_WAY')],
+  ['order customer status (→ delivered)', () => notifyCustomerOrderStatus(order, 'DELIVERED')]
 ];
 
 let templateFailure = false;
@@ -129,4 +201,8 @@ if (sendIndex !== -1) {
   console.log(`\n${YELLOW}No live email was sent. Add -- --send you@example.com for a live delivery test.${RESET}`);
 }
 
-if (templateFailure) process.exitCode = 1;
+if (templateFailure) {
+  process.exit(1);
+} else {
+  process.exit(0);
+}

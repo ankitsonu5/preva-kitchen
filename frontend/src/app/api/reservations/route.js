@@ -83,19 +83,25 @@ export async function POST(request) {
       submittedAt
     };
 
-    // 3. Send email via Nodemailer SMTP to reservations@prevakitchen.com
-    await sendReservationEmail(reservationData);
-
-    // 4. Synchronize with backend MongoDB storage if available (for Admin dashboard)
+    // 3. Synchronize with backend MongoDB storage if available (for Admin dashboard)
     const backendUrl = (process.env.BACKEND_URL || 'http://localhost:4000').replace(/\/$/, '');
     if (backendUrl) {
-      fetch(`${backendUrl}/api/reservations`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-internal-forward': 'true' },
-        body: JSON.stringify({ ...body, referenceId, skipEmail: true })
-      }).catch((backendErr) => {
+      try {
+        await fetch(`${backendUrl}/api/reservations`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-internal-forward': 'true' },
+          body: JSON.stringify({ ...body, referenceId, skipEmail: true })
+        });
+      } catch (backendErr) {
         console.warn('[reservations] Backend DB sync notice:', backendErr.message);
-      });
+      }
+    }
+
+    // 4. Send email via Nodemailer SMTP to reservations@prevakitchen.com
+    try {
+      await sendReservationEmail(reservationData);
+    } catch (emailErr) {
+      console.warn('[reservations] Email dispatch notice:', emailErr.message);
     }
 
     return NextResponse.json({ ok: true, referenceId }, { status: 200 });

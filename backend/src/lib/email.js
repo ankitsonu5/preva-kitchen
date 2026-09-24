@@ -362,6 +362,8 @@ export async function notifyNewOrder(order) {
     : `⚡ ASAP (~${order.fulfilment === 'DELIVERY' ? '45' : '25'} min)`;
 
   return send({
+    to: getAdminRecipients(),
+    replyTo: order.customer?.email || undefined,
     subject: `🍽️ New Order #${order.orderNumber} — ${total} · Preva Kitchen`,
     html: wrap({
       icon: '🍽️',
@@ -380,6 +382,9 @@ export async function notifyNewOrder(order) {
       adminLink: `${adminUrl}/orders`,
       adminLabel: 'Open Orders Dashboard',
     }),
+    formType: 'ORDER',
+    recipientType: 'admin',
+    referenceId: order.orderNumber
   });
 }
 
@@ -489,8 +494,12 @@ export async function notifyCustomerOrder(order) {
 
   return send({
     to: order.customer.email,
+    replyTo: getContactRecipients()[0] || 'info@prevakitchen.com',
     subject: `✅ Order Confirmed #${order.orderNumber} — Preva Kitchen`,
     html,
+    formType: 'ORDER',
+    recipientType: 'customer',
+    referenceId: order.orderNumber
   });
 }
 
@@ -573,8 +582,12 @@ export async function notifyCustomerOrderStatus(order, newStatus) {
 
   return send({
     to: order.customer.email,
+    replyTo: getContactRecipients()[0] || 'info@prevakitchen.com',
     subject,
     html,
+    formType: 'ORDER_STATUS',
+    recipientType: 'customer',
+    referenceId: order.orderNumber
   });
 }
 
@@ -631,6 +644,8 @@ export async function notifyReservation(data) {
 export async function notifyVipRequest(data) {
   const adminUrl = String(process.env.ADMIN_URL || 'https://prevakitchen.com/admin').trim();
   return send({
+    to: getReservationRecipients(),
+    replyTo: data.email || undefined,
     subject: `⭐ VIP Request — ${data.name} · ${data.date || 'Date TBD'} · Preva Kitchen`,
     html: wrap({
       icon: '⭐',
@@ -643,10 +658,112 @@ export async function notifyVipRequest(data) {
         row('Guests', data.guests) +
         row('Date', data.date) +
         row('Occasion', data.occasion) +
-        row('Notes', data.notes),
+        row('Notes', data.notes) +
+        row('Reference', data.referenceId),
       adminLink: `${adminUrl}/vip-requests`,
       adminLabel: 'Open VIP Requests',
     }),
+    formType: 'VIP_REQUEST',
+    recipientType: 'admin',
+    referenceId: data.referenceId
+  });
+}
+
+/**
+ * Customer confirmation for a VIP table / bottle-service request.
+ */
+export async function notifyVipRequestCustomer(data) {
+  if (!data.email) return false;
+  const replyTo = getReservationRecipients()[0];
+  return send({
+    to: data.email,
+    replyTo,
+    subject: 'VIP Request Received - PREVA Kitchen',
+    html: customerConfirmationHtml({
+      eyebrow: 'VIP Concierge',
+      heading: 'Your VIP request is with our host.',
+      name: data.name,
+      referenceId: data.referenceId,
+      introLine: `Thank you for your VIP reservation request at ${BRAND_NAME}. We've received your details. Our VIP host will contact you directly to confirm availability and table arrangements.`,
+      summaryRows:
+        row('Guests', data.guests) +
+        row('Date', data.date) +
+        row('Occasion', data.occasion) +
+        row('Notes', data.notes),
+      nextSteps: `Our VIP host will review table availability and contact you directly. For urgent VIP inquiries, call us directly at ${BRAND_PHONE}.`,
+      ctaLabel: 'Visit PREVA Kitchen',
+      ctaHref: `${getSiteUrl()}/reservations`
+    }),
+    text: `Hello ${data.name || 'there'},\n\nThank you for your VIP request at PREVA Kitchen. We have received your details, and our VIP team will contact you directly.\n\n${textDetails([
+      ['Reference', data.referenceId],
+      ['Date', data.date],
+      ['Guests', data.guests],
+      ['Occasion', data.occasion],
+      ['Notes', data.notes]
+    ])}\n\nQuestions? Call ${BRAND_PHONE}.\n${getSiteUrl()}/reservations`,
+    formType: 'VIP_REQUEST',
+    recipientType: 'customer',
+    referenceId: data.referenceId
+  });
+}
+
+/**
+ * Staff alert for new Guest List submission.
+ */
+export async function notifyGuestList(data) {
+  const adminUrl = String(process.env.ADMIN_URL || 'https://prevakitchen.com/admin').trim();
+  return send({
+    to: getReservationRecipients(),
+    replyTo: data.email || undefined,
+    subject: `📋 Guest List Request — ${data.name} · Preva Kitchen`,
+    html: wrap({
+      icon: '📋',
+      title: 'New Guest List Request',
+      subtitle: `${data.guests || 1} guests · ${data.eventDate || 'Date TBD'}`,
+      tableRows:
+        row('Name', data.name) +
+        row('Phone', data.phone) +
+        row('Email', data.email) +
+        row('Guests', data.guests) +
+        row('Event Date', data.eventDate) +
+        row('Notes', data.notes) +
+        row('Reference', data.referenceId),
+      adminLink: `${adminUrl}/inbox?kind=guest-list`,
+      adminLabel: 'Open Guest List',
+    }),
+    formType: 'GUEST_LIST',
+    recipientType: 'admin',
+    referenceId: data.referenceId
+  });
+}
+
+/**
+ * Customer confirmation for Guest List submission.
+ */
+export async function notifyGuestListCustomer(data) {
+  if (!data.email) return false;
+  const replyTo = getReservationRecipients()[0];
+  return send({
+    to: data.email,
+    replyTo,
+    subject: 'Guest List Request Received - PREVA Kitchen',
+    html: customerConfirmationHtml({
+      eyebrow: 'Guest List Concierge',
+      heading: 'Your guest list request is received.',
+      name: data.name,
+      referenceId: data.referenceId,
+      introLine: `Thank you for requesting to join the guest list at ${BRAND_NAME}. We've received your request for <b>${escapeHtml(data.guests || 1)} guest(s)</b> on <b>${escapeHtml(data.eventDate || 'the selected date')}</b>.`,
+      summaryRows:
+        row('Guests', data.guests) +
+        row('Event Date', data.eventDate) +
+        row('Notes', data.notes),
+      nextSteps: `Our door host will review capacity and you will receive check-in instructions. Questions? Call ${BRAND_PHONE}.`,
+      ctaLabel: 'Visit PREVA Kitchen',
+      ctaHref: getSiteUrl()
+    }),
+    formType: 'GUEST_LIST',
+    recipientType: 'customer',
+    referenceId: data.referenceId
   });
 }
 
@@ -902,13 +1019,15 @@ export async function notifyContactCustomer(data) {
   if (!data.email) return false;
   return send({
     to: data.email,
+    replyTo: getContactRecipients()[0] || 'info@prevakitchen.com',
     subject: `✅ We've Got Your Message — ${data.referenceId} · Preva Kitchen`,
     html: customerConfirmationHtml({
       icon: '✉️',
+      eyebrow: 'Contact Concierge',
       heading: 'Message Received!',
       name: data.name,
       referenceId: data.referenceId,
-      introLine: `thanks for reaching out to ${BRAND_NAME}. We've received your message and someone from our team will get back to you soon.`,
+      introLine: `Thank you for reaching out to ${BRAND_NAME}. We've received your message and someone from our team will get back to you soon.`,
       summaryRows:
         row('Subject', data.subject || 'General enquiry') +
         row('Message', data.message, false),
