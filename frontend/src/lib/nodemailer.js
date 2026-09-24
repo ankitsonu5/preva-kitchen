@@ -162,8 +162,21 @@ function wrapEmail({ title, subtitle, referenceId, badgeText = 'Website Notifica
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="left" valign="middle">
-                    <span style="color:#F5D899;font-size:16px;font-weight:800;letter-spacing:5px;text-transform:uppercase;">PREVA</span>
-                    <span style="color:#8A7B66;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;margin-left:8px;">KITCHEN &bull; REDFORD</span>
+                    <table role="presentation" cellpadding="0" cellspacing="0" style="display:inline-table;vertical-align:middle;">
+                      <tr>
+                        <td valign="middle" style="padding-right:12px;">
+                          <table role="presentation" cellpadding="0" cellspacing="0" style="width:38px;height:38px;background:linear-gradient(145deg,#241C10 0%,#0D0B08 100%);border:2px solid #C9A96E;border-radius:10px;text-align:center;">
+                            <tr>
+                              <td align="center" valign="middle" style="color:#F5D899;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:900;line-height:38px;text-align:center;">P</td>
+                            </tr>
+                          </table>
+                        </td>
+                        <td valign="middle">
+                          <span style="color:#F5D899;font-size:16px;font-weight:800;letter-spacing:5px;text-transform:uppercase;display:block;">PREVA</span>
+                          <span style="color:#8A7B66;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;display:block;margin-top:2px;">KITCHEN &bull; REDFORD</span>
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                   <td align="right" valign="middle">
                     <span style="display:inline-block;padding:5px 12px;background:rgba(212,175,55,0.12);border:1px solid rgba(212,175,55,0.32);border-radius:999px;color:#F3D58C;font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;">
@@ -247,8 +260,21 @@ function wrapCustomerConfirmation({ heading, name, referenceId, introText, summa
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="left" valign="middle">
-                    <span style="color:#F5D899;font-size:16px;font-weight:800;letter-spacing:5px;text-transform:uppercase;">PREVA</span>
-                    <span style="color:#8A7B66;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;margin-left:8px;">KITCHEN &bull; REDFORD</span>
+                    <table role="presentation" cellpadding="0" cellspacing="0" style="display:inline-table;vertical-align:middle;">
+                      <tr>
+                        <td valign="middle" style="padding-right:12px;">
+                          <table role="presentation" cellpadding="0" cellspacing="0" style="width:38px;height:38px;background:linear-gradient(145deg,#241C10 0%,#0D0B08 100%);border:2px solid #C9A96E;border-radius:10px;text-align:center;">
+                            <tr>
+                              <td align="center" valign="middle" style="color:#F5D899;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:900;line-height:38px;text-align:center;">P</td>
+                            </tr>
+                          </table>
+                        </td>
+                        <td valign="middle">
+                          <span style="color:#F5D899;font-size:16px;font-weight:800;letter-spacing:5px;text-transform:uppercase;display:block;">PREVA</span>
+                          <span style="color:#8A7B66;font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;display:block;margin-top:2px;">KITCHEN &bull; REDFORD</span>
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                   <td align="right" valign="middle">
                     <span style="display:inline-block;padding:5px 12px;background:rgba(212,175,55,0.12);border:1px solid rgba(212,175,55,0.32);border-radius:999px;color:#F3D58C;font-size:9.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;">
@@ -334,6 +360,11 @@ export async function sendMail({ to, subject, html, text, replyTo, attachments =
       to,
       subject,
       html,
+      headers: {
+        'X-Priority': '1 (Highest)',
+        'X-MSMail-Priority': 'High',
+        'Importance': 'High'
+      },
       ...(text ? { text } : {}),
       ...(replyTo ? { replyTo } : {}),
       ...(attachments.length ? { attachments } : {})
@@ -370,8 +401,7 @@ export async function sendReservationEmail(data) {
     row('Special Notes', data.notes) +
     row('Submitted At', submitted, false, true);
 
-  // 1. Admin staff notification: goes ONLY to reservations@prevakitchen.com
-  // replyTo is set to customer's email so admin can hit "Reply" to contact customer directly
+  // 1. Admin staff notification: goes to reservations@prevakitchen.com
   const adminTask = sendMail({
     to: recipient,
     replyTo: data.email || undefined,
@@ -390,10 +420,9 @@ export async function sendReservationEmail(data) {
     return { ok: false, error: err.message };
   });
 
-  // 2. Customer confirmation: goes ONLY to customer's personal email
-  // Skipped if the customer email is an internal admin/staff address so admin NEVER gets customer copy
+  // 2. Customer confirmation: goes directly to customer's personal email
   let customerTask = null;
-  if (data.email && !isStaffEmail(data.email)) {
+  if (data.email) {
     customerTask = sendMail({
       to: data.email,
       replyTo: recipient,
@@ -409,7 +438,8 @@ export async function sendReservationEmail(data) {
           row('Occasion', data.occasion) +
           row('Notes', data.notes, false, true),
         nextSteps: `Our front-of-house host will review seating availability and contact you if anything else is needed. For urgent inquiries, call ${BRAND_PHONE}.`
-      })
+      }),
+      text: `Hello ${data.name},\n\nThank you for choosing Preva Kitchen! We have received your reservation request for ${data.guests} guests on ${data.date} at ${data.time}.\n\nReference: #${data.referenceId}\nParty Size: ${data.guests} guests\nDate & Time: ${data.date} at ${data.time}\nOccasion: ${data.occasion || 'N/A'}\nSpecial Notes: ${data.notes || 'None'}\n\nOur front-of-house host will review seating availability and contact you if anything else is needed. For urgent inquiries, call ${BRAND_PHONE}.\n\nPreva Kitchen\n${BRAND_ADDRESS}\nPhone: ${BRAND_PHONE}\n${getSiteUrl()}`
     }).catch((confErr) => {
       console.warn('[nodemailer] Customer confirmation email skipped or failed:', confErr.message);
       return { ok: false, error: confErr.message };
@@ -417,8 +447,8 @@ export async function sendReservationEmail(data) {
   }
 
   // Parallel dispatch for instant delivery
-  const [adminResult] = await Promise.all([adminTask, customerTask].filter(Boolean));
-  return adminResult;
+  const results = await Promise.allSettled([adminTask, customerTask].filter(Boolean));
+  return results[0]?.status === 'fulfilled' ? results[0].value : { ok: true };
 }
 
 /**
@@ -458,9 +488,9 @@ export async function sendContactEmail(data) {
     return { ok: false, error: err.message };
   });
 
-  // 2. Customer confirmation: goes ONLY to sender's personal email (skipped for staff emails)
+  // 2. Customer confirmation: goes to sender's personal email
   let customerTask = null;
-  if (data.email && !isStaffEmail(data.email)) {
+  if (data.email) {
     customerTask = sendMail({
       to: data.email,
       replyTo: recipient,
@@ -474,7 +504,8 @@ export async function sendContactEmail(data) {
           row('Subject', data.subject || 'General Inquiry') +
           row('Message', data.message, false, true),
         nextSteps: `We typically reply within 1 business day. For urgent orders or same-day reservations, please call us directly at ${BRAND_PHONE}.`
-      })
+      }),
+      text: `Hello ${data.name},\n\nThank you for reaching out to Preva Kitchen! Our team has received your message regarding "${data.subject || 'General Inquiry'}".\n\nReference: #${data.referenceId}\nMessage: ${data.message}\n\nWe typically reply within 1 business day. For urgent orders or same-day reservations, please call us directly at ${BRAND_PHONE}.\n\nPreva Kitchen\n${BRAND_ADDRESS}\nPhone: ${BRAND_PHONE}\n${getSiteUrl()}`
     }).catch((confErr) => {
       console.warn('[nodemailer] Customer confirmation email skipped or failed:', confErr.message);
       return { ok: false, error: confErr.message };
@@ -482,8 +513,8 @@ export async function sendContactEmail(data) {
   }
 
   // Parallel dispatch for instant delivery
-  const [adminResult] = await Promise.all([adminTask, customerTask].filter(Boolean));
-  return adminResult;
+  const results = await Promise.allSettled([adminTask, customerTask].filter(Boolean));
+  return results[0]?.status === 'fulfilled' ? results[0].value : { ok: true };
 }
 
 /**

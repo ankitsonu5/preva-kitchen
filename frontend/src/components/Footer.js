@@ -477,7 +477,10 @@ export default function Footer() {
           <div className="premium-footer-grid">
             {/* Brand Column */}
             <div className="footer-col brand-col">
-              <img src="/asset/preva-logo-silver.png" alt={settings.siteTitle || 'PREVA'} className="footer-logo-img" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <img src="/favicon.svg" alt="P Logo" style={{ width: '38px', height: '38px', borderRadius: '8px', objectFit: 'contain' }} />
+                <img src="/asset/preva-logo-silver.png" alt={settings.siteTitle || 'PREVA'} className="footer-logo-img" style={{ margin: 0 }} />
+              </div>
               <h4 className="footer-heading footer-brand-heading">CONTACT US</h4>
               <ul className="footer-info-list footer-brand-contact">
                 <li>

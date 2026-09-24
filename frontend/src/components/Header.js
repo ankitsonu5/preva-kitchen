@@ -183,7 +183,13 @@ export default function Header() {
 
         <div className="container">
           <div className="site-branding">
-            <a href="/" className="site-logo-link" onClick={handleNavigate('/')} style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
+            <a href="/" className="site-logo-link" onClick={handleNavigate('/')} style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+              <img
+                src="/favicon.svg"
+                alt="P Logo"
+                className="site-logo-p-badge"
+                style={{ width: '38px', height: '38px', display: 'block', borderRadius: '8px', objectFit: 'contain' }}
+              />
               <img
                 src="/asset/preva-logo-silver.png"
                 alt="Preva Kitchen"
