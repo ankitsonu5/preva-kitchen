@@ -118,26 +118,23 @@ export async function POST(request) {
       submittedAt
     };
 
-    // 4. Synchronize with backend MongoDB storage if available (for Admin career applications)
+    // 4 & 5. Concurrent DB sync & Email dispatch for instant UI response
     const backendUrl = (process.env.BACKEND_URL || 'http://localhost:4000').replace(/\/$/, '');
-    if (backendUrl) {
-      try {
-        await fetch(`${backendUrl}/api/career-applications`, {
+    const dbSyncPromise = backendUrl
+      ? fetch(`${backendUrl}/api/career-applications`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-internal-forward': 'true' },
           body: JSON.stringify({ ...body, referenceId, skipEmail: true })
-        });
-      } catch (backendErr) {
-        console.warn('[career-applications] Backend DB sync notice:', backendErr.message);
-      }
-    }
+        }).catch((backendErr) => {
+          console.warn('[career-applications] Backend DB sync notice:', backendErr.message);
+        })
+      : Promise.resolve();
 
-    // 5. Send email via Nodemailer SMTP to CAREER_EMAIL with resume attached
-    try {
-      await sendCareerEmail(applicationData);
-    } catch (emailErr) {
+    const emailPromise = sendCareerEmail(applicationData).catch((emailErr) => {
       console.warn('[career-applications] Email dispatch notice:', emailErr.message);
-    }
+    });
+
+    await Promise.allSettled([dbSyncPromise, emailPromise]);
 
     return NextResponse.json({ ok: true, referenceId }, { status: 201 });
   } catch (error) {
