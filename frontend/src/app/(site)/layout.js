@@ -139,9 +139,8 @@ export async function generateMetadata() {
     },
     icons: {
       icon: [
-        { url: '/favicon.svg', type: 'image/svg+xml' },
-        { url: '/favicon.ico', type: 'image/x-icon', sizes: '32x32' },
-        { url: '/asset/preva-logo.png', type: 'image/png', sizes: '512x512' }
+        { url: '/favicon.ico', sizes: '48x48' },
+        { url: '/favicon.svg', type: 'image/svg+xml', sizes: 'any' }
       ],
       shortcut: '/favicon.ico',
       apple: '/asset/preva-real-logo.png'
