@@ -148,7 +148,12 @@ export default function AdminKdsPage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isKdsManager, setIsKdsManager] = useState(null);
 
-  const board = useKdsBoard({ client, soundStorageKey: 'preva_kds_sound', sseUrl: '/api/shop/kitchen-events' });
+  const board = useKdsBoard({
+    client,
+    soundStorageKey: 'preva_kds_sound',
+    autoPrintStorageKey: 'preva_kds_autoprint',
+    sseUrl: '/api/shop/kitchen-events'
+  });
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {

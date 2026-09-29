@@ -1537,6 +1537,12 @@ export async function connectDatabase({ ensureIndexes = true } = {}) {
         globalForMongo.__prevaDb = database;
         return database;
       } catch (error) {
+        // A failed attempt must not be cached forever — without this, one
+        // transient outage at boot (network blip, Atlas cold start) would
+        // wedge every future request behind today's rejection until the
+        // process is restarted by hand. Clearing it lets the next request
+        // retry once the database is actually reachable again.
+        globalForMongo.__prevaConnecting = null;
         if (process.env.NODE_ENV === 'production') {
           throw new Error(`MongoDB connection failed: ${error.message}`, { cause: error });
         }

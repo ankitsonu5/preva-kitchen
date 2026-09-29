@@ -176,13 +176,14 @@ function checkedItemMap(orders) {
  * filters, counts, the chime, checklist sync, error handling — lives here so
  * the two entry points cannot drift again.
  */
-export function useKdsBoard({ client, soundStorageKey, pollMs = 3500, onNewOrder, active = true, sseUrl = null }) {
+export function useKdsBoard({ client, soundStorageKey, autoPrintStorageKey, pollMs = 3500, onNewOrder, active = true, sseUrl = null }) {
   const [orders, setOrders] = useState([]);
   const [completedOrders, setCompletedOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [autoPrintEnabled, setAutoPrintEnabled] = useState(false);
   const [filterStage, setFilterStage] = useState('ALL');
   const [filterFulfilment, setFilterFulfilment] = useState('ALL');
   const [filterStation, setFilterStation] = useState('ALL');
@@ -207,11 +208,31 @@ export function useKdsBoard({ client, soundStorageKey, pollMs = 3500, onNewOrder
     setConnectionStatus('offline');
   }, []);
 
+  // One physical printer can only print one ticket at a time. A manual click
+  // landing while an auto-printed ticket is still on its way to the printer
+  // must queue rather than clobber it, so every print request — auto or
+  // manual — goes through this queue.
+  const printQueueRef = useRef([]);
+
+  const printOrder = useCallback((order) => {
+    printQueueRef.current.push(order);
+    setPrintingOrder((current) => (current ? current : printQueueRef.current.shift() || null));
+  }, []);
+
   useEffect(() => {
     if (!printingOrder) return;
     const timer = setTimeout(() => window.print(), 180);
     return () => clearTimeout(timer);
   }, [printingOrder]);
+
+  // `afterprint` fires once the browser's print dialog closes, whether the
+  // ticket was actually printed or the dialog was dismissed — either way the
+  // printer is free, so the next queued ticket can start.
+  useEffect(() => {
+    const handleAfterPrint = () => setPrintingOrder(printQueueRef.current.shift() || null);
+    window.addEventListener('afterprint', handleAfterPrint);
+    return () => window.removeEventListener('afterprint', handleAfterPrint);
+  }, []);
 
   useEffect(() => {
     if (!soundStorageKey) return;
@@ -235,6 +256,31 @@ export function useKdsBoard({ client, soundStorageKey, pollMs = 3500, onNewOrder
       return next;
     });
   }, [soundStorageKey]);
+
+  // Auto-print is opt-in per terminal: a fresh browser/device defaults to off
+  // so a kitchen screen with no printer attached never starts firing print
+  // dialogs on its own. A cook turns it on once their printer is confirmed.
+  useEffect(() => {
+    if (!autoPrintStorageKey) return;
+    try {
+      const saved = localStorage.getItem(autoPrintStorageKey);
+      if (saved !== null) setAutoPrintEnabled(saved === 'true');
+    } catch {
+      // Ignore storage access failures (private browsing, etc).
+    }
+  }, [autoPrintStorageKey]);
+
+  const toggleAutoPrint = useCallback(() => {
+    setAutoPrintEnabled((prev) => {
+      const next = !prev;
+      try {
+        if (autoPrintStorageKey) localStorage.setItem(autoPrintStorageKey, String(next));
+      } catch {
+        // Ignore storage access failures.
+      }
+      return next;
+    });
+  }, [autoPrintStorageKey]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -260,6 +306,7 @@ export function useKdsBoard({ client, soundStorageKey, pollMs = 3500, onNewOrder
         }
         if (incomingTicket) {
           if (soundEnabled) playKitchenChime();
+          if (autoPrintEnabled) printOrder(incomingTicket);
           onNewOrder?.(incomingTicket);
         }
       }
@@ -282,7 +329,7 @@ export function useKdsBoard({ client, soundStorageKey, pollMs = 3500, onNewOrder
       setLoading(false);
       setRefreshing(false);
     }
-  }, [active, client, soundEnabled, onNewOrder]);
+  }, [active, client, soundEnabled, autoPrintEnabled, printOrder, onNewOrder]);
 
   const flushActionQueue = useCallback(async () => {
     const queue = readActionQueue();
@@ -518,7 +565,9 @@ export function useKdsBoard({ client, soundStorageKey, pollMs = 3500, onNewOrder
     errorNotice,
     setErrorNotice,
     printingOrder,
-    setPrintingOrder,
+    printOrder,
+    autoPrintEnabled,
+    toggleAutoPrint,
     connectionStatus,
     pendingActionCount,
     scheduledHoldOrders,

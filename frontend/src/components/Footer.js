@@ -66,12 +66,7 @@ export default function Footer() {
     { title: 'Reserve a Table', url: '/reservations' },
     { title: 'View Menu', url: '/menu' },
     { title: 'Order Online', url: '/menu' },
-    { title: 'Catering', url: '/catering' },
-    { title: 'About Us', url: '/about' },
-    { title: 'Careers', url: '/careers' },
-    { title: 'Contact Us', url: '/contact' },
-    { title: 'Privacy Policy', url: '/privacy-policy' },
-    { title: 'Terms of Service', url: '/terms' }
+    { title: 'Contact Us', url: '/contact' }
   ]);
   const [instagramPosts, setInstagramPosts] = useState(FALLBACK_INSTAGRAM_POSTS);
 

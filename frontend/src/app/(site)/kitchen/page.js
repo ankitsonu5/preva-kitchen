@@ -142,6 +142,7 @@ export default function KitchenDisplayPage() {
   const board = useKdsBoard({
     client,
     soundStorageKey: 'preva_kitchen_sound',
+    autoPrintStorageKey: 'preva_kitchen_autoprint',
     active: Boolean(authToken),
     sseUrl: authToken ? `/api/shop/kitchen-events?token=${encodeURIComponent(authToken)}` : null,
     onNewOrder: (order) => {

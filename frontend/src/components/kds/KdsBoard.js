@@ -456,7 +456,9 @@ export default function KdsBoard({
     errorNotice,
     setErrorNotice,
     printingOrder,
-    setPrintingOrder,
+    printOrder,
+    autoPrintEnabled,
+    toggleAutoPrint,
     connectionStatus,
     pendingActionCount,
     scheduledHoldOrders,
@@ -701,6 +703,33 @@ export default function KdsBoard({
           >
             {soundEnabled ? <Bell size={15} /> : <BellOff size={15} />}
             <span>{soundEnabled ? 'Chime ON' : 'Muted'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={toggleAutoPrint}
+            title={autoPrintEnabled
+              ? 'Turn off auto-print for new tickets'
+              : "Auto-print each new ticket to this terminal's printer"}
+            style={{
+              height: '36px',
+              padding: '0 12px',
+              borderRadius: '8px',
+              background: autoPrintEnabled ? 'rgba(16, 185, 129, 0.12)' : '#1c1c28',
+              color: autoPrintEnabled ? '#34d399' : '#888',
+              border: `1px solid ${autoPrintEnabled ? 'rgba(16, 185, 129, 0.35)' : 'rgba(255,255,255,0.12)'}`,
+              fontSize: '12px',
+              fontWeight: 700,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              boxSizing: 'border-box'
+            }}
+          >
+            <Printer size={15} />
+            <span>{autoPrintEnabled ? 'Auto-Print ON' : 'Auto-Print OFF'}</span>
           </button>
 
           <Link
@@ -1204,7 +1233,7 @@ export default function KdsBoard({
                 onUpdateStatus={updateStatus}
                 onAssign={(o) => setAssigningOrder(o)}
                 onAssignDriver={(o) => setDriverOrder(o)}
-                onPrint={() => setPrintingOrder(order)}
+                onPrint={() => printOrder(order)}
                 onCancel={(o) => setCancelingOrder(o)}
                 onMarkPaid={(o) => setPayingOrder(o)}
                 onSoldOut={(item) => setSoldOutItem(item)}
