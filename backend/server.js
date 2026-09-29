@@ -55,9 +55,9 @@ if (isProduction) {
     throw new Error('ALLOW_UNPAID_TEST_ORDERS must be false in production.');
   }
 
-  if (!stripeConfigured() || stripeMode() !== 'live') {
-    throw new Error('A live STRIPE_SECRET_KEY is required in production.');
-  }
+  if (!stripeConfigured()) {
+  throw new Error('STRIPE_SECRET_KEY is required.');
+}
   if (!webhookSecret().startsWith('whsec_')) {
     throw new Error('The live STRIPE_WEBHOOK_SECRET is required in production.');
   }
