@@ -69,8 +69,16 @@ const nextConfig = {
         destination: 'https://prevakitchen.com/:path*',
         permanent: true
       },
+      // TEMPORARY (until KDS is live): /menu goes to the old site's menu page.
+      // Delete this rule to bring the new /menu page back.
+      { source: '/menu', destination: 'https://prevaclub.com/preva-kitchen-menu/', permanent: false },
       { source: '/preva-kitchen', destination: '/about', permanent: true },
-      { source: '/preva-kitchen-menu', destination: '/menu', permanent: true },
+      // TEMPORARY (ads running, KDS not finished): QR/menu scans show the old
+      // prevaclub.com menu page. Non-permanent so browsers/search engines don't cache it.
+      // When KDS is live: delete this rule and uncomment the original below.
+      { source: '/preva-kitchen-menu', destination: 'https://prevaclub.com/preva-kitchen-menu/', permanent: false },
+      // ORIGINAL (restore after KDS launch):
+      // { source: '/preva-kitchen-menu', destination: '/menu', permanent: true },
       { source: '/contact-us', destination: '/contact', permanent: true },
       { source: '/shop/:path*', destination: '/menu/:path*', permanent: true },
       { source: '/order-online', destination: '/menu', permanent: true },

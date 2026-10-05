@@ -17,7 +17,7 @@ export function getSmtpConfig() {
     ? String(process.env.SMTP_SECURE).toLowerCase() === 'true'
     : port === 465;
   const user = String(process.env.SMTP_USER || process.env.GMAIL_USER || 'reservations@prevakitchen.com').trim();
-  const pass = String(process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || 'wajwwwlhhuyodvja').replace(/\s+/g, '').trim();
+  const pass = String(process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, '').trim();
 
   return { host, port, secure, user, pass };
 }

@@ -238,7 +238,20 @@ export default function Header() {
                 </a>
               </li>
               <li className="nav-order-cta">
+                {/* TEMPORARY: open the Order Online popup (DoorDash/Uber Eats/Toast/Grubhub/Call) until KDS is live.
+                    Restore the original link below after KDS launch:
                 <a href="/menu" className="preva-order-trigger" onClick={handleLinkClick}>
+                  {settings.headerCtaText || 'ORDER ONLINE'}
+                </a> */}
+                <a
+                  href="#preva-order"
+                  className="preva-order-trigger"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleLinkClick();
+                    if (typeof window !== 'undefined' && window.openOrderModal) window.openOrderModal();
+                  }}
+                >
                   {settings.headerCtaText || 'ORDER ONLINE'}
                 </a>
               </li>

@@ -605,7 +605,16 @@ export default function Footer() {
           <a href="#prv-reservations"
              onClick={(e) => { e.preventDefault(); selectTabAndScroll('prv-reservations'); }}
              className="sticky-btn">RESERVE TABLE</a>
-          <a href="/menu" className="sticky-btn">ORDER ONLINE</a>
+          {/* TEMPORARY (until KDS is live): open Order Online popup. Original:
+          <a href="/menu" className="sticky-btn">ORDER ONLINE</a> */}
+          <a
+            href="#preva-order"
+            className="sticky-btn"
+            onClick={(e) => {
+              e.preventDefault();
+              if (typeof window !== 'undefined' && window.openOrderModal) window.openOrderModal();
+            }}
+          >ORDER ONLINE</a>
           <a href="/catering" className="sticky-btn">CATERING</a>
         </div>
       )}
