@@ -28,7 +28,6 @@ export async function generateMetadata({ params }) {
   return {
     title: { absolute: cleanTitle },
     description: cleanDesc,
-    keywords: post.focusKeyword ? [post.focusKeyword, ...tagsList, 'Preva Kitchen', 'Redford MI'] : [...tagsList, 'Preva Kitchen', 'Redford MI'],
     alternates: {
       canonical: canonical
     },
@@ -230,7 +229,7 @@ export default async function BlogPost({ params }) {
               <div style={{ marginBottom: '8px', color: '#c9a84c' }}><SvgIcon name="utensils" size={30} /></div>
               <h3>Plan Your Next Meal</h3>
               <p>Book a table or tell our kitchen team about your next group meal.</p>
-              <Link href="/#prv-reservations" className="sidebar-vip-btn">
+              <Link href="/reservations" className="sidebar-vip-btn">
                 Reserve a Table
               </Link>
             </div>

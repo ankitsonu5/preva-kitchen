@@ -366,7 +366,7 @@ export default async function PreviewPage({ searchParams }) {
                   <div style={{ marginBottom: '8px', color: '#c9a84c' }}><SvgIcon name="utensils" size={30} /></div>
                   <h3>Plan Your Next Meal</h3>
                   <p>Book a table or tell our kitchen team about your next group meal.</p>
-                  <Link href="/#prv-reservations" className="sidebar-vip-btn">
+                  <Link href="/reservations" className="sidebar-vip-btn">
                     Reserve a Table
                   </Link>
                 </div>

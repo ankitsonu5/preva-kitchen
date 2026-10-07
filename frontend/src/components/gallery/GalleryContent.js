@@ -20,7 +20,7 @@ export const ALL_GALLERY_IMAGES = [
     category: 'dishes',
     tag: 'SEAFOOD SPECIAL',
     desc: 'Wild-caught lobster tail seared in garlic-herb butter with clarified lemon.',
-    src: 'https://images.unsplash.com/photo-1551248429-40975aa4de74?auto=format&fit=crop&w=1200&q=85',
+    src: '/asset/prevaclub/wp-content/uploads/2026/08/PrevaLobster-768x768.webp',
     aspect: 'wide'
   },
   {
@@ -39,7 +39,7 @@ export const ALL_GALLERY_IMAGES = [
     category: 'dishes',
     tag: 'PRIME CUT',
     desc: 'USDA Prime seared steak bites with caramelized onions and wild mushrooms.',
-    src: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=85',
+    src: '/asset/gallery/STEAK02.jpg',
     aspect: 'square'
   },
   {
@@ -48,17 +48,8 @@ export const ALL_GALLERY_IMAGES = [
     category: 'atmosphere',
     tag: 'DINING ROOM',
     desc: 'Intimate evening dining atmosphere crafted for celebrations and dinner dates.',
-    src: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1400&q=85',
+    src: '/asset/home-reference/preva-restaurant-hero.png',
     aspect: 'wide'
-  },
-  {
-    id: 6,
-    title: 'Craft Wine & Cocktail Program',
-    category: 'cocktails',
-    tag: 'BAR COLLECTION',
-    desc: 'Curated wine collection and artisanal cocktails crafted to complement our dishes.',
-    src: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=1200&q=85',
-    aspect: 'square'
   },
   {
     id: 7,
@@ -66,7 +57,7 @@ export const ALL_GALLERY_IMAGES = [
     category: 'dishes',
     tag: 'SOUTHERN SPECIALTY',
     desc: 'Golden cornmeal crusted catfish fillets served with seasoned remoulade.',
-    src: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=1200&q=85',
+    src: '/asset/gallery/CATFISH01.jpg',
     aspect: 'square'
   },
   {
@@ -75,44 +66,35 @@ export const ALL_GALLERY_IMAGES = [
     category: 'dishes',
     tag: 'SHAREABLE',
     desc: 'Crispy tossed house wings glazed in signature sweet chili or garlic honey.',
-    src: 'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?auto=format&fit=crop&w=1200&q=85',
+    src: '/asset/prevaclub/wp-content/uploads/2026/08/PrevaWings-768x768.webp',
     aspect: 'square'
   },
   {
     id: 9,
-    title: 'Preva Double Prime Burger',
+    title: 'Preva Double Smash Burger',
     category: 'dishes',
-    tag: 'GOURMET BURGER',
-    desc: 'Custom prime beef blend patty, aged cheddar, brioche bun, house sauce.',
-    src: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=1200&q=85',
+    tag: 'SMASH BURGER',
+    desc: 'Two smashed beef patties, double American cheese and thousand island, served with fries.',
+    src: '/asset/prevaclub/wp-content/uploads/2026/08/PrevaDoubleSmashBurger-768x768.webp',
     aspect: 'square'
   },
   {
     id: 10,
-    title: 'Chef Kitchen Preparation',
+    title: 'Behind the Line at Preva Kitchen',
     category: 'kitchen',
     tag: 'CULINARY CRAFT',
-    desc: 'Every plate prepared with fresh local ingredients and meticulous culinary care.',
-    src: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=1200&q=85',
+    desc: 'Every plate prepared with fresh ingredients and careful attention in our Redford kitchen.',
+    src: '/asset/home-reference/preva-kitchen-story.jpg',
     aspect: 'tall'
   },
   {
     id: 11,
-    title: 'Artisan Berry Cheesecake',
+    title: 'Red Wine Poached Pear',
     category: 'dishes',
-    tag: 'SWEET INDULGENCE',
-    desc: 'New York style cheesecake with macerated berry compote & fresh mint.',
-    src: 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=1200&q=85',
+    tag: 'SWEET FINISH',
+    desc: 'A ripe pear gently poached in spiced red wine with cinnamon, star anise and vanilla.',
+    src: '/asset/prevaclub/wp-content/uploads/2026/08/red-wine-poached-pear.webp',
     aspect: 'square'
-  },
-  {
-    id: 12,
-    title: 'Evening Cocktail Lounge',
-    category: 'cocktails',
-    tag: 'NIGHTCAP',
-    desc: 'Signature drinks mixed to order for relaxing evenings and lively nights.',
-    src: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=1200&q=85',
-    aspect: 'wide'
   }
 ];
 
@@ -120,7 +102,6 @@ const CATEGORIES = [
   { id: 'all', label: 'All Moments' },
   { id: 'dishes', label: 'Signature Dishes' },
   { id: 'kitchen', label: 'Kitchen & Chefs' },
-  { id: 'cocktails', label: 'Cocktails & Bar' },
   { id: 'atmosphere', label: 'Dining Atmosphere' }
 ];
 

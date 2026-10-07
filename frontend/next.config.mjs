@@ -14,6 +14,12 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
 
+  // Next 15.2+ streams async generateMetadata() into <body> for normal browsers,
+  // leaving <head> with only the viewport tag. Search/social/AI crawlers that read
+  // only the initial <head> then miss title, description, canonical and OG tags.
+  // Matching every user-agent keeps metadata blocking, so it is always in <head>.
+  htmlLimitedBots: /.*/,
+
   async headers() {
     return [
       {
@@ -80,6 +86,15 @@ const nextConfig = {
       // ORIGINAL (restore after KDS launch):
       // { source: '/preva-kitchen-menu', destination: '/menu', permanent: true },
       { source: '/contact-us', destination: '/contact', permanent: true },
+      // Legacy /shop/<old-dup-slug> goes straight to the surviving dish in ONE hop
+      // (otherwise /shop/x -> /menu/x -> /menu/<new> would be a two-step chain).
+      // These must stay above the generic '/shop/:path*' rule.
+      { source: '/shop/preva-lamb-chops', destination: '/menu/lamb-chops', permanent: true },
+      { source: '/shop/preva-steak-bites', destination: '/menu/steak-bites', permanent: true },
+      { source: '/shop/preva-lobster', destination: '/menu/lobster-bites', permanent: true },
+      { source: '/shop/preva-mac-and-cheese', destination: '/menu/mac-and-cheese', permanent: true },
+      { source: '/shop/preva-yams', destination: '/menu/yams', permanent: true },
+      { source: '/shop/collard-greens-with-turkey-meat', destination: '/menu/collard-greens-turkey', permanent: true },
       { source: '/shop/:path*', destination: '/menu/:path*', permanent: true },
       { source: '/order-online', destination: '/menu', permanent: true },
       { source: '/online-order-platform', destination: '/menu', permanent: true },

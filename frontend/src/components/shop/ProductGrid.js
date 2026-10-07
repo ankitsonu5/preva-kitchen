@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { money, useCart } from './ShopProvider';
 import Tilt3DCard from '../Tilt3DCard';
 import { Sparkles, ArrowRight } from 'lucide-react';
+import { DISH_LOCAL_MAP } from '@/lib/dish-images';
 
 // High-definition circular category images matching live Preva Kitchen menu
 const CATEGORY_IMAGES = {
@@ -20,25 +21,6 @@ const CATEGORY_IMAGES = {
   'Entrees': '/asset/prevaclub/wp-content/uploads/2026/08/prevaLamb-768x768.webp',
   'Sides': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaMac-768x768.webp',
   'Dessert': '/asset/prevaclub/wp-content/uploads/2026/08/red-wine-poached-pear.webp'
-};
-
-const DISH_LOCAL_MAP = {
-  'rasta-pasta': '/asset/home-reference/signature-dishes/Rasta-Pasta.webp',
-  'veggie-pasta': '/asset/prevaclub/wp-content/uploads/2026/08/Veggie-Pasta-768x614.webp',
-  'preva-lamb': '/asset/home-reference/signature-dishes/prevaLamb-600x600.webp',
-  'preva-lamb-chops': '/asset/home-reference/signature-dishes/prevaLamb-600x600.webp',
-  'catfish-bites': '/asset/home-reference/signature-dishes/PrevaCatfish-600x600.webp',
-  'preva-catfish': '/asset/home-reference/signature-dishes/PrevaCatfish-600x600.webp',
-  'preva-steak-bites': '/asset/home-reference/signature-dishes/PrevaSteakBites-600x600.webp',
-  'preva-lobster': 'https://images.unsplash.com/photo-1551248429-40975aa4de74?auto=format&fit=crop&w=800&q=80',
-  'lobster-bites': 'https://images.unsplash.com/photo-1551248429-40975aa4de74?auto=format&fit=crop&w=800&q=80',
-  'preva-burger': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaBurger-768x768.webp',
-  'preva-wings': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaWings-768x768.webp',
-  'preva-wings-chilli': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaWingsChilli-768x768.webp',
-  'preva-mac': '/asset/home-reference/signature-dishes/PrevaMac-600x600.webp',
-  'preva-mac-and-cheese': '/asset/home-reference/signature-dishes/PrevaMac-600x600.webp',
-  'preva-quesadillas': '/asset/home-reference/signature-dishes/PrevaQuesadilla-600x600.webp',
-  'shrimp-tacos': '/asset/home-reference/signature-dishes/ShrimpTacos-600x600.webp'
 };
 
 const CANONICAL_CATEGORIES = [
@@ -91,19 +73,24 @@ export function ProductCard({ product }) {
 
   return (
     <Tilt3DCard className="ps-card">
-      <Link className="ps-card__shot" href={`/menu/${product.slug}`}>
-        <img
-          src={imageSrc}
-          alt={`${product.name}${product.price ? ` — ${product.price}` : ''} at Preva Kitchen, Redford Township MI`}
-          loading="lazy"
-          onError={(e) => {
-            if (product.slug?.includes('pasta')) {
-              e.currentTarget.src = '/asset/home-reference/signature-dishes/Rasta-Pasta.webp';
-            } else {
-              e.currentTarget.src = '/asset/hero/preva-pasta-hero.jpg';
-            }
-          }}
-        />
+      <div className="ps-card__shot">
+        {/* The dish name below is the card's real link; this image link is a
+            duplicate target for mouse users, so keep it out of the tab order and
+            the accessibility tree. */}
+        <Link href={`/menu/${product.slug}`} tabIndex={-1} aria-hidden="true" style={{ display: 'block', height: '100%' }}>
+          <img
+            src={imageSrc}
+            alt={`${product.name} at Preva Kitchen`}
+            loading="lazy"
+            onError={(e) => {
+              if (product.slug?.includes('pasta')) {
+                e.currentTarget.src = '/asset/home-reference/signature-dishes/Rasta-Pasta.webp';
+              } else {
+                e.currentTarget.src = '/asset/hero/preva-pasta-hero.jpg';
+              }
+            }}
+          />
+        </Link>
 
         <div className="ps-card__chips">
           {soldOut && <span className="ps-chip ps-chip--out">Sold out</span>}
@@ -114,25 +101,25 @@ export function ProductCard({ product }) {
         {!soldOut && (
           <div className="ps-card__quick">
             {needsChoice ? (
-              <span className="ps-btn ps-btn--ghost ps-btn--sm ps-btn--block" style={{ background: 'rgba(0,0,0,.7)', borderRadius: '4px' }}>
+              <Link href={`/menu/${product.slug}`} className="ps-btn ps-btn--ghost ps-btn--sm ps-btn--block" style={{ background: 'rgba(0,0,0,.7)', borderRadius: '4px' }}>
                 Choose options
-              </span>
+              </Link>
             ) : (
               <button
+                type="button"
                 className="ps-btn ps-btn--gold ps-btn--sm ps-btn--block"
-                onClick={(event) => {
-                  event.preventDefault();
-                  quickAdd();
-                }}
+                onClick={quickAdd}
               >
                 + Add to order
               </button>
             )}
           </div>
         )}
-      </Link>
+      </div>
 
-      <Link className="ps-card__name" href={`/menu/${product.slug}`}>{product.name}</Link>
+      <h3 style={{ margin: 0, fontSize: 'inherit', textTransform: 'inherit', lineHeight: 'inherit' }}>
+        <Link className="ps-card__name" href={`/menu/${product.slug}`}>{product.name}</Link>
+      </h3>
 
       {product.description && <p className="ps-card__desc">{product.description}</p>}
 
@@ -208,7 +195,7 @@ export default function ProductGrid({ products, categories }) {
         </button>
 
         {distinctCategories.map((catName) => {
-          const imgSrc = CATEGORY_IMAGES[catName] || 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=300&q=80';
+          const imgSrc = CATEGORY_IMAGES[catName] || '/asset/home-reference/signature-dishes/Rasta-Pasta.webp';
 
           return (
             <button
@@ -261,7 +248,7 @@ export default function ProductGrid({ products, categories }) {
                       <Sparkles size={13} />
                       PREVA SIGNATURE
                     </span>
-                    <h3
+                    <h2
                       style={{
                         fontFamily: 'var(--font-roboto), Arial, sans-serif',
                         fontSize: 'clamp(1.7rem, 2.6vw, 2.3rem)',
@@ -273,7 +260,7 @@ export default function ProductGrid({ products, categories }) {
                       }}
                     >
                       {group.category}
-                    </h3>
+                    </h2>
                   </div>
 
                   <span

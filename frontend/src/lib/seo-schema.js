@@ -70,7 +70,7 @@ export function generateSiteWideSchema(origin = 'https://prevakitchen.com') {
         address: BUSINESS_INFO.address,
         geo: BUSINESS_INFO.geo,
         openingHoursSpecification: BUSINESS_INFO.openingHoursSpecification,
-        acceptsReservations: 'True',
+        acceptsReservations: `${origin}/reservations`,
         hasMenu: `${origin}/menu`,
         sameAs: BUSINESS_INFO.sameAs,
         potentialAction: [
@@ -78,7 +78,7 @@ export function generateSiteWideSchema(origin = 'https://prevakitchen.com') {
             '@type': 'ReserveAction',
             target: {
               '@type': 'EntryPoint',
-              urlTemplate: `${origin}/#prv-reservations`,
+              urlTemplate: `${origin}/reservations`,
               inLanguage: 'en-US',
               actionPlatform: [
                 'http://schema.org/DesktopWebPlatform',

@@ -84,6 +84,20 @@
   text-shadow: 0 7px 28px rgba(0,0,0,.72);
 }
 
+/* The H1 carries brand + location for SEO; this span keeps the look of the old
+   small gold kicker that used to sit above the big "Good Food Good Mood" line. */
+.pk-ref-hero h1 .pk-ref-h1-eyebrow {
+  display: block;
+  margin-bottom: 12px;
+  color: var(--pk-gold-light);
+  font-size: clamp(1.05rem, 1.5vw, 1.35rem);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  text-shadow: none;
+}
+
 .pk-ref-hero-lead {
   max-width: 540px;
   margin-bottom: 30px;
@@ -726,6 +740,7 @@ select.pk-ref-booking-input:focus:hover {
   .pk-ref-hero-inner { padding: 0 0 32px; }
   .pk-ref-hero-copy { width: 100%; }
   .pk-ref-script { font-size: .82rem; margin-bottom: 8px; letter-spacing: .1em; }
+  .pk-ref-hero h1 .pk-ref-h1-eyebrow { font-size: .82rem; margin-bottom: 8px; letter-spacing: .1em; }
   .pk-ref-hero h1 { font-size: clamp(2.6rem, 10vw, 3.4rem); margin-bottom: 12px; line-height: 1.1; }
   .pk-ref-hero-lead { font-size: .88rem; line-height: 1.55; margin-bottom: 20px; max-width: 100%; }
   .pk-ref-hero-actions { gap: 10px; }
@@ -821,6 +836,7 @@ select.pk-ref-booking-input:focus:hover {
 @media (max-width: 360px) {
   .pk-ref-hero h1 { font-size: 2rem; }
   .pk-ref-script { font-size: .74rem; }
+  .pk-ref-hero h1 .pk-ref-h1-eyebrow { font-size: .74rem; }
   .pk-ref-hero-lead { font-size: .8rem; }
   .pk-ref-button { min-height: 42px; padding-inline: 14px; font-size: .7rem; }
 }

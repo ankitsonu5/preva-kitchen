@@ -15,7 +15,7 @@ const PROMO_SLIDES = [
     price: '$27.50',
     tag: 'Chef Signature',
     desc: 'Rosemary-glazed lamb chops stacked over roasted seasonal vegetables with a velvety jus. Crafted to share, made to be remembered.',
-    img: 'https://images.unsplash.com/photo-1603360946369-dc9bb6258143?auto=format&fit=crop&w=900&q=80',
+    img: '/asset/prevaclub/wp-content/uploads/2026/08/prevaLamb-768x768.webp',
     accent: '#E3C077'
   },
   {
@@ -24,7 +24,7 @@ const PROMO_SLIDES = [
     price: '$21.98',
     tag: 'USDA Prime Angus',
     desc: 'Tender 8oz Prime steak bites with caramelized onions, bell peppers, and wild mushrooms. Rich, smoky, unforgettable umami.',
-    img: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80',
+    img: '/asset/prevaclub/wp-content/uploads/2026/08/PrevaSteakBites-768x768.webp',
     accent: '#E3A15C'
   },
   {
@@ -33,7 +33,7 @@ const PROMO_SLIDES = [
     price: '$27.98',
     tag: 'Wild-Caught',
     desc: 'Fresh lobster bites seared in garlic herb butter, finished with clarified lemon dip and microgreens.',
-    img: 'https://images.unsplash.com/photo-1551248429-40975aa4de74?auto=format&fit=crop&w=900&q=80',
+    img: '/asset/prevaclub/wp-content/uploads/2026/08/PrevaLobster-768x768.webp',
     accent: '#E37C5C'
   },
   {
@@ -42,7 +42,7 @@ const PROMO_SLIDES = [
     price: '$14.99',
     tag: 'Full Service',
     desc: 'Relaxed lunch and early dining with the full chef-driven menu — polished plates, generous portions and easy ordering.',
-    img: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=900&q=80',
+    img: '/asset/home-reference/preva-restaurant-hero.png',
     accent: '#9BC49A'
   }
 ];

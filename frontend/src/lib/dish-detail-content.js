@@ -393,19 +393,28 @@ export function parseAboutContent(value, dish) {
   return getDefaultAboutParagraphs(dish);
 }
 
+// "Lamb Chops", "Shrimp Tacos", "Fries" take plural verbs; "Rasta Pasta" does not.
+function isPluralName(name) {
+  const lastWord = String(name || '').trim().split(/\s+/).pop() || '';
+  return /s$/i.test(lastWord) && !/(ss|us|is)$/i.test(lastWord);
+}
+
 export function getDefaultFaqs(dish) {
   const name = dish?.name || 'this dish';
+  const plural = isPluralName(name);
+  const be = plural ? 'are' : 'is';
+  const costs = plural ? 'cost' : 'costs';
   const price = dish?.price || 'the current menu price';
-  const description = dish?.description || `${name} is prepared fresh to order with Preva’s house seasoning.`;
+  const description = dish?.description || `${name} ${be} prepared fresh to order with Preva’s house seasoning.`;
   const content = profileFor(dish) || fallbackFor(dish);
   const pairings = pairingsFor(dish, content);
   const pairingText = pairings.length ? pairings.slice(0, 3).join(', ') : 'Preva’s signature sides and menu favorites';
   return [
-    { q: `What is the ${name} at Preva Kitchen?`, a: `${description} ${content.preparation}` },
-    { q: `How much does the ${name} cost?`, a: `The ${name} costs ${price} at Preva Kitchen in Redford Township, MI. Prices on delivery apps may vary slightly.` },
+    { q: `What ${be} the ${name} at Preva Kitchen?`, a: `${description} ${content.preparation}` },
+    { q: `How much ${plural ? 'do' : 'does'} the ${name} cost?`, a: `The ${name} ${costs} ${price} at Preva Kitchen in Redford Township, MI. Prices on delivery apps may vary slightly.` },
     content.question && content.answer
       ? { q: content.question, a: content.answer }
-      : { q: `Where can I order the ${name} near me?`, a: `The ${name} is served at ${LOCATION}. Dine in, call +1 313-286-3586 for pickup, or order online for delivery.` },
+      : { q: `Where can I order the ${name} near me?`, a: `The ${name} ${be} served at ${LOCATION}. Dine in, call +1 313-286-3586 for pickup, or order online for delivery.` },
     { q: `Can I get the ${name} delivered in Redford Township?`, a: `Yes — order the ${name} for delivery from the Preva online shop during kitchen hours, or call +1 313-286-3586 to arrange pickup from 13090 Inkster Rd.` },
     { q: `What goes well with the ${name}?`, a: `Recommended pairings are ${pairingText}. They can be added to the same pickup or delivery order.` }
   ];
@@ -423,7 +432,7 @@ export const WING_FLAVOR_LINKS = [
   { slug: 'honey-hot', name: 'Honey Hot Wings' },
   { slug: 'buffalo', name: 'Buffalo Wings' },
   { slug: 'bbq', name: 'BBQ Wings' },
-  { slug: 'preva-wings-chilli', name: 'Sweet Chilli Wings' },
+  { slug: 'preva-wings-chilli', name: 'Sweet Chili Wings' },
   { slug: 'garlic-parmesan', name: 'Garlic Parmesan Wings' },
   { slug: 'lemon-pepper', name: 'Lemon Pepper Wings' },
   { slug: 'jerk', name: 'Jerk Wings' }

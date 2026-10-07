@@ -15,7 +15,8 @@
 // real template logic (title interpolation, path building, keyword lists)
 // still runs for real.
 import { describe, it, expect } from 'vitest';
-import { pageMetadata } from '@/lib/seo';
+import { pageMetadata, truncateAtWord } from '@/lib/seo';
+import { dishImage } from '@/lib/dish-images';
 import { readSource, extractCallArgs, extractConstValue, extractStatementSource, evalExpression } from '../helpers/sourceExtract.js';
 import { srcPath } from '../helpers/paths.js';
 import { FIXTURE_PRODUCT, FIXTURE_JOB } from '../helpers/fixtures.js';
@@ -115,7 +116,9 @@ describe('SEO guardrails: dynamic indexable pages (fixture data)', () => {
       product: FIXTURE_PRODUCT,
       slug: FIXTURE_PRODUCT.slug,
       description,
-      encodeURIComponent
+      encodeURIComponent,
+      truncateAtWord,
+      dishImage
     });
     const metadata = pageMetadata(args);
 

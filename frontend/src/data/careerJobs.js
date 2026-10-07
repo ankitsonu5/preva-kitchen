@@ -7,7 +7,7 @@ export const careerJobs = [
     badge: 'Priority opening',
     type: 'Part-time / Full-time',
     schedule: 'Days, evenings & weekends',
-    pay: 'Pay range pending confirmation',
+    pay: 'Hourly pay, discussed in your interview',
     intro: 'Help every service start strong by preparing fresh ingredients, stocking stations, and keeping the kitchen organized and ready for the rush.',
     responsibilities: [
       'Wash, cut, portion, label, and store ingredients to Preva standards.',
@@ -35,7 +35,7 @@ export const careerJobs = [
     badge: 'Ongoing hiring',
     type: 'Part-time / Full-time',
     schedule: 'Flexible shifts',
-    pay: 'Pay range pending confirmation',
+    pay: 'Hourly pay, discussed in your interview',
     intro: 'Be the dependable force that keeps the kitchen clean, stocked, and ready for service. This is a hands-on role with a clear path to learn more.',
     responsibilities: [
       'Wash and sanitize dishes, cookware, utensils, and kitchen equipment.',
@@ -63,7 +63,7 @@ export const careerJobs = [
     badge: 'Growth opportunity',
     type: 'Part-time / Full-time',
     schedule: 'Days, evenings & weekends',
-    pay: 'Pay range pending confirmation',
+    pay: 'Hourly pay, discussed in your interview',
     intro: 'Bring consistency, speed, and care to every plate. You will own your station while working closely with the Chef and the rest of the kitchen team.',
     responsibilities: [
       'Prepare menu items consistently, safely, and to Preva standards.',
@@ -91,7 +91,7 @@ export const careerJobs = [
     badge: 'Leadership role',
     type: 'Full-time',
     schedule: 'Flexible leadership schedule',
-    pay: 'Pay range pending confirmation',
+    pay: 'Hourly pay, discussed in your interview',
     intro: 'Lead a kitchen built around standards, accountability, and memorable food. This role owns daily execution while helping the team grow.',
     responsibilities: [
       'Lead daily kitchen operations, service readiness, and shift execution.',
@@ -119,7 +119,7 @@ export const careerJobs = [
     badge: 'Ongoing hiring',
     type: 'Part-time',
     schedule: 'After-hours shifts',
-    pay: 'Pay range pending confirmation',
+    pay: 'Hourly pay, discussed in your interview',
     intro: 'Create the clean, polished environment every guest and team member expects. Your attention to detail protects the entire Preva experience.',
     responsibilities: [
       'Clean and sanitize dining, kitchen, restroom, office, and common areas.',

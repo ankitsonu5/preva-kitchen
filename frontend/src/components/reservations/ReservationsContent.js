@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Calendar, Users, Cake, Sparkles, MapPin, Clock, Phone, Check, ArrowRight } from 'lucide-react';
 import { showError, showSuccess, showWarning } from '@/lib/swal';
+import { RESERVATION_GUEST_OPTIONS } from '@/lib/reservation-options';
 import {
   PageShell,
   PageHero,
@@ -228,8 +229,8 @@ export default function ReservationsContent() {
                   <div>
                     <label htmlFor="reservation-guests" style={labelStyle}>Party Size</label>
                     <select id="reservation-guests" name="guests" value={form.guests} onChange={update} style={inputStyle}>
-                      {Array.from({ length: 19 }, (_, i) => i + 2).map((n) => (
-                        <option key={n} value={n}>{n} guests</option>
+                      {RESERVATION_GUEST_OPTIONS.map((n) => (
+                        <option key={n} value={n}>{n} {n === 1 ? 'guest' : 'guests'}</option>
                       ))}
                     </select>
                   </div>

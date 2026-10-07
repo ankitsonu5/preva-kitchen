@@ -11,7 +11,7 @@ import { api } from '@/lib/admin-api';
 const emptyForm = {
   title: '', slug: '', department: 'Preva Kitchen', location: 'Redford Township, MI',
   badge: 'Ongoing hiring', type: 'Part-time / Full-time', schedule: 'Flexible shifts',
-  pay: 'Pay range pending confirmation', intro: '', responsibilities: '', qualifications: '',
+  pay: 'Hourly pay, discussed in your interview', intro: '', responsibilities: '', qualifications: '',
   salaryMin: 0, salaryMax: 0, salaryUnit: 'HOUR', growth: '', interview: '', trial: false,
   image: '/asset/careers/preva-team-culture-v2.png', status: 'DRAFT', sortOrder: 0
 };

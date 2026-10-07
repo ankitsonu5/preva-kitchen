@@ -11,7 +11,9 @@ import {
   isWingFlavorPage,
   getCrossCategoryPairings
 } from '@/lib/dish-detail-content';
-import { pageMetadata } from '@/lib/seo';
+import { pageMetadata, truncateAtWord } from '@/lib/seo';
+import { dishImage } from '@/lib/dish-images';
+import { getOrderingStatus } from '@/lib/kitchen-hours';
 import { getCanonicalOrigin } from '@/lib/site-url';
 import { generateBreadcrumbSchema } from '@/lib/seo-schema';
 import { getFallbackProduct, getFallbackRelated } from '@/data/fallbackMenu';
@@ -29,9 +31,11 @@ export async function generateMetadata({ params }) {
 
   return pageMetadata({
     title: `${product.name} in Redford, MI`,
-    description: description.slice(0, 160),
+    description: truncateAtWord(description, 155),
     path: `/menu/${encodeURIComponent(slug)}`,
-    image: product.image,
+    image: dishImage(product),
+    // Dish photos are square, not 1200x630 - do not declare the wrong size.
+    imageSize: null,
     type: 'website',
     keywords: [
       product.name,
@@ -57,6 +61,10 @@ export default async function ProductPage({ params }) {
   const crossCategoryPairings = getCrossCategoryPairings(product);
   const siteOrigin = getCanonicalOrigin();
   const productUrl = `${siteOrigin}/menu/${encodeURIComponent(slug)}`;
+  const photo = dishImage(product);
+  const photoUrl = photo.startsWith('http') ? photo : `${siteOrigin}${photo}`;
+  const categoryPath = product.category ? `/menu#cat-${String(product.category).toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : '/menu';
+  const priceText = (Number(product.priceCents) / 100).toFixed(2);
 
   const detailSchema = {
     '@context': 'https://schema.org',
@@ -65,7 +73,7 @@ export default async function ProductPage({ params }) {
         '@type': 'Product',
         name: product.name,
         description: product.description,
-        image: product.image || undefined,
+        image: photoUrl,
         url: productUrl,
         brand: { '@type': 'Brand', name: 'Preva Kitchen' },
         category: product.category,
@@ -79,6 +87,18 @@ export default async function ProductPage({ params }) {
         }
       },
       {
+        '@type': 'MenuItem',
+        name: product.name,
+        description: product.description,
+        image: photoUrl,
+        url: productUrl,
+        offers: {
+          '@type': 'Offer',
+          price: priceText,
+          priceCurrency: 'USD'
+        }
+      },
+      {
         '@type': 'FAQPage',
         mainEntity: faqs.map((faq) => ({
           '@type': 'Question',
@@ -89,7 +109,7 @@ export default async function ProductPage({ params }) {
       generateBreadcrumbSchema([
         { name: 'Home', url: '/' },
         { name: 'Menu', url: '/menu' },
-        ...(product.category ? [{ name: product.category, url: '/menu' }] : []),
+        ...(product.category ? [{ name: product.category, url: categoryPath }] : []),
         { name: product.name, url: `/menu/${encodeURIComponent(slug)}` }
       ], siteOrigin)
     ]
@@ -100,7 +120,7 @@ export default async function ProductPage({ params }) {
     product.servings ? ['Serves', product.servings] : null,
     product.calories ? ['Calories', String(product.calories)] : null,
     ['Category', product.category],
-    ['Availability', product.available ? 'On today’s menu' : 'Sold out'],
+    ['Availability', product.available ? getOrderingStatus().label : 'Sold out'],
     Array.isArray(product.allergens) && product.allergens.length > 0
       ? ['Contains', product.allergens.map((a) => a[0].toUpperCase() + a.slice(1)).join(', ')]
       : null
@@ -119,7 +139,7 @@ export default async function ProductPage({ params }) {
             <Link href="/menu">Menu</Link> <span>/</span>
             {product.category && (
               <>
-                <Link href="/menu">{product.category}</Link> <span>/</span>
+                <Link href={categoryPath}>{product.category}</Link> <span>/</span>
               </>
             )}
             <span>{product.name}</span>
@@ -128,8 +148,8 @@ export default async function ProductPage({ params }) {
           <div className="ps-pdp">
             <div className="ps-pdp__shot">
               <img
-                src={product.slug === 'rasta-pasta' ? '/asset/home-reference/signature-dishes/Rasta-Pasta.webp' : (product.image || '/asset/home-reference/signature-dishes/Rasta-Pasta.webp')}
-                alt={`${product.name}${product.price ? ` — ${product.price}` : ''} at Preva Kitchen, Redford Township MI`}
+                src={photo}
+                alt={`${product.name} at Preva Kitchen, Redford Township MI`}
               />
             </div>
 
@@ -160,7 +180,7 @@ export default async function ProductPage({ params }) {
                   <div className="ps-acc__body">
                     <p>
                       Pickup from 13090 Inkster Rd, Redford Township — usually ready in about 25 minutes.
-                      Delivery runs across Redford and the surrounding neighbourhoods.
+                      Delivery runs across Redford and the surrounding neighborhoods.
                     </p>
                   </div>
                 </details>

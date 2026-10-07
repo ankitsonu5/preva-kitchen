@@ -7,7 +7,7 @@ import MenuSelectionModal from './MenuSelectionModal';
 
 const ORIGINAL_HEADER_MENU = [
   { title: 'Menu',         url: '/menu',                 openInNewTab: false, visible: true },
-  { title: 'Reservations', url: '/#prv-reservations',    openInNewTab: false, visible: true },
+  { title: 'Reservations', url: '/reservations',         openInNewTab: false, visible: true },
   { title: 'Blog',         url: '/blog',                 openInNewTab: false, visible: true },
   { title: 'Careers',      url: '/careers',              openInNewTab: false, visible: true },
   { title: 'Contact Us',   url: '/contact',              openInNewTab: false, visible: true },
@@ -36,7 +36,7 @@ function includeOrderNavigation(items) {
   // Always enforce the user's exact preferred header navigation items
   return [
     { title: 'Menu',         url: '/menu',                 openInNewTab: false, visible: true },
-    { title: 'Reservations', url: '/#prv-reservations',    openInNewTab: false, visible: true },
+    { title: 'Reservations', url: '/reservations',         openInNewTab: false, visible: true },
     { title: 'Blog',         url: '/blog',                 openInNewTab: false, visible: true },
     { title: 'Careers',      url: '/careers',              openInNewTab: false, visible: true },
     { title: 'Contact Us',   url: '/contact',              openInNewTab: false, visible: true },

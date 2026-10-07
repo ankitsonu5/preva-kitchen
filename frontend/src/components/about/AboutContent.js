@@ -34,7 +34,7 @@ export default function AboutContent() {
         <SectionHeading eyebrow="Where it started" eyebrowIcon={MapPin} title="Our Story on" titleAccent="Inkster Rd" />
         <div style={{ maxWidth: '820px', display: 'grid', gap: '18px' }}>
           <p style={{ color: COLORS.textMuted, fontSize: '1rem', lineHeight: 1.85, margin: 0 }}>
-            Preva Kitchen sits at 13090 Inkster Rd in Redford Township, cooking comfort food for a neighbourhood that shows up night
+            Preva Kitchen sits at 13090 Inkster Rd in Redford Township, cooking comfort food for a neighborhood that shows up night
             after night. The idea has always been simple: fresh ingredients, real technique, and plates that feel like they were made
             for you specifically — whether you&apos;re dining in, picking up, or feeding a whole party through catering.
           </p>
@@ -50,8 +50,7 @@ export default function AboutContent() {
         <SectionHeading eyebrow="Behind the line" eyebrowIcon={ChefHat} title="Meet the" titleAccent="Kitchen Team" />
         <Card style={{ maxWidth: '820px' }}>
           <p style={{ color: COLORS.textMuted, fontSize: '0.98rem', lineHeight: 1.8, margin: 0 }}>
-            Our kitchen team preps and cooks every order fresh, service after service. We&apos;re working on introducing the people
-            behind the line — real names and photos are coming soon. For now, know that every plate that leaves this kitchen has
+            Our kitchen team preps and cooks every order fresh, service after service. Every plate that leaves this kitchen has
             someone&apos;s full attention behind it.
           </p>
         </Card>
@@ -79,7 +78,7 @@ export default function AboutContent() {
       {/* Serving Redford Township etc */}
       <Section bg={COLORS.bgAlt}>
         <SectionHeading
-          eyebrow="Our neighbourhood"
+          eyebrow="Our neighborhood"
           eyebrowIcon={MapPin}
           title="Serving Redford Township,"
           titleAccent="Old Redford & Livonia"

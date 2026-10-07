@@ -219,7 +219,7 @@ function wrapEmail({ title, subtitle, referenceId, badgeText = 'Website Notifica
               <p style="margin:0 0 4px;color:#E5DAC6;font-family:'Cinzel',Georgia,serif;font-size:12px;letter-spacing:2.5px;font-weight:600;">PREVA KITCHEN</p>
               <p style="margin:0 0 6px;color:#786E5E;font-size:10px;line-height:1.6;">
                 ${BRAND_ADDRESS}<br>
-                <a href="tel:3132863586" style="color:#C9A96E;text-decoration:none;">${BRAND_PHONE}</a> &bull;
+                <a href="tel:+13132863586" style="color:#C9A96E;text-decoration:none;">${BRAND_PHONE}</a> &bull;
                 <a href="${escapeHtml(siteUrl)}" style="color:#C9A96E;text-decoration:none;">prevakitchen.com</a>
               </p>
               ${footerNote ? `<p style="margin:4px 0 0;color:#544D42;font-size:9.5px;font-style:italic;">${escapeHtml(footerNote)}</p>` : ''}
@@ -327,7 +327,7 @@ function wrapCustomerConfirmation({ eyebrow = 'PREVA Concierge', heading, name, 
               <p style="margin:0 0 4px;color:#E5DAC6;font-family:'Cinzel',Georgia,serif;font-size:12px;letter-spacing:2.5px;font-weight:600;">PREVA KITCHEN</p>
               <p style="margin:0 0 6px;color:#786E5E;font-size:10px;line-height:1.6;">
                 ${BRAND_ADDRESS}<br>
-                <a href="tel:3132863586" style="color:#C9A96E;text-decoration:none;">${BRAND_PHONE}</a> &bull;
+                <a href="tel:+13132863586" style="color:#C9A96E;text-decoration:none;">${BRAND_PHONE}</a> &bull;
                 <a href="${escapeHtml(siteUrl)}" style="color:#C9A96E;text-decoration:none;">prevakitchen.com</a>
               </p>
               <p style="margin:0;color:#544D42;font-size:9px;line-height:1.5;">Fine Dining &bull; Redford Township, MI</p>

@@ -26,7 +26,6 @@ export async function generateMetadata({ params }) {
   return {
     title,
     description,
-    keywords: page.focusKeyword ? [page.focusKeyword] : undefined,
     alternates: {
       canonical
     },

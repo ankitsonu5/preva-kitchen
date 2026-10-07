@@ -34,7 +34,6 @@ export default async function sitemap() {
   const coreRoutes = [
     { url: `${base}`, lastModified: new Date(), changeFrequency: 'daily', priority: 1.0 },
     { url: `${base}/menu`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.95 },
-    { url: `${base}/order-online`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.9 },
     { url: `${base}/blog`, lastModified: new Date(), changeFrequency: 'daily', priority: 0.85 },
     { url: `${base}/gallery`, lastModified: new Date(), changeFrequency: 'weekly', priority: 0.75 },
     { url: `${base}/contact`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },

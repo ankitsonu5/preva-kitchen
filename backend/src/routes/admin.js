@@ -499,7 +499,7 @@ function careerJobPayload(body) {
     badge: cleanText(body?.badge, 80) || 'Ongoing hiring',
     type: cleanText(body?.type, 100) || 'Part-time / Full-time',
     schedule: cleanText(body?.schedule, 160) || 'Flexible shifts',
-    pay: cleanText(body?.pay, 160) || 'Pay range pending confirmation',
+    pay: cleanText(body?.pay, 160) || 'Hourly pay, discussed in your interview',
     salaryMin: Math.max(Number(body?.salaryMin) || 0, 0),
     salaryMax: Math.max(Number(body?.salaryMax) || 0, 0),
     salaryUnit: ['HOUR', 'DAY', 'WEEK', 'MONTH', 'YEAR'].includes(String(body?.salaryUnit).toUpperCase())

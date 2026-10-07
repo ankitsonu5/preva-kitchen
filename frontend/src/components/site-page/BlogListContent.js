@@ -45,14 +45,15 @@ export default function BlogListContent({ posts, initialPage }) {
     <main id="primary" className="site-main" suppressHydrationWarning>
       {/* Hero Section */}
       <section className="blog-hero">
-        <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1600&q=80" className="blog-hero-image" alt="Preva Kitchen blog" />
+        <img src="/asset/hero/menu-hero-cinematic.jpg" className="blog-hero-image" alt="Dishes from Preva Kitchen in Redford Township" />
         <div className="overlay" style={{ background: 'rgba(0,0,0,0.6)', position: 'absolute', inset: 0 }}></div>
         <div className="container relative-z2 text-center" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
           <span className="section-eyebrow" style={{ color: 'var(--accent-gold, #c5a059)', fontSize: '0.8rem', letterSpacing: '3px', fontWeight: 700, marginBottom: '12px' }}>
             STORIES & INSIGHTS
           </span>
           <h1 className="blog-title-large" style={{ color: '#fff', fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 700, fontFamily: 'var(--font-roboto), Arial, sans-serif', margin: 0 }}>
-            Blog
+            Preva Kitchen Blog
+            <span style={{ display: 'block', marginTop: '8px', fontSize: '0.4em', fontWeight: 500, letterSpacing: '0.04em' }}>Food Stories from Redford</span>
           </h1>
         </div>
       </section>

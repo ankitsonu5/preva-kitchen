@@ -80,6 +80,9 @@ const domReconciliationGuard = `
  */
 export const dynamic = 'force-dynamic';
 
+// Colors the mobile browser bar to match the dark site (PWA / "theme-color").
+export const viewport = { themeColor: '#0a0907' };
+
 export async function generateMetadata() {
   const settings = await cmsFetch('/settings');
   const oldBrand = /night\s*life|night\s*club|\bclub\b|\bvip\b|bottle/i;
@@ -97,13 +100,6 @@ export async function generateMetadata() {
       template: `%s | ${siteTitle}`
     },
     description,
-    keywords: [
-      'Preva Kitchen',
-      'restaurant Redford Township',
-      'food delivery Redford MI',
-      'pickup restaurant Redford',
-      'catering Redford Michigan'
-    ],
     authors: [{ name: 'Preva Kitchen' }],
     creator: 'Preva Kitchen',
     publisher: 'Preva Kitchen',
@@ -142,8 +138,8 @@ export async function generateMetadata() {
         { url: '/favicon.ico', sizes: '48x48' },
         { url: '/favicon.svg', type: 'image/svg+xml', sizes: 'any' }
       ],
-      shortcut: '/favicon.ico',
-      apple: '/asset/preva-real-logo.png'
+      shortcut: '/favicon.ico'
+      // apple-touch-icon comes from src/app/apple-icon.js
     }
   };
 }

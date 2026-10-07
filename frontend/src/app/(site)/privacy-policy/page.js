@@ -28,7 +28,7 @@ const sections = [
   {
     heading: 'How We Use Your Information',
     body: [
-      'We use the information you provide to fulfill orders, confirm reservations, respond to enquiries, process catering requests, and communicate with you about your order or request. We may also use contact information to follow up about a submission you made, or to send order and reservation confirmations.',
+      'We use the information you provide to fulfill orders, confirm reservations, respond to inquiries, process catering requests, and communicate with you about your order or request. We may also use contact information to follow up about a submission you made, or to send order and reservation confirmations.',
       'We do not sell your personal information to third parties.'
     ]
   },

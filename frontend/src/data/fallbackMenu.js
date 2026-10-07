@@ -18,7 +18,7 @@ export const FALLBACK_PRODUCTS = [
     optionGroups: [
       {
         id: 'flavour',
-        label: 'Flavour Choice',
+        label: 'Flavor Choice',
         type: 'radio',
         required: true,
         maxPick: 1,
@@ -532,7 +532,7 @@ export const FALLBACK_PRODUCTS = [
     category: 'Sides',
     price: '$6.50',
     priceCents: 650,
-    description: 'Sweet plantains fried golden and caramelised at the edges.',
+    description: 'Sweet plantains fried golden and caramelized at the edges.',
     image: '/asset/prevaclub/wp-content/uploads/2026/08/Fried-Plantains.webp',
     available: true,
     orderable: true,

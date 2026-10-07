@@ -26,7 +26,7 @@ const contactOptions = [
     icon: Utensils,
     title: 'Catering & Private Dining',
     body: 'Custom party trays, corporate lunches, and celebration feasts prepared fresh for your guests.',
-    href: '/menu',
+    href: '/catering',
     cta: 'Explore catering menu'
   },
   {
@@ -147,8 +147,9 @@ export default function ContactContent() {
                   textTransform: 'uppercase'
                 }}
               >
-                Talk to the <br />
-                <span style={{ color: '#c5a059', fontStyle: 'italic', textTransform: 'none' }}>Kitchen.</span>
+                Contact <br />
+                <span style={{ color: '#c5a059', fontStyle: 'italic', textTransform: 'none' }}>Preva Kitchen</span>
+                <span style={{ display: 'block', marginTop: '10px', fontSize: '0.38em', fontWeight: 500, letterSpacing: '0.08em' }}>Redford Township, MI</span>
               </h1>
 
               {/* Sparkles Ornament */}

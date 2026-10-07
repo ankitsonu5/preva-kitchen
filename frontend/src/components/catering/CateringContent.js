@@ -27,26 +27,24 @@ const EMPTY_FORM = {
 };
 
 /*
- * Tray sizes and pricing below are ILLUSTRATIVE PLACEHOLDERS only — the
- * owner has not yet confirmed real catering prices. Replace these numbers
- * (and add any additional tray/pan options) before treating this page as
- * final. Labeled clearly on-page as "starting at" so nothing reads as a
- * locked-in quote.
+ * The owner has not confirmed real catering prices yet, so no dollar amounts
+ * are published. When prices are confirmed, set `price` (e.g. 'Starting at $X')
+ * on each tray below.
  */
 const trays = [
-  { size: 'Small Tray', feeds: 'Feeds 8-10', price: 'Starting at $60', note: 'Great for office lunches and small gatherings.' },
-  { size: 'Medium Tray', feeds: 'Feeds 15-20', price: 'Starting at $110', note: 'A solid choice for birthdays and team events.' },
-  { size: 'Large Tray', feeds: 'Feeds 25-30', price: 'Starting at $160', note: 'Built for family parties, repasts and church events.' }
+  { size: 'Small Tray', feeds: 'Feeds 8-10', price: 'Custom quote', note: 'Great for office lunches and small gatherings.' },
+  { size: 'Medium Tray', feeds: 'Feeds 15-20', price: 'Custom quote', note: 'A solid choice for birthdays and team events.' },
+  { size: 'Large Tray', feeds: 'Feeds 25-30', price: 'Custom quote', note: 'Built for family parties, repasts and church events.' }
 ];
 
 const deliveryAreas = ['Redford Township', 'Old Redford', 'Livonia', 'Dearborn Heights', 'Garden City'];
 
 /* Same dishes featured as homepage favorites — good tray/pan candidates for catering. */
 const popularDishes = [
-  { name: 'Preva Mac & Cheese', slug: 'preva-mac-and-cheese', description: 'Baked macaroni in a rich five-cheese sauce, finished with a golden crust.' },
-  { name: 'Preva Lamb Chops', slug: 'preva-lamb-chops', description: 'Grilled lamb chops seasoned with Preva house spices.' },
-  { name: 'Preva Steak Bites', slug: 'preva-steak-bites', description: 'Tender steak bites finished with savory garlic herb butter.' },
-  { name: 'Sweet Chilli Wings', slug: 'preva-wings-chilli', description: 'Crispy jumbo wings coated in a bright sweet chilli glaze with a gentle kick.' },
+  { name: 'Preva Mac & Cheese', slug: 'mac-and-cheese', description: 'Baked macaroni in a rich five-cheese sauce, finished with a golden crust.' },
+  { name: 'Preva Lamb Chops', slug: 'lamb-chops', description: 'Grilled lamb chops seasoned with Preva house spices.' },
+  { name: 'Preva Steak Bites', slug: 'steak-bites', description: 'Tender steak bites finished with savory garlic herb butter.' },
+  { name: 'Sweet Chili Wings', slug: 'preva-wings-chilli', description: 'Crispy jumbo wings coated in a bright sweet chili glaze with a gentle kick.' },
   { name: 'Shrimp Tacos', slug: 'shrimp-tacos', description: 'Seasoned shrimp tucked into warm tortillas with fresh slaw and house sauce.' },
   { name: 'Preva Quesadillas', slug: 'preva-quesadillas', description: 'Golden grilled tortilla layered with melted cheese and house seasoning.' }
 ];
@@ -58,11 +56,11 @@ const faqs = [
   },
   {
     question: 'Do you deliver, or is it pickup only?',
-    answer: 'Both — pickup at 13090 Inkster Rd is always available, and we deliver within Redford Township, Old Redford, Livonia, Dearborn Heights and Garden City. Ask about delivery to your area when you enquire.'
+    answer: 'Both — pickup at 13090 Inkster Rd is always available, and we deliver within Redford Township, Old Redford, Livonia, Dearborn Heights and Garden City. Ask about delivery to your area when you inquire.'
   },
   {
     question: 'Can you accommodate dietary requests?',
-    answer: 'Yes — let us know about allergies or dietary preferences (halal, no shellfish, vegetarian, etc.) in your enquiry and we will work with you on the menu.'
+    answer: 'Yes — let us know about allergies or dietary preferences (halal, no shellfish, vegetarian, etc.) in your inquiry and we will work with you on the menu.'
   },
   {
     question: 'Do you require a deposit for larger orders?',
@@ -108,7 +106,7 @@ export default function CateringContent() {
         name: form.name,
         email: form.email,
         phone: form.phone,
-        subject: 'Catering Enquiry',
+        subject: 'Catering Inquiry',
         message: detailLines,
         formSource: 'Preva Kitchen Catering Page',
         pageUrl: typeof window !== 'undefined' ? window.location.href : undefined
@@ -118,14 +116,14 @@ export default function CateringContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      if (!response.ok) throw new Error('Catering enquiry could not be sent');
+      if (!response.ok) throw new Error('Catering inquiry could not be sent');
       setSuccess(true);
       setForm(EMPTY_FORM);
-      showSuccess('Enquiry received', 'Thanks! Our kitchen team will follow up about your event shortly.');
+      showSuccess('Inquiry received', 'Thanks! Our kitchen team will follow up about your event shortly.');
     } catch (submitError) {
       console.error(submitError);
-      setError('We could not send your enquiry. Please call (313) 286-3586 and we will help directly.');
-      showError('Enquiry not sent', 'Please try again or call the kitchen at (313) 286-3586.');
+      setError('We could not send your inquiry. Please call (313) 286-3586 and we will help directly.');
+      showError('Inquiry not sent', 'Please try again or call the kitchen at (313) 286-3586.');
     } finally {
       setSubmitting(false);
     }
@@ -153,7 +151,7 @@ export default function CateringContent() {
           eyebrowIcon={Utensils}
           title="Tray Sizes"
           titleAccent="& Pricing"
-          description="Illustrative starting prices — final pricing depends on menu selection and headcount. Ask for an exact quote when you enquire."
+          description="Pricing depends on menu selection and headcount. Tell us about your event and we will send you a quote."
         />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '24px' }}>
           {trays.map((tray) => (
@@ -166,7 +164,7 @@ export default function CateringContent() {
           ))}
         </div>
         <p style={{ color: '#888', fontSize: '0.8rem', marginTop: '18px', maxWidth: '720px' }}>
-          Pricing shown is a starting-point estimate pending final confirmation from ownership — call or use the form below for a firm quote on your event.
+          Call (313) 286-3586 or use the form below for a quote on your event.
         </p>
       </Section>
 
@@ -236,7 +234,7 @@ export default function CateringContent() {
           eyebrowIcon={UtensilsCrossed}
           title="Popular Dishes"
           titleAccent="for Your Event"
-          description="Not sure what to put on the tray? These are guest favorites from the full menu — click through for details, or mix and match when you enquire."
+          description="Not sure what to put on the tray? These are guest favorites from the full menu — click through for details, or mix and match when you inquire."
         />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '20px', marginBottom: '28px' }}>
           {popularDishes.map((dish) => (
@@ -260,7 +258,7 @@ export default function CateringContent() {
         <SecondaryButton href="/menu" icon={Utensils}>View Full Menu</SecondaryButton>
       </Section>
 
-      {/* Enquiry form */}
+      {/* Inquiry form */}
       <Section id="catering-form" bg={COLORS.bgAlt} padding="90px 0 100px" borderBottom={false}>
         <div
           style={{
@@ -274,17 +272,17 @@ export default function CateringContent() {
           <div>
             <SectionHeading eyebrow="Tell us about your event" title="Get a" titleAccent="Catering Quote" description="Share your event date and headcount and our kitchen team will follow up with menu options and pricing." />
           </div>
-          <FormCard eyebrow="Catering Enquiry" title="Request a Quote" description="We'll respond with menu options and a firm price.">
+          <FormCard eyebrow="Catering Inquiry" title="Request a Quote" description="We'll respond with menu options and a firm price.">
             {success ? (
               <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                 <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(213, 164, 79, 0.15)', border: `1px solid ${COLORS.gold}`, color: COLORS.gold, display: 'grid', placeItems: 'center', margin: '0 auto 20px' }}>
                   <Check size={32} />
                 </div>
-                <h4 style={{ fontFamily, fontSize: '1.6rem', color: '#fff', margin: '0 0 10px' }}>Enquiry Received</h4>
+                <h4 style={{ fontFamily, fontSize: '1.6rem', color: '#fff', margin: '0 0 10px' }}>Inquiry Received</h4>
                 <p style={{ color: '#aaa', fontSize: '0.94rem', marginBottom: '24px' }}>
                   Thanks for reaching out. Our kitchen team will follow up about your event shortly.
                 </p>
-                <PrimaryButton onClick={() => setSuccess(false)}>Send Another Enquiry</PrimaryButton>
+                <PrimaryButton onClick={() => setSuccess(false)}>Send Another Inquiry</PrimaryButton>
               </div>
             ) : (
               <form onSubmit={submit} style={{ display: 'grid', gap: '18px' }} noValidate>
@@ -322,7 +320,7 @@ export default function CateringContent() {
                   <textarea id="catering-message" name="message" rows={4} placeholder="Event type, menu preferences, delivery or pickup..." value={form.message} onChange={update} required style={textareaStyle} />
                 </div>
                 <PrimaryButton type="submit" disabled={submitting} icon={ArrowRight} style={{ width: '100%', marginTop: '8px' }}>
-                  {submitting ? 'Sending Enquiry...' : 'Request Catering Quote'}
+                  {submitting ? 'Sending Inquiry...' : 'Request Catering Quote'}
                 </PrimaryButton>
                 <p style={{ margin: 0, color: '#888', fontSize: '0.78rem', textAlign: 'center' }}>
                   Prefer to talk it through? Call <a href="tel:+13132863586" style={{ color: COLORS.gold }}>(313) 286-3586</a>.

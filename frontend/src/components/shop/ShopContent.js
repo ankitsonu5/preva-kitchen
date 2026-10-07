@@ -5,6 +5,7 @@ import PrivateDiningBanner from '@/components/shop/PrivateDiningBanner';
 import { getCanonicalOrigin } from '@/lib/site-url';
 import { generateMenuPageSchema } from '@/lib/seo-schema';
 import { FALLBACK_PRODUCTS, FALLBACK_CATEGORIES } from '@/data/fallbackMenu';
+import { withoutLegacyDuplicates } from '@/lib/legacy-dish-slugs';
 
 export default async function ShopContent() {
   const origin = getCanonicalOrigin();
@@ -13,7 +14,7 @@ export default async function ShopContent() {
     cmsFetch('/shop/categories')
   ]);
 
-  const list = Array.isArray(products) && products.length > 0 ? products : FALLBACK_PRODUCTS;
+  const list = withoutLegacyDuplicates(Array.isArray(products) && products.length > 0 ? products : FALLBACK_PRODUCTS);
   const cats = Array.isArray(categories) && categories.length > 0 ? categories : FALLBACK_CATEGORIES;
   const menuSchema = generateMenuPageSchema(list, origin);
 
@@ -35,7 +36,7 @@ export default async function ShopContent() {
 
           <div className="ps-hero-minimal__content">
             <span className="ps-hero-minimal__kicker">PREVA KITCHEN</span>
-            <h1 className="ps-hero-minimal__title">Explore Our Dishes</h1>
+            <h1 className="ps-hero-minimal__title">Preva Kitchen Menu – Wings, Seafood, Pasta &amp; More</h1>
             <p className="ps-hero-minimal__sub">Crafted with passion, served with pride in Redford Township, MI.</p>
           </div>
         </section>
@@ -57,19 +58,19 @@ export default async function ShopContent() {
             </div>
             <div className="ps-exp-grid">
               <div className="ps-exp-card">
-                <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80" alt="Preva Ambiance" />
+                <img src="/asset/home-reference/preva-restaurant-hero.png" alt="Dining room at Preva Kitchen" loading="lazy" />
                 <div className="ps-exp-card__overlay">
                   <span className="ps-exp-card__title">Sophisticated Atmosphere</span>
                 </div>
               </div>
               <div className="ps-exp-card">
-                <img src="https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=800&q=80" alt="Master Chef Plating" />
+                <img src="/asset/home-reference/preva-kitchen-story.jpg" alt="Preparing a dish in the Preva Kitchen" loading="lazy" />
                 <div className="ps-exp-card__overlay">
                   <span className="ps-exp-card__title">Culinary Mastery</span>
                 </div>
               </div>
               <div className="ps-exp-card">
-                <img src="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80" alt="Candlelight Dining" />
+                <img src="/asset/hero/preva-feast-hero.jpg" alt="A table of Preva Kitchen dishes" loading="lazy" />
                 <div className="ps-exp-card__overlay">
                   <span className="ps-exp-card__title">Exclusive Fine Dining</span>
                 </div>

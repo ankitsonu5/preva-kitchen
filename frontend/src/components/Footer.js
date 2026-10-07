@@ -574,18 +574,29 @@ export default function Footer() {
                   marginTop: '16px'
                 }}
               >
-                <iframe
-                  title="Preva Kitchen Location Map"
-                  src="https://www.google.com/maps?q=Preva+Kitchen,+13090+Inkster+Rd,+Redford+Township,+MI+48239,+United+States&output=embed"
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
+                <a
+                  href="https://www.google.com/maps/search/?api=1&query=Preva+Kitchen,+13090+Inkster+Rd,+Redford+Township,+MI+48239,+United+States"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
                     width: '100%',
                     height: '100%',
-                    border: 0,
-                    display: 'block'
+                    padding: '16px',
+                    textAlign: 'center',
+                    textDecoration: 'none',
+                    color: '#f5f1e8',
+                    background: 'rgba(255, 255, 255, 0.04)'
                   }}
-                />
+                >
+                  <SvgIcon name="location" size={26} />
+                  <span>{settings.address}</span>
+                  <strong style={{ color: '#c5a059', letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.8rem' }}>Get Directions →</strong>
+                </a>
               </div>
             </div>
           </div>
@@ -594,6 +605,9 @@ export default function Footer() {
             <div className="footer-bottom-divider"></div>
             <div className="footer-copyright-content">
               <p>&copy; {new Date().getFullYear()} Preva Kitchen. All rights reserved.</p>
+              <p className="footer-legal-links">
+                <a href="/privacy-policy">Privacy Policy</a> · <a href="/terms">Terms of Service</a> · <a href="/accessibility">Accessibility</a>
+              </p>
             </div>
           </div>
         </div>
@@ -602,9 +616,7 @@ export default function Footer() {
       {/* Mobile kitchen actions */}
       {!isLandingPage && !isShopOrOrderPage && (
         <div className="mobile-sticky-cta">
-          <a href="#prv-reservations"
-             onClick={(e) => { e.preventDefault(); selectTabAndScroll('prv-reservations'); }}
-             className="sticky-btn">RESERVE TABLE</a>
+          <a href="/reservations" className="sticky-btn">RESERVE TABLE</a>
           {/* TEMPORARY (until KDS is live): open Order Online popup. Original:
           <a href="/menu" className="sticky-btn">ORDER ONLINE</a> */}
           <a

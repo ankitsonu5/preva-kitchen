@@ -160,6 +160,9 @@ describe('SEO guardrails: dish detail page inline JSON-LD (menu/[slug])', () => 
     const siteOrigin = TEST_ORIGIN;
     const slug = product.slug;
     const productUrl = `${siteOrigin}/menu/${encodeURIComponent(slug)}`;
+    const photoUrl = `${siteOrigin}/asset/dish.webp`;
+    const categoryPath = '/menu#cat-test';
+    const priceText = (Number(product.priceCents) / 100).toFixed(2);
 
     const schema = evalExpression(detailSchemaSrc, {
       product,
@@ -167,6 +170,9 @@ describe('SEO guardrails: dish detail page inline JSON-LD (menu/[slug])', () => 
       siteOrigin,
       slug,
       productUrl,
+      photoUrl,
+      categoryPath,
+      priceText,
       generateBreadcrumbSchema,
       encodeURIComponent
     });

@@ -6,6 +6,9 @@ import Swal from 'sweetalert2';
 import GoogleReviewsSection from '@/components/sections/GoogleReviewsSection';
 import GallerySection from '@/components/sections/GallerySection';
 import { getCanonicalOrigin } from '@/lib/site-url';
+import { money } from '@/components/shop/ShopProvider';
+import { withoutLegacyDuplicates } from '@/lib/legacy-dish-slugs';
+import { RESERVATION_GUEST_OPTIONS } from '@/lib/reservation-options';
 import {
   ArrowRight,
   BadgeCheck,
@@ -35,8 +38,8 @@ const restaurantGalleryImages = [
     caption: 'Steak Bites'
   },
   {
-    src: 'https://images.unsplash.com/photo-1551248429-40975aa4de74?auto=format&fit=crop&w=800&q=80',
-    caption: 'Wild Lobster Bites'
+    src: '/asset/prevaclub/wp-content/uploads/2026/08/PrevaLobster-768x768.webp',
+    caption: 'Lobster Bites'
   },
   {
     src: '/asset/gallery/RASTA05.jpg',
@@ -72,75 +75,61 @@ const highlights = [
   { icon: BadgeCheck, title: 'Quality Service', text: 'Warm hospitality for every guest at every table.' }
 ];
 
-const categories = [
-  { name: 'Entrees', count: '18 Items', image: '/asset/hero/preva-steak-hero.jpg', position: '67% center' },
-  { name: 'Burgers', count: '12 Items', image: '/asset/hero/preva-burger-hero.jpg', position: 'center' },
-  { name: 'Pasta', count: '10 Items', image: '/asset/hero/preva-pasta-hero.jpg', position: 'center' },
-  { name: 'Shareables', count: '9 Items', image: '/asset/hero/preva-feast-hero.jpg', position: 'center' },
-  { name: 'Chef Specials', count: '8 Items', image: '/asset/hero/preva-steak-hero.jpg', position: '44% center' },
-  { name: 'Fresh Plates', count: '14 Items', image: '/asset/hero/preva-feast-hero.jpg', position: '78% center' }
-];
-
-const signatureDishes = [
-  {
-    name: 'Preva Mac & Cheese',
-    slug: 'preva-mac-and-cheese',
-    price: '$7.50',
-    description: 'Baked macaroni in a rich five-cheese sauce, finished with a golden crust.',
-    image: '/asset/home-reference/signature-dishes/PrevaMac-600x600.webp'
-  },
-  {
-    name: 'Preva Lamb Chops',
-    slug: 'preva-lamb-chops',
-    price: '$33.50',
-    description: 'Grilled lamb chops seasoned with Preva house spices and served with your choice of sides.',
-    image: '/asset/home-reference/signature-dishes/prevaLamb-600x600.webp'
-  },
-  {
-    name: 'Preva Steak Bites',
-    slug: 'preva-steak-bites',
-    price: '$19.50',
-    description: 'Tender steak bites grilled to perfection and finished with savory garlic herb butter.',
-    image: '/asset/home-reference/signature-dishes/PrevaSteakBites-600x600.webp'
-  },
-  {
-    name: 'Preva Catfish Bites',
-    slug: 'preva-catfish',
-    price: '$15.50',
-    description: 'Seasoned catfish bites fried golden and served hot, crisp and full of Southern flavor.',
-    image: '/asset/home-reference/signature-dishes/PrevaCatfish-600x600.webp'
-  },
-  {
-    name: 'Shrimp Tacos',
-    slug: 'shrimp-tacos',
-    price: '$16.00',
-    description: 'Seasoned shrimp tucked into warm tortillas with fresh slaw and signature house sauce.',
-    image: '/asset/home-reference/signature-dishes/ShrimpTacos-600x600.webp'
-  },
-  {
-    name: 'Preva Quesadillas',
-    slug: 'preva-quesadillas',
-    price: '$17.49',
-    description: 'Golden grilled tortilla layered with melted cheese, house seasoning and your choice of filling.',
-    image: '/asset/home-reference/signature-dishes/PrevaQuesadilla-600x600.webp'
-  },
-  {
-    name: 'Double Smash Burger',
-    slug: 'preva-double-smash-burger',
-    price: '$11.49',
-    description: 'Two smashed beef patties, double American cheese and thousand island with seasoned fries.',
-    image: '/asset/home-reference/signature-dishes/PrevaDoubleSmashBurger-600x600.webp'
-  },
-  {
-    name: 'Sweet Chilli Wings',
-    slug: 'preva-wings-chilli',
-    price: '$16.50',
-    description: 'Crispy jumbo wings coated in a bright sweet chilli glaze with a gentle kick.',
-    image: '/asset/home-reference/signature-dishes/PrevaWingsChilli-1024x1024.webp'
+// Category cards are built from the menu itself: real category names, real item
+// counts, and the photo of the first dish in each category.
+function buildCategories(menuProducts) {
+  const groups = new Map();
+  for (const product of withoutLegacyDuplicates(menuProducts)) {
+    if (product.available === false || !product.category) continue;
+    const group = groups.get(product.category) || { name: product.category, count: 0, image: '' };
+    group.count += 1;
+    if (!group.image) group.image = signatureDishPhotos[product.slug] || product.image || '';
+    groups.set(product.category, group);
   }
-];
+  return [...groups.values()].map((group) => ({
+    ...group,
+    count: `${group.count} ${group.count === 1 ? 'Item' : 'Items'}`
+  }));
+}
 
-export default function Home() {
+const SIGNATURE_DISH_COUNT = 8;
+
+// Better home-page crops for a few dishes; any other dish uses its own menu image.
+const signatureDishPhotos = {
+  'mac-and-cheese': '/asset/home-reference/signature-dishes/PrevaMac-600x600.webp',
+  'preva-mac-and-cheese': '/asset/home-reference/signature-dishes/PrevaMac-600x600.webp',
+  'lamb-chops': '/asset/home-reference/signature-dishes/prevaLamb-600x600.webp',
+  'preva-lamb-chops': '/asset/home-reference/signature-dishes/prevaLamb-600x600.webp',
+  'steak-bites': '/asset/home-reference/signature-dishes/PrevaSteakBites-600x600.webp',
+  'preva-steak-bites': '/asset/home-reference/signature-dishes/PrevaSteakBites-600x600.webp',
+  'preva-catfish': '/asset/home-reference/signature-dishes/PrevaCatfish-600x600.webp',
+  'shrimp-tacos': '/asset/home-reference/signature-dishes/ShrimpTacos-600x600.webp',
+  'preva-quesadillas': '/asset/home-reference/signature-dishes/PrevaQuesadilla-600x600.webp',
+  'preva-double-smash-burger': '/asset/home-reference/signature-dishes/PrevaDoubleSmashBurger-600x600.webp',
+  'preva-wings-chilli': '/asset/home-reference/signature-dishes/PrevaWingsChilli-1024x1024.webp'
+};
+
+// "Preva Favorites" is taken straight from the menu: featured dishes first,
+// then the rest in menu order, 8 in total. Name, price, description and link
+// are the menu's own, so the home page can never disagree with /menu.
+function buildSignatureDishes(menuProducts) {
+  const available = withoutLegacyDuplicates(menuProducts).filter((product) => product.available !== false && product.slug);
+  const featured = available.filter((product) => product.featured);
+  const rest = available.filter((product) => !product.featured);
+  return [...featured, ...rest]
+    .slice(0, SIGNATURE_DISH_COUNT)
+    .map((product) => ({
+      name: product.name,
+      slug: product.slug,
+      price: money(product.priceCents),
+      description: product.description || '',
+      image: signatureDishPhotos[product.slug] || product.image || '/asset/home-reference/signature-dishes/Rasta-Pasta.webp'
+    }));
+}
+
+export default function Home({ menuProducts = [] }) {
+  const signatureDishes = buildSignatureDishes(menuProducts);
+  const categories = buildCategories(menuProducts);
   const [booking, setBooking] = useState({ name: '', email: '', phone: '', purpose: '', date: '', time: '', guests: '2', hp_field: '' });
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   // "Other" in the purpose dropdown reveals this free-text field instead of
@@ -158,6 +147,9 @@ export default function Home() {
   const [activeHeroSlide, setActiveHeroSlide] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const heroVideoRef = useRef(null);
+  // The 1080p hero video is the main mobile LCP cost, so phones (like Data
+  // Saver / slow-connection visitors) get the poster still instead of the video.
+  const skipVideo = saveData || isMobile;
 
   useEffect(() => {
     const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -206,24 +198,24 @@ export default function Home() {
   useEffect(() => {
     const videoEl = heroVideoRef.current;
     if (!videoEl) return;
-    if (activeHeroSlide === 0 && !reduceMotion && !saveData) {
+    if (activeHeroSlide === 0 && !reduceMotion && !skipVideo) {
       videoEl.currentTime = 0;
       videoEl.play().catch(() => {});
     } else {
       videoEl.pause();
     }
-  }, [activeHeroSlide, reduceMotion, saveData]);
+  }, [activeHeroSlide, reduceMotion, skipVideo]);
 
   // On a metered connection the video slide would otherwise sit frozen on
   // its poster forever (it normally advances itself via onEnded once
   // playback finishes) — advance it on the same timer used for image slides.
   useEffect(() => {
-    if (!saveData || reduceMotion || heroSlides[activeHeroSlide].type !== 'video') return undefined;
+    if (!skipVideo || reduceMotion || heroSlides[activeHeroSlide].type !== 'video') return undefined;
     const timer = window.setTimeout(() => {
       setActiveHeroSlide((current) => (current + 1) % heroSlides.length);
     }, HERO_IMAGE_SLIDE_DELAY);
     return () => window.clearTimeout(timer);
-  }, [activeHeroSlide, reduceMotion, saveData]);
+  }, [activeHeroSlide, reduceMotion, skipVideo]);
 
   const updateBooking = (field) => (event) => {
     setBooking((current) => ({ ...current, [field]: event.target.value }));
@@ -344,7 +336,7 @@ export default function Home() {
                 aria-hidden={index !== activeHeroSlide}
                 muted
                 playsInline
-                preload={saveData ? 'none' : 'auto'}
+                preload={skipVideo ? 'none' : 'metadata'}
                 poster={slide.poster}
                 onEnded={() => { if (!reduceMotion) setActiveHeroSlide((current) => (current + 1) % heroSlides.length); }}
               >
@@ -365,8 +357,10 @@ export default function Home() {
         <div className="pk-ref-hero-shade" aria-hidden="true" />
         <div className="pk-ref-wrap pk-ref-hero-inner">
           <div className="pk-ref-hero-copy">
-            <p className="pk-ref-script">Welcome to Preva Kitchen — Redford Township, MI</p>
-            <h1 id="pk-ref-hero-title">Good Food<br />Good Mood</h1>
+            <h1 id="pk-ref-hero-title">
+              <span className="pk-ref-h1-eyebrow">Preva Kitchen – Restaurant in Redford Township, MI</span>
+              Good Food<br />Good Mood
+            </h1>
             <p className="pk-ref-hero-lead">Experience the perfect blend of bold flavor, warm ambience and genuine hospitality. Every dish is made fresh with care.</p>
             <div className="pk-ref-hero-actions">
               <Link className="pk-ref-button pk-ref-button--gold" href="/menu">
@@ -430,9 +424,9 @@ export default function Home() {
 
           <div className="pk-ref-category-grid">
             {categories.map((category) => (
-              <Link className="pk-ref-category" href="/menu" key={category.name}>
+              <Link className="pk-ref-category" href={`/menu#cat-${category.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} key={category.name}>
                 <span className="pk-ref-category-image">
-                  <img src={category.image} alt={`${category.name} at Preva Kitchen`} loading="lazy" style={{ objectPosition: category.position }} />
+                  <img src={category.image} alt={`${category.name} at Preva Kitchen`} loading="lazy" />
                 </span>
                 <strong>{category.name}</strong>
                 <small>{category.count}</small>
@@ -591,7 +585,7 @@ export default function Home() {
                   <div className="pk-ref-booking-group">
                     <span className="pk-ref-booking-label"><UsersRound size={12} /> Guests</span>
                     <select className="pk-ref-booking-input" value={booking.guests} onChange={updateBooking('guests')} aria-label="Number of guests">
-                      {Array.from({ length: 10 }, (_, i) => i + 1).map((g) => (
+                      {RESERVATION_GUEST_OPTIONS.map((g) => (
                         <option key={g} value={g}>{g} {g === 1 ? 'Person' : 'People'}</option>
                       ))}
                     </select>
