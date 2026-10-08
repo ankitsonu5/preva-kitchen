@@ -74,7 +74,7 @@ export default function CulinarySection({ visible, onReserveDining }) {
         ref={bgRef}
         className="culinary-bg-parallax"
         style={{
-          backgroundImage: "url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1600&q=80')",
+          backgroundImage: "url('/asset/hero/preva-feast-hero.jpg')",
           position: 'absolute',
           top: '-8%',
           left: 0,

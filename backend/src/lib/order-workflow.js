@@ -2,7 +2,6 @@ import { badRequest } from '../router.js';
 import { notifyCustomerOrderStatus } from './email.js';
 import { col } from './db.js';
 import { releaseOrderStock } from './inventory.js';
-import { notifyKdsChange } from './events.js';
 
 export const ORDER_STATUSES = [
   'PENDING',
@@ -17,7 +16,7 @@ export const ORDER_STATUSES = [
   'REFUNDED'
 ];
 
-export const KDS_ACTIVE_STATUSES = ['PAID', 'RECEIVED', 'PREPARING', 'READY', 'ON_THE_WAY'];
+export const ACTIVE_ORDER_STATUSES = ['PAID', 'RECEIVED', 'PREPARING', 'READY', 'ON_THE_WAY'];
 
 export function allowedOrderTransitions(order = {}) {
   return {
@@ -53,8 +52,8 @@ function stageTimestamps(order, status, now) {
 /**
  * Apply one validated order transition.
  *
- * Both KDS entry points call this service so their state rules, audit history,
- * timestamps, and customer notifications cannot drift apart.
+ * Every status change goes through this service so state rules, audit history,
+ * timestamps, and customer notifications stay consistent.
  */
 export async function transitionOrderStatus({ orders, order, targetStatus, actor, reason = '', now = new Date() }) {
   const status = String(targetStatus || '').trim().toUpperCase();
@@ -80,7 +79,6 @@ export async function transitionOrderStatus({ orders, order, targetStatus, actor
 
   await orders.updateOne({ _id: order._id }, { $set: update });
   const updatedOrder = { ...order, ...update };
-  notifyKdsChange();
 
   // Only a RECEIVED-or-later order ever had stock reserved (checkout never
   // reserves for a still-PENDING/unpaid order), so only give it back here.
@@ -98,7 +96,7 @@ export async function transitionOrderStatus({ orders, order, targetStatus, actor
     }
   }
 
-  // Email delivery must never roll back a kitchen action.
+  // Email delivery must never roll back a status change.
   try {
     await notifyCustomerOrderStatus(updatedOrder, status);
   } catch (error) {
@@ -106,52 +104,4 @@ export async function transitionOrderStatus({ orders, order, targetStatus, actor
   }
 
   return updatedOrder;
-}
-
-/** Persist one line's preparation checkbox and retain a compact audit trail. */
-export async function setOrderItemChecked({ orders, order, lineIndex, checked, actor, now = new Date() }) {
-  const index = Number(lineIndex);
-  const lines = Array.isArray(order?.lines) ? order.lines : [];
-  if (!Number.isInteger(index) || index < 0 || index >= lines.length) {
-    throw badRequest('That kitchen item does not exist on this order.');
-  }
-  if (typeof checked !== 'boolean') throw badRequest('Item checked state must be true or false.');
-
-  const by = actor || 'kitchen-display';
-  const existingStates = Array.isArray(order.kdsItemStates) ? order.kdsItemStates : [];
-  const state = { lineIndex: index, checked, at: now, by };
-  const kdsItemStates = [
-    ...existingStates.filter((entry) => Number(entry?.lineIndex) !== index),
-    state
-  ].sort((left, right) => Number(left.lineIndex) - Number(right.lineIndex));
-  const kdsItemHistory = [
-    ...(Array.isArray(order.kdsItemHistory) ? order.kdsItemHistory : []),
-    state
-  ].slice(-100);
-  const update = { kdsItemStates, kdsItemHistory, updatedAt: now };
-
-  await orders.updateOne({ _id: order._id }, { $set: update });
-  notifyKdsChange();
-  return { ...order, ...update };
-}
-
-export async function assignOrderTicket({ orders, order, station, assignee, actor, now = new Date() }) {
-  const cleanStation = String(station ?? order.kdsAssignment?.station ?? '').trim().slice(0, 40);
-  const cleanAssignee = String(assignee ?? order.kdsAssignment?.assignee ?? '').trim().slice(0, 80);
-  if (!cleanStation && !cleanAssignee) throw badRequest('Choose a station or cook for this ticket.');
-
-  const assignment = {
-    station: cleanStation || 'Expo',
-    assignee: cleanAssignee,
-    at: now,
-    by: actor || 'kitchen-display'
-  };
-  const kdsAssignmentHistory = [
-    ...(Array.isArray(order.kdsAssignmentHistory) ? order.kdsAssignmentHistory : []),
-    assignment
-  ].slice(-50);
-  const update = { kdsAssignment: assignment, kdsAssignmentHistory, updatedAt: now };
-  await orders.updateOne({ _id: order._id }, { $set: update });
-  notifyKdsChange();
-  return { ...order, ...update };
 }

@@ -15,7 +15,6 @@ const SOURCE_PRODUCTS = [
   ['garlic-parmesan-wings', 'garlic-parmesan'],
   ['lemon-pepper-wings', 'lemon-pepper'],
   ['jerk-wings', 'jerk'],
-  ['preva-burger', 'preva-burger'],
   ['preva-double-smash-burger', 'preva-double-smash-burger'],
   ['preva-quesadillas', 'preva-quesadillas'],
   ['chicken-quesadillas', 'chicken-quesadillas'],
@@ -45,7 +44,6 @@ const SOURCE_PRODUCTS = [
 ];
 
 const SOURCE_IMAGE_OVERRIDES = {
-  'preva-burger': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaBurger-768x768.webp',
   'preva-wings': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaWings-768x768.webp',
   'preva-wings-chilli': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaWingsChilli-768x768.webp'
 };

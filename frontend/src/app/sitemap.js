@@ -3,6 +3,7 @@ import { getCanonicalOrigin } from '@/lib/site-url';
 import { getPublishedCareerJobs } from '@/lib/career-api';
 import { FALLBACK_PRODUCTS } from '@/data/fallbackMenu';
 import { FALLBACK_POSTS } from '@/data/fallbackPosts';
+import { categoryPath } from '@/lib/menu-categories';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 3600; // Cache 1 hour
@@ -66,6 +67,17 @@ export default async function sitemap() {
       priority: 0.8
     }));
 
+  const categoryEntries = [...new Set(
+    productList
+      .filter(prod => prod.category && !legacyDishSlugs.has(String(prod.slug || '')))
+      .map(prod => categoryPath(prod.category))
+  )].map(path => ({
+    url: `${base}${path}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly',
+    priority: 0.8
+  }));
+
   const jobList = Array.isArray(jobs) ? jobs : [];
   const jobEntries = jobList
     .filter(job => !nonKitchen.test(`${job.department || ''} ${job.title || ''} ${job.slug || ''}`))
@@ -86,6 +98,6 @@ export default async function sitemap() {
       priority: 0.6
     }));
 
-  const all = [...coreRoutes, ...postEntries, ...productEntries, ...jobEntries, ...pageEntries];
+  const all = [...coreRoutes, ...postEntries, ...productEntries, ...categoryEntries, ...jobEntries, ...pageEntries];
   return [...new Map(all.map(item => [item.url, item])).values()];
 }

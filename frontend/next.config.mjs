@@ -37,16 +37,6 @@ const nextConfig = {
           { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }
         ]
       },
-      {
-        // Nginx reverse-proxy buffering must be disabled for Server-Sent Events.
-        // Without this, nginx buffers the stream until the buffer fills and the
-        // KDS board never receives real-time push events (silently falls back to polling).
-        source: '/api/shop/kitchen-events',
-        headers: [
-          { key: 'X-Accel-Buffering', value: 'no' },
-          { key: 'Cache-Control', value: 'no-cache, no-transform' }
-        ]
-      }
     ];
   },
 
@@ -75,16 +65,40 @@ const nextConfig = {
         destination: 'https://prevakitchen.com/:path*',
         permanent: true
       },
-      // TEMPORARY (until KDS is live): /menu goes to the old site's menu page.
-      // Delete this rule to bring the new /menu page back.
-      { source: '/menu', destination: 'https://prevaclub.com/preva-kitchen-menu/', permanent: false },
       { source: '/preva-kitchen', destination: '/about', permanent: true },
-      // TEMPORARY (ads running, KDS not finished): QR/menu scans show the old
-      // prevaclub.com menu page. Non-permanent so browsers/search engines don't cache it.
-      // When KDS is live: delete this rule and uncomment the original below.
-      { source: '/preva-kitchen-menu', destination: 'https://prevaclub.com/preva-kitchen-menu/', permanent: false },
-      // ORIGINAL (restore after KDS launch):
-      // { source: '/preva-kitchen-menu', destination: '/menu', permanent: true },
+      { source: '/preva-kitchen-menu', destination: '/menu', permanent: true },
+      // Old prevaclub.com-style dish URLs (/preva-kitchen-menu/<slug>) go to the dish in one hop.
+      { source: '/preva-kitchen-menu/honey-hot-wings', destination: '/menu/honey-hot', permanent: true },
+      { source: '/preva-kitchen-menu/buffalo-wings', destination: '/menu/buffalo', permanent: true },
+      { source: '/preva-kitchen-menu/bbq-wings', destination: '/menu/bbq', permanent: true },
+      { source: '/preva-kitchen-menu/garlic-parmesan-wings', destination: '/menu/garlic-parmesan', permanent: true },
+      { source: '/preva-kitchen-menu/lemon-pepper-wings', destination: '/menu/lemon-pepper', permanent: true },
+      { source: '/preva-kitchen-menu/jerk-wings', destination: '/menu/jerk', permanent: true },
+      { source: '/preva-kitchen-menu/preva-lamb', destination: '/menu/lamb-chops', permanent: true },
+      { source: '/preva-kitchen-menu/preva-mac', destination: '/menu/mac-and-cheese', permanent: true },
+      { source: '/preva-kitchen-menu/preva-greens', destination: '/menu/collard-greens-turkey', permanent: true },
+      { source: '/preva-kitchen-menu/preva-yams', destination: '/menu/yams', permanent: true },
+      { source: '/preva-kitchen-menu/preva-lobster', destination: '/menu/lobster-bites', permanent: true },
+      { source: '/preva-kitchen-menu/preva-steak-bites', destination: '/menu/steak-bites', permanent: true },
+      { source: '/preva-kitchen-menu/rice-and-peas', destination: '/menu/rice-peas', permanent: true },
+      { source: '/preva-kitchen-menu/preva-burger', destination: '/menu/preva-double-smash-burger', permanent: true },
+      { source: '/preva-kitchen-menu/:slug', destination: '/menu/:slug', permanent: true },
+      // Dishes not on the menu: send visitors to the closest page.
+      { source: '/menu/preva-burger', destination: '/menu/preva-double-smash-burger', permanent: true },
+      { source: '/menu/oxtail-quesadilla', destination: '/menu/category/quesadillas', permanent: true },
+      { source: '/menu/rice-and-black-beans', destination: '/menu/category/sides', permanent: true },
+      // Short, ad-friendly URLs for the priority dishes.
+      { source: '/wings', destination: '/menu/category/wings', permanent: true },
+      { source: '/burgers', destination: '/menu/category/burger', permanent: true },
+      { source: '/burger', destination: '/menu/category/burger', permanent: true },
+      { source: '/quesadillas', destination: '/menu/category/quesadillas', permanent: true },
+      { source: '/tacos', destination: '/menu/category/tacos', permanent: true },
+      { source: '/rasta-pasta', destination: '/menu/rasta-pasta', permanent: true },
+      { source: '/lamb-chops', destination: '/menu/lamb-chops', permanent: true },
+      { source: '/catfish-bites', destination: '/menu/catfish-bites-with-fries', permanent: true },
+      { source: '/menu/catfish-bites', destination: '/menu/catfish-bites-with-fries', permanent: true },
+      { source: '/menu/category/burgers', destination: '/menu/category/burger', permanent: true },
+      { source: '/menu/burgers', destination: '/menu/category/burger', permanent: true },
       { source: '/contact-us', destination: '/contact', permanent: true },
       // Legacy /shop/<old-dup-slug> goes straight to the surviving dish in ONE hop
       // (otherwise /shop/x -> /menu/x -> /menu/<new> would be a two-step chain).

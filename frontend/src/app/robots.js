@@ -11,7 +11,6 @@ export default function robots() {
         disallow: [
           '/admin',
           '/admin/',
-          '/kitchen',
           '/display',
           '/api/',
           '/checkout',

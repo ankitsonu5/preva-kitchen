@@ -67,14 +67,6 @@ export const DISH_DETAIL_PROFILES = {
     answer: 'Expect a savory Caribbean jerk profile with warm spice and a grilled finish. It is a bolder choice than BBQ or lemon pepper.',
     pairings: ['Rice & Peas', 'Fried Plantains', 'Steamed Cabbage']
   },
-  'preva-burger': {
-    title: 'The Signature Preva Cheeseburger',
-    preparation: 'The burger is layered with American cheese, lettuce, tomato, red onion and pickles on a toasted bun.',
-    occasion: 'It is a straightforward signature burger for a weekday lunch or a familiar main in a larger delivery order.',
-    question: 'What toppings come on the Preva Burger?',
-    answer: 'The Preva Burger comes with American cheese, lettuce, tomato, red onion and pickles on a toasted bun.',
-    pairings: ['Fries', 'Mac & Cheese', 'Preva Wings']
-  },
   'preva-double-smash-burger': {
     title: 'Two Smash Patties with Crisp Edges',
     preparation: 'Two patties are smashed on the hot cooking surface, layered with two slices of American cheese and thousand island, then served with fries.',
@@ -249,7 +241,7 @@ export const DISH_DETAIL_PROFILES = {
     occasion: 'Add them to wings, tacos, a burger or bites when the main item does not already include a side.',
     question: 'Are fries included with every burger or wing order?',
     answer: 'Not with every menu item. The Double Smash Burger and Catfish Bites with Fries include fries; otherwise order this side separately.',
-    pairings: ['Preva Burger', 'Preva Wings', 'Chicken Tacos']
+    pairings: ['Preva Double Smash Burger', 'Preva Wings', 'Chicken Tacos']
   },
   'rice-peas': {
     title: 'Caribbean Rice with Kidney Beans and Coconut',

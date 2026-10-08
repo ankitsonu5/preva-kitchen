@@ -12,7 +12,6 @@ export const DISH_LOCAL_MAP = {
   'steak-bites': '/asset/home-reference/signature-dishes/PrevaSteakBites-600x600.webp',
   'preva-lobster': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaLobster-768x768.webp',
   'lobster-bites': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaLobster-768x768.webp',
-  'preva-burger': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaBurger-768x768.webp',
   'preva-wings': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaWings-768x768.webp',
   'preva-wings-chilli': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaWingsChilli-768x768.webp',
   'preva-mac': '/asset/home-reference/signature-dishes/PrevaMac-600x600.webp',

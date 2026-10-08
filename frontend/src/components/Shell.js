@@ -15,9 +15,7 @@ export default function Shell({ children }) {
 
   const isKioskMode =
     pathname === '/display' ||
-    pathname.startsWith('/display/') ||
-    pathname === '/kitchen' ||
-    pathname.startsWith('/kitchen/');
+    pathname.startsWith('/display/');
 
   useEffect(() => {
     window.openOrderModal = () => setIsOrderOpen(true);

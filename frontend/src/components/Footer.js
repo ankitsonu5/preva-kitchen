@@ -472,7 +472,7 @@ export default function Footer() {
           <div className="premium-footer-grid">
             {/* Brand Column */}
             <div className="footer-col brand-col">
-              <img src="/asset/preva-logo-silver.png" alt={settings.siteTitle || 'PREVA'} className="footer-logo-img" />
+              <img src="/asset/preva-kitchen-logo.webp" alt={settings.siteTitle || 'PREVA'} className="footer-logo-img" />
               <h4 className="footer-heading footer-brand-heading">CONTACT US</h4>
               <ul className="footer-info-list footer-brand-contact">
                 <li>
@@ -617,10 +617,10 @@ export default function Footer() {
       {!isLandingPage && !isShopOrOrderPage && (
         <div className="mobile-sticky-cta">
           <a href="/reservations" className="sticky-btn">RESERVE TABLE</a>
-          {/* TEMPORARY (until KDS is live): open Order Online popup. Original:
+          {/* TEMPORARY (until in-house online ordering is live): open Order Online popup. Original:
           <a href="/menu" className="sticky-btn">ORDER ONLINE</a> */}
           <a
-            href="#preva-order"
+            href="/menu"
             className="sticky-btn"
             onClick={(e) => {
               e.preventDefault();

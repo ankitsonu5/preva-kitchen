@@ -14,7 +14,7 @@ const DISHES = [
     num: '01',
     title: 'Lavish Lamb Tower',
     price: '$27.50',
-    img: 'https://images.unsplash.com/photo-1603360946369-dc9bb6258143?auto=format&fit=crop&w=900&q=80',
+    img: '/asset/hero/preva-steak-hero.jpg',
     category: 'CHEF SIGNATURE',
     desc: 'Rosemary-glazed lamb chops with seasonal vegetables and a rich, velvety jus.'
   },
@@ -22,7 +22,7 @@ const DISHES = [
     num: '02',
     title: 'Lobster Bites',
     price: '$27.98',
-    img: 'https://images.unsplash.com/photo-1551248429-40975aa4de74?auto=format&fit=crop&w=900&q=80',
+    img: '/asset/home-reference/story-lobster-dish.webp',
     category: 'SEAFOOD SPECIAL',
     desc: 'Wild-caught lobster seared in garlic herb butter with a bright lemon finish.'
   },
@@ -30,7 +30,7 @@ const DISHES = [
     num: '03',
     title: 'Seared Steak Bites',
     price: '$21.98',
-    img: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80',
+    img: '/asset/gallery/STEAK02.jpg',
     category: 'GUEST FAVORITE',
     desc: 'Prime steak bites sautéed with peppers, onions, and mushrooms for deep savory flavor.'
   }

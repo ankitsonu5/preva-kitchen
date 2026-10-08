@@ -10,7 +10,7 @@ import { loadContentInclude } from './public.js';
 import { stripe, stripeConfigured, paymentStatusSummary } from '../lib/stripe.js';
 import { careerJobsCollection } from '../lib/career-jobs.js';
 import { get, post, put, patch, del, badRequest, forbidden, notFound, result } from '../router.js';
-import { KDS_ACTIVE_STATUSES, ORDER_STATUSES, transitionOrderStatus } from '../lib/order-workflow.js';
+import { ACTIVE_ORDER_STATUSES, ORDER_STATUSES, transitionOrderStatus } from '../lib/order-workflow.js';
 
 const WRITE = ['SUPER_ADMIN', 'ADMIN', 'EDITOR'];
 const AUTHOR = ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'AUTHOR'];
@@ -624,7 +624,6 @@ resource({
       aboutTitle: cleanText(body?.aboutTitle ?? current?.aboutTitle, 240),
       aboutContent: cleanText(body?.aboutContent ?? current?.aboutContent, 6000),
       category: cleanText(body?.category, 80) || 'Others',
-      kdsStation: cleanText(body?.kdsStation ?? current?.kdsStation, 40) || 'Expo',
       image: cleanText(body?.image, 2000) || null,
       available: cleanBool(body?.available, true),
       orderable: cleanBool(body?.orderable, current?.orderable ?? false),
@@ -677,7 +676,7 @@ get('/admin/users', { auth: true, roles: MANAGE }, async ({ user }) => {
 post('/admin/users', { auth: true, roles: MANAGE }, async (ctx) => {
   const email = cleanEmail(ctx.body?.email);
   const password = String(ctx.body?.password || '');
-  const role = ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'AUTHOR', 'CAREERS_MANAGER', 'KDS_MANAGER'].includes(ctx.body?.role) ? ctx.body.role : 'AUTHOR';
+  const role = ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'AUTHOR', 'CAREERS_MANAGER'].includes(ctx.body?.role) ? ctx.body.role : 'AUTHOR';
 
   if (!email) throw badRequest('An email address is required.');
   if (password.length < 12) throw badRequest('Use at least 12 characters for the password.');
@@ -719,7 +718,7 @@ put('/admin/users/:id', { auth: true, roles: MANAGE }, async (ctx) => {
     if (clash) throw badRequest('That email address is already registered.');
     update.email = nextEmail;
   }
-  if (ctx.body?.role && ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'AUTHOR', 'CAREERS_MANAGER', 'KDS_MANAGER'].includes(ctx.body.role)) {
+  if (ctx.body?.role && ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'AUTHOR', 'CAREERS_MANAGER'].includes(ctx.body.role)) {
     if (ctx.user.role !== 'SUPER_ADMIN' && ctx.body.role === 'SUPER_ADMIN') throw forbidden('Only the site owner can grant Super Admin access.');
     update.role = ctx.body.role;
   }
@@ -887,8 +886,8 @@ function orderFilter(query = {}) {
   const fulfilment = cleanText(query.fulfilment, 20).toUpperCase();
   const search = cleanText(query.search, 100);
 
-  if (status === 'KDS' || status === 'ACTIVE') {
-    filter.status = { $in: KDS_ACTIVE_STATUSES };
+  if (status === 'ACTIVE') {
+    filter.status = { $in: ACTIVE_ORDER_STATUSES };
   } else if (status === 'OPEN' || query.open === 'true') {
     filter.status = { $in: ['PENDING', 'PAID', 'RECEIVED', 'PREPARING', 'READY', 'ON_THE_WAY'] };
   } else if (status === 'PAID' || status === 'RECEIVED') {

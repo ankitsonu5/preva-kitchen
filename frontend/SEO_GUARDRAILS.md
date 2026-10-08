@@ -224,7 +224,7 @@ JSON-LD payload.
 These must keep `robots: { index: false, follow: false }` (checked directly,
 not via `pageMetadata()`, since they intentionally skip OG/canonical noise):
 `/checkout`, `/order/[number]`, `/preview`. `robots.js` also blocks
-`/admin`, `/kitchen`, `/display`, `/api/` at the crawler level. If you add a
+`/admin`, `/display`, `/api/` at the crawler level. If you add a
 new internal/utility route, disallow it in `frontend/src/app/robots.js` and
 give it `robots: { index: false, follow: false }`, and add it to the
 `NOINDEX_PAGES` array in `tests/seo/page-metadata.test.js`.

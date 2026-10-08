@@ -135,8 +135,7 @@ export async function priceOrder(input) {
       qty,
       unitCents,
       options: chosen.join(', '),
-      note: cleanText(raw.note, 200),
-      station: cleanText(item.kdsStation, 40) || 'Expo'
+      note: cleanText(raw.note, 200)
     });
   }
 

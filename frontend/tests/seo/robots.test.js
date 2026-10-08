@@ -8,7 +8,7 @@ describe('SEO guardrails: robots.js', () => {
 
   it('disallows the known noindex/internal routes', () => {
     const rule = result.rules[0];
-    for (const path of ['/checkout', '/order/', '/preview', '/admin', '/kitchen', '/display', '/api/']) {
+    for (const path of ['/checkout', '/order/', '/preview', '/admin', '/display', '/api/']) {
       expect(rule.disallow, `robots.js must disallow ${path}`).toContain(path);
     }
   });

@@ -329,7 +329,7 @@ export const KITCHEN_MENU_ITEMS = [
     image: "/asset/prevaclub/wp-content/uploads/2026/08/Fries.webp",
     tags: ["crispy", "classic"],
     allergens: ["gluten"],
-    pairings: ["Preva Burger", "Preva Wings"]
+    pairings: ["Preva Double Smash Burger", "Preva Wings"]
   },
   {
     name: "Rice & Peas",

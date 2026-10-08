@@ -9,6 +9,7 @@ import { getCanonicalOrigin } from '@/lib/site-url';
 import { money } from '@/components/shop/ShopProvider';
 import { withoutLegacyDuplicates } from '@/lib/legacy-dish-slugs';
 import { RESERVATION_GUEST_OPTIONS } from '@/lib/reservation-options';
+import { categoryPath } from '@/lib/menu-categories';
 import {
   ArrowRight,
   BadgeCheck,
@@ -424,7 +425,7 @@ export default function Home({ menuProducts = [] }) {
 
           <div className="pk-ref-category-grid">
             {categories.map((category) => (
-              <Link className="pk-ref-category" href={`/menu#cat-${category.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} key={category.name}>
+              <Link className="pk-ref-category" href={categoryPath(category.name)} key={category.name}>
                 <span className="pk-ref-category-image">
                   <img src={category.image} alt={`${category.name} at Preva Kitchen`} loading="lazy" />
                 </span>
@@ -603,7 +604,7 @@ export default function Home({ menuProducts = [] }) {
               <div className="pk-ref-booking-media">
                 <img
                   src="/asset/reservation-dining.jpg?v=diverse-neighborhood-dining-v2"
-                  alt="Black and White guests enjoying dinner together at Preva Kitchen"
+                  alt="Guests enjoying dinner together at Preva Kitchen in Redford Township"
                   className="pk-ref-booking-img"
                 />
                 <div className="pk-ref-booking-media-overlay" />

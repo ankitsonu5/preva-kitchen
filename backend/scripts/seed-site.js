@@ -71,9 +71,9 @@ const SECTIONS = [
       videoUrl: '',
       slides: [
         '/asset/prevaclub/wp-content/uploads/2026/06/hero-preva-kitchen-.jpeg',
-        'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80',
-        'https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=1200&q=80',
-        'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=80'
+        '/asset/home-reference/preva-restaurant-hero.webp',
+        '/asset/reservation-dining.jpg',
+        '/asset/gallery/STEAK02.jpg'
       ]
     }
   },
@@ -85,7 +85,7 @@ const SECTIONS = [
       eyebrow: 'ABOUT PREVA',
       title: 'The Preva Experience',
       description: "Preva defies convention by seamlessly blending two worlds. By day, we are a sanctuary of culinary excellence, offering a chef-driven menu in an upscale, modern setting.\n\nAs the sun sets, the energy shifts. Preva transforms into Detroit's most exclusive nightlife destination, featuring state-of-the-art sound & lighting and world-class entertainment.",
-      image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1000&q=80'
+      image: '/asset/home-reference/preva-restaurant-hero.webp'
     }
   },
   {
@@ -102,7 +102,7 @@ const SECTIONS = [
       eyebrow: 'PREVA KITCHEN',
       title: 'Chef-Driven Cuisine',
       description: 'Our culinary team crafts every dish with premium ingredients and bold flavors. From our signature wings to artisan burgers, every bite reflects our commitment to excellence.',
-      image: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1000&q=80',
+      image: '/asset/gallery/STEAK02.jpg',
       ctaLabel: 'View Full Menu',
       ctaUrl: '/preva-kitchen-menu'
     }
@@ -128,7 +128,7 @@ const SECTIONS = [
       eyebrow: 'NIGHTLIFE',
       title: 'Where Detroit Comes Alive',
       description: "As the sun sets, Preva transforms. State-of-the-art sound systems, premium lighting, and top-tier DJs create an atmosphere unlike anywhere else in Detroit. Reserve your VIP table and experience the night.",
-      image: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=1000&q=80',
+      image: '/asset/reservation-dining.jpg',
       ctaLabel: 'Book VIP Table',
       ctaUrl: '#reservations'
     }
@@ -692,10 +692,10 @@ if (!existingGallery) {
     visible: true,
     images: [
       { url: '/asset/prevaclub/wp-content/uploads/2026/06/hero-preva-kitchen-.jpeg', caption: 'Preva Kitchen Atmosphere', alt: 'Preva Kitchen' },
-      { url: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80', caption: 'Signature Steak Bites', alt: 'Steak Bites' },
-      { url: 'https://images.unsplash.com/photo-1551248429-40975aa4de74?auto=format&fit=crop&w=800&q=80', caption: 'Wild Lobster Bites', alt: 'Lobster Bites' },
-      { url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80', caption: 'Exclusive Lounge & VIP', alt: 'VIP Lounge' },
-      { url: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=800&q=80', caption: 'Vibrant Light & DJ Setups', alt: 'Nightlife' }
+      { url: '/asset/gallery/STEAK02.jpg', caption: 'Signature Steak Bites', alt: 'Steak Bites' },
+      { url: '/asset/home-reference/story-lobster-dish.webp', caption: 'Wild Lobster Bites', alt: 'Lobster Bites' },
+      { url: '/asset/home-reference/preva-restaurant-hero.webp', caption: 'Exclusive Lounge & VIP', alt: 'VIP Lounge' },
+      { url: '/asset/reservation-dining.jpg', caption: 'Vibrant Light & DJ Setups', alt: 'Nightlife' }
     ],
     createdAt: new Date(),
     updatedAt: new Date()

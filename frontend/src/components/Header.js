@@ -185,7 +185,7 @@ export default function Header() {
           <div className="site-branding">
             <a href="/" className="site-logo-link" onClick={handleNavigate('/')}>
               <img
-                src="/asset/preva-logo-silver.png"
+                src="/asset/preva-kitchen-logo.webp"
                 alt="Preva Kitchen"
                 className="site-logo"
                 onError={(e) => {
@@ -232,19 +232,14 @@ export default function Header() {
                   <span className="nav-phone-icon" aria-hidden="true"><SvgIcon name="phone" size={20} /></span>
                 </a>
               </li>
-              <li className="nav-cart-cta">
-                <a href="/checkout" className="nav-cart-link" aria-label="View cart" title="View cart" onClick={handleLinkClick}>
-                  <span className="nav-cart-icon" aria-hidden="true"><SvgIcon name="cart" size={20} /></span>
-                </a>
-              </li>
               <li className="nav-order-cta">
-                {/* TEMPORARY: open the Order Online popup (DoorDash/Uber Eats/Toast/Grubhub/Call) until KDS is live.
-                    Restore the original link below after KDS launch:
+                {/* TEMPORARY: open the Order Online popup (DoorDash/Uber Eats/Toast/Grubhub/Call) until in-house online ordering is live.
+                    Restore the original link below once in-house ordering launches:
                 <a href="/menu" className="preva-order-trigger" onClick={handleLinkClick}>
                   {settings.headerCtaText || 'ORDER ONLINE'}
                 </a> */}
                 <a
-                  href="#preva-order"
+                  href="/menu"
                   className="preva-order-trigger"
                   onClick={(e) => {
                     e.preventDefault();
@@ -257,7 +252,7 @@ export default function Header() {
               </li>
               <li className="nav-selection-cta">
                 <a
-                  href="#our-selection"
+                  href="/menu"
                   className="preva-order-trigger preva-selection-trigger"
                   onClick={(e) => {
                     e.preventDefault();

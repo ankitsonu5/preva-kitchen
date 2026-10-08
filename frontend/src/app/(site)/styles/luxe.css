@@ -4367,3 +4367,23 @@ div.preva-menu-modal,
     font-size: clamp(2rem, 10vw, 2.45rem) !important;
   }
 }
+
+/* Full-colour "Preva Kitchen" logo: drop the white glow made for the old silver mark */
+.site-header .site-logo,
+.footer-logo-img {
+  filter: none !important;
+}
+.site-header .site-logo {
+  width: 148px !important;
+  max-width: 148px !important;
+  max-height: 52px !important;
+}
+.footer-logo-img {
+  width: min(100%, 260px);
+}
+@media (max-width: 1199px) {
+  .site-header .site-logo { width: 124px !important; max-width: 124px !important; max-height: 44px !important; }
+}
+@media (max-width: 768px) {
+  .site-header .site-logo { width: 108px !important; max-width: 108px !important; max-height: 38px !important; }
+}

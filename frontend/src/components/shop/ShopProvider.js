@@ -95,8 +95,6 @@ export function ShopProvider({ children }) {
   return (
     <CartContext.Provider value={value}>
       {children}
-      <CartDrawer />
-      <CartButton />
     </CartContext.Provider>
   );
 }

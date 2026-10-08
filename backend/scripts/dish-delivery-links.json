@@ -1,0 +1,207 @@
+{
+  "_help": "For each dish, open it on Uber Eats / DoorDash / Grubhub (click the dish so its popup opens), copy the full browser URL and paste it here. Leave '' to keep the restaurant page link. Then run: node scripts/set-dish-delivery-links.js --apply",
+  "red-wine-poached-pear": {
+    "name": "Red Wine Poached Pear",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "lamb-chops": {
+    "name": "Preva Lamb Chops",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "catfish-bites-with-fries": {
+    "name": "Catfish Bites with Fries",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "rasta-pasta": {
+    "name": "Rasta Pasta",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "veggie-pasta": {
+    "name": "Veggie Pasta",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "lobster-bites": {
+    "name": "Preva Lobster",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "steak-bites": {
+    "name": "Preva Steak Bites",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "preva-catfish": {
+    "name": "Preva Catfish",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "preva-double-smash-burger": {
+    "name": "Preva Double Smash Burger",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "preva-wings": {
+    "name": "Preva Wings",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "preva-wings-chilli": {
+    "name": "Preva Wings Chilli",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "honey-hot": {
+    "name": "Honey Hot Wings",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "buffalo": {
+    "name": "Buffalo Wings",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "bbq": {
+    "name": "BBQ Wings",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "garlic-parmesan": {
+    "name": "Garlic Parmesan Wings",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "lemon-pepper": {
+    "name": "Lemon Pepper Wings",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "jerk": {
+    "name": "Jerk Wings",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "preva-quesadillas": {
+    "name": "Preva Quesadillas",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "chicken-quesadillas": {
+    "name": "Chicken Quesadillas",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "steak-quesadilla": {
+    "name": "Steak Quesadilla",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "shrimp-quesadillas": {
+    "name": "Shrimp Quesadillas",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "beef-quesadillas": {
+    "name": "Beef Quesadillas",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "veggie-quesadilla": {
+    "name": "Veggie Quesadilla",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "house-salad": {
+    "name": "House Salad",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "mac-and-cheese": {
+    "name": "Preva Mac and Cheese",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "collard-greens-turkey": {
+    "name": "Collard Greens with Turkey Meat",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "yams": {
+    "name": "Preva Yams",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "fries": {
+    "name": "Fries",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "rice-peas": {
+    "name": "Rice & Peas",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "fried-plantains": {
+    "name": "Fried Plantains",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "steamed-cabbage": {
+    "name": "Steamed Cabbage",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "shrimp-tacos": {
+    "name": "Shrimp Tacos",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "steak-tacos": {
+    "name": "Steak Tacos",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  },
+  "chicken-tacos": {
+    "name": "Chicken Tacos",
+    "uberEats": "",
+    "doorDash": "",
+    "grubhub": ""
+  }
+}

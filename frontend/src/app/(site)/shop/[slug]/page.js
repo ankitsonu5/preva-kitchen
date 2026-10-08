@@ -11,12 +11,14 @@ import {
   isWingFlavorPage,
   getCrossCategoryPairings
 } from '@/lib/dish-detail-content';
+import { withoutLegacyDuplicates } from '@/lib/legacy-dish-slugs';
 import { pageMetadata, truncateAtWord } from '@/lib/seo';
 import { dishImage } from '@/lib/dish-images';
 import { getOrderingStatus } from '@/lib/kitchen-hours';
 import { getCanonicalOrigin } from '@/lib/site-url';
 import { generateBreadcrumbSchema } from '@/lib/seo-schema';
 import { getFallbackProduct, getFallbackRelated } from '@/data/fallbackMenu';
+import { categoryPath as menuCategoryPath } from '@/lib/menu-categories';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,7 +55,7 @@ export default async function ProductPage({ params }) {
   const product = data?.product || getFallbackProduct(slug);
   if (!product) notFound();
 
-  const related = data?.related?.length > 0 ? data.related : getFallbackRelated(product);
+  const related = withoutLegacyDuplicates(data?.related?.length > 0 ? data.related : getFallbackRelated(product));
   const aboutTitle = product.aboutTitle || getDefaultAboutTitle(product);
   const aboutParagraphs = parseAboutContent(product.aboutContent, product);
   const faqs = getDishFaqs(product);
@@ -63,7 +65,7 @@ export default async function ProductPage({ params }) {
   const productUrl = `${siteOrigin}/menu/${encodeURIComponent(slug)}`;
   const photo = dishImage(product);
   const photoUrl = photo.startsWith('http') ? photo : `${siteOrigin}${photo}`;
-  const categoryPath = product.category ? `/menu#cat-${String(product.category).toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : '/menu';
+  const categoryPath = product.category ? menuCategoryPath(product.category) : '/menu';
   const priceText = (Number(product.priceCents) / 100).toFixed(2);
 
   const detailSchema = {
@@ -148,6 +150,7 @@ export default async function ProductPage({ params }) {
           <div className="ps-pdp">
             <div className="ps-pdp__shot">
               <img
+                fetchPriority="high"
                 src={photo}
                 alt={`${product.name} at Preva Kitchen, Redford Township MI`}
               />

@@ -1086,3 +1086,17 @@ a:hover .ps-btn--gold {
     grid-template-columns: 1fr;
   }
 }
+
+/* Dish page: "Order your way" delivery-partner tiles */
+.ps-pdp__info .ps-way { margin: 28px 0 24px; padding: 8px 0 12px; }
+.ps-pdp__info .ps-way .ps-way__title { display: flex; align-items: center; gap: 18px; margin: 0 0 28px; padding: 0; font-family: inherit; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.22em; line-height: 1.2; text-transform: uppercase; color: #c5a059; }
+.ps-way__title::before, .ps-way__title::after { content: ''; flex: 1; height: 1px; background: rgba(197, 160, 89, 0.35); }
+.ps-way__grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.ps-way__tile { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 18px 8px 16px; border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 12px; background: rgba(255, 255, 255, 0.02); color: #fff; text-decoration: none; text-align: center; transition: border-color .2s, background .2s, transform .2s; }
+.ps-way__tile:hover { border-color: #c5a059; background: rgba(197, 160, 89, 0.08); transform: translateY(-2px); }
+.ps-way__mark { display: flex; align-items: center; justify-content: center; height: 26px; }
+.ps-way__uber { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; color: #fff; } .ps-way__uber b { color: #06c167; font-weight: 700; }
+.ps-way__name { font-size: 0.8rem; font-weight: 600; line-height: 1; }
+.ps-way__cta { margin-top: auto; padding-top: 16px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.02em; color: #c5a059; }
+.ps-way__tile:hover .ps-way__cta { color: #f0d080; }
+@media (max-width: 900px) { .ps-way__grid { grid-template-columns: repeat(2, 1fr); } }

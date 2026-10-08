@@ -32,9 +32,7 @@ export default function Login() {
         ? '/admin/profile?first=1'
         : payload?.user?.role === 'CAREERS_MANAGER'
           ? '/admin/careers'
-          : payload?.user?.role === 'KDS_MANAGER'
-            ? '/admin/kds'
-            : '/admin';
+          : '/admin';
     } catch (err) {
       setErr('Could not connect to the admin service. Make sure the API server is running.');
       setLoading(false);

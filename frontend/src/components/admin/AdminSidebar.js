@@ -6,7 +6,6 @@ import {
   BookOpen,
   BriefcaseBusiness,
   ChartNoAxesCombined,
-  ChefHat,
   ChevronLeft,
   ChevronRight,
   CircleUserRound,
@@ -21,7 +20,6 @@ import {
   LogOut,
   MenuSquare,
   Settings,
-  Settings2,
   ShoppingCart,
   Tags,
   Sparkles,
@@ -57,12 +55,7 @@ const groups = [
   {
     label: 'Online ordering',
     items: [
-      { label: 'Orders', href: '/admin/orders', icon: ShoppingCart, permission: 'orders' },
-      { label: 'KDS Live Display', href: '/admin/kds', icon: ChefHat, permission: 'kds' },
-      { label: 'Take Order (Dine-In)', href: '/admin/kds/take-order', icon: UtensilsCrossed, permission: 'kds' },
-      { label: 'Table Status', href: '/admin/kds/tables', icon: LayoutGrid, permission: 'kds' },
-      { label: 'KDS Orders', href: '/admin/kds/orders', icon: ListTree, permission: 'kds' },
-      { label: 'KDS Settings', href: '/admin/kds/settings', icon: Settings2, permission: 'kds' }
+      { label: 'Orders', href: '/admin/orders', icon: ShoppingCart, permission: 'orders' }
     ]
   },
   {

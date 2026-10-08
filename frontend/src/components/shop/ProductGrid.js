@@ -2,74 +2,15 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { money, useCart } from './ShopProvider';
+import { money } from './ShopProvider';
 import Tilt3DCard from '../Tilt3DCard';
 import { Sparkles, ArrowRight } from 'lucide-react';
 import { DISH_LOCAL_MAP } from '@/lib/dish-images';
-
-// High-definition circular category images matching live Preva Kitchen menu
-const CATEGORY_IMAGES = {
-  'All': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaWings-768x768.webp',
-  'Preva Wings': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaWings-768x768.webp',
-  'Preva Burger': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaBurger-768x768.webp',
-  'Quesadillas': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaQuesadilla-768x768.webp',
-  'Tacos': '/asset/prevaclub/wp-content/uploads/2026/08/ShrimpTacos-768x768.webp',
-  'Preva Bites': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaCatfish-768x768.webp',
-  'Pasta': '/asset/home-reference/signature-dishes/Rasta-Pasta.webp',
-  'Salads': '/asset/prevaclub/wp-content/uploads/2026/08/house-salad.webp',
-  'Entrées': '/asset/prevaclub/wp-content/uploads/2026/08/prevaLamb-768x768.webp',
-  'Entrees': '/asset/prevaclub/wp-content/uploads/2026/08/prevaLamb-768x768.webp',
-  'Sides': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaMac-768x768.webp',
-  'Dessert': '/asset/prevaclub/wp-content/uploads/2026/08/red-wine-poached-pear.webp'
-};
-
-const CANONICAL_CATEGORIES = [
-  'Preva Wings',
-  'Preva Burger',
-  'Quesadillas',
-  'Tacos',
-  'Preva Bites',
-  'Pasta',
-  'Salads',
-  'Entrées',
-  'Sides',
-  'Dessert'
-];
-
-function normalizeCategoryName(name) {
-  if (!name) return 'Other';
-  const clean = String(name).trim();
-  if (/^entr[eé]es$/i.test(clean)) return 'Entrées';
-  if (/^wings$/i.test(clean)) return 'Preva Wings';
-  if (/^burger(s)?$/i.test(clean)) return 'Preva Burger';
-  if (/^bites$/i.test(clean)) return 'Preva Bites';
-  if (/^pasta$/i.test(clean)) return 'Pasta';
-  if (/^salads?$/i.test(clean)) return 'Salads';
-  if (/^desserts?$/i.test(clean)) return 'Dessert';
-  if (/^sides?$/i.test(clean)) return 'Sides';
-  if (/^quesadillas?$/i.test(clean)) return 'Quesadillas';
-  if (/^tacos?$/i.test(clean)) return 'Tacos';
-  return clean;
-}
+import { CATEGORY_IMAGES, CANONICAL_CATEGORIES, normalizeCategoryName, categoryPath } from '@/lib/menu-categories';
 
 export function ProductCard({ product }) {
-  const cart = useCart();
   const soldOut = !product.available;
-  const needsChoice = product.optionGroups?.some((group) => group.required);
   const imageSrc = DISH_LOCAL_MAP[product.slug] || product.image || '/asset/home-reference/signature-dishes/Rasta-Pasta.webp';
-
-  const quickAdd = () => {
-    cart.add({
-      itemId: product.id,
-      name: product.name,
-      image: imageSrc,
-      unitCents: product.priceCents,
-      qty: 1,
-      optionIds: [],
-      optionLabel: '',
-      note: ''
-    });
-  };
 
   return (
     <Tilt3DCard className="ps-card">
@@ -98,23 +39,6 @@ export function ProductCard({ product }) {
           {!soldOut && !product.badge && product.featured && <span className="ps-chip">Chef&rsquo;s pick</span>}
         </div>
 
-        {!soldOut && (
-          <div className="ps-card__quick">
-            {needsChoice ? (
-              <Link href={`/menu/${product.slug}`} className="ps-btn ps-btn--ghost ps-btn--sm ps-btn--block" style={{ background: 'rgba(0,0,0,.7)', borderRadius: '4px' }}>
-                Choose options
-              </Link>
-            ) : (
-              <button
-                type="button"
-                className="ps-btn ps-btn--gold ps-btn--sm ps-btn--block"
-                onClick={quickAdd}
-              >
-                + Add to order
-              </button>
-            )}
-          </div>
-        )}
       </div>
 
       <h3 style={{ margin: 0, fontSize: 'inherit', textTransform: 'inherit', lineHeight: 'inherit' }}>
@@ -129,13 +53,7 @@ export function ProductCard({ product }) {
           {product.showServings && product.servings && <span className="ps-meta">{product.servings}</span>}
         </div>
         {!soldOut && (
-          needsChoice ? (
-            <Link className="ps-btn ps-btn--gold ps-btn--sm lx-order-btn" href={`/menu/${product.slug}`}>Order</Link>
-          ) : (
-            <button type="button" className="ps-btn ps-btn--gold ps-btn--sm lx-order-btn" onClick={(e) => { e.preventDefault(); quickAdd(); }}>
-              Order
-            </button>
-          )
+          <Link className="ps-btn ps-btn--gold ps-btn--sm lx-order-btn" href={`/menu/${product.slug}`}>Order now</Link>
         )}
       </div>
     </Tilt3DCard>
@@ -263,9 +181,11 @@ export default function ProductGrid({ products, categories }) {
                     </h2>
                   </div>
 
-                  <span
+                  <Link
+                    href={categoryPath(group.category)}
                     style={{
                       display: 'inline-block',
+                      textDecoration: 'none',
                       padding: '6px 14px',
                       background: 'rgba(213, 164, 79, 0.08)',
                       border: '1px solid rgba(213, 164, 79, 0.25)',
@@ -277,8 +197,8 @@ export default function ProductGrid({ products, categories }) {
                       textTransform: 'uppercase'
                     }}
                   >
-                    {group.items.length} {group.items.length === 1 ? 'Dish' : 'Dishes'} Available
-                  </span>
+                    {group.items.length} {group.items.length === 1 ? 'Dish' : 'Dishes'} · View all
+                  </Link>
                 </div>
               </div>
 

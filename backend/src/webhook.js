@@ -3,7 +3,6 @@ import { stripe, stripeConfigured, webhookSecret } from './lib/stripe.js';
 import { logActivity } from './lib/activity.js';
 import { notifyNewOrder, notifyCustomerOrder } from './lib/email.js';
 import { releaseStock, reserveOrderStock } from './lib/inventory.js';
-import { notifyKdsChange } from './lib/events.js';
 
 /**
  * Stripe webhook.
@@ -200,7 +199,6 @@ async function markPaid(orders, order, payment) {
       );
       await logActivity({}, 'UPDATE', 'ORDER', `#${order.orderNumber} paid but oversold — ${error.message}`);
     }
-    notifyKdsChange();
   }
 
   return true;
@@ -403,7 +401,6 @@ export async function handleStripeWebhook(req, res) {
             console.error(`[stripe] stock release failed for refunded order #${order.orderNumber}: ${error.message}`);
           }
         }
-        notifyKdsChange();
         break;
       }
 

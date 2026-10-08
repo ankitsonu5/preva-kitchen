@@ -2,7 +2,7 @@ import slugify from 'slugify';
 import { col, serialize, asObjectId } from '../lib/db.js';
 import { cleanText, cleanEmail } from '../lib/sanitize.js';
 import {
-  SESSION_COOKIE, signSession, signKitchenAdminSession, sessionCookieOptions, verifyPassword, hashPassword,
+  SESSION_COOKIE, signSession, sessionCookieOptions, verifyPassword, hashPassword,
   loginBlocked, noteFailedLogin, clearLoginAttempts
 } from '../lib/auth.js';
 import { get, post, result, badRequest, notFound, unauthorized } from '../router.js';
@@ -256,7 +256,7 @@ post('/auth/login', async ({ body, ip }) => {
   const password = String(body?.password || '');
   const key = `${ip}:${identifier}`;
 
-  if (!identifier || !password) throw badRequest('Email/Kitchen ID and password are required.');
+  if (!identifier || !password) throw badRequest('Email and password are required.');
   if (await loginBlocked(key)) throw badRequest('Too many attempts. Try again in a few minutes.');
 
   const users = await col('users');
@@ -266,41 +266,14 @@ post('/auth/login', async ({ body, ip }) => {
     user.status !== 'DISABLED' &&
     await verifyPassword(password, user.passwordHash)
   );
-  const kitchenId = String(process.env.KITCHEN_ID || '').trim();
-  const kitchenPassword = String(process.env.KITCHEN_PASSWORD || '').trim();
-  const validKitchen = Boolean(
-    !validUser &&
-    kitchenId &&
-    kitchenPassword &&
-    identifier === kitchenId.toLowerCase() &&
-    password === kitchenPassword
-  );
-
   // The same message for a missing account and a wrong password, so the form
   // cannot be used to find out which addresses exist.
-  if (!validUser && !validKitchen) {
+  if (!validUser) {
     await noteFailedLogin(key);
-    throw unauthorized('Email/Kitchen ID or password is incorrect.');
+    throw unauthorized('Email or password is incorrect.');
   }
 
   await clearLoginAttempts(key);
-
-  if (validKitchen) {
-    const token = signKitchenAdminSession(kitchenId);
-    const kitchenUser = {
-      id: `kitchen:${kitchenId.toLowerCase()}`,
-      email: kitchenId,
-      name: 'Kitchen Display',
-      role: 'KDS_MANAGER',
-      mustChangePassword: false,
-      isKitchenAccount: true
-    };
-    await logActivity({ ip }, 'LOGIN', 'KITCHEN', `KDS admin login by ${kitchenId}`);
-    return result(
-      { user: kitchenUser },
-      { cookies: [{ name: SESSION_COOKIE, value: token, options: sessionCookieOptions }] }
-    );
-  }
 
   await users.updateOne({ _id: user._id }, { $set: { lastLoginAt: new Date() } });
 

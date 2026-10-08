@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 
-const FALLBACK_INTERIOR = 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=85';
-const PLATE_IMAGE = 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=700&q=85';
+const FALLBACK_INTERIOR = '/asset/home-reference/preva-restaurant-hero.webp';
+const PLATE_IMAGE = '/asset/gallery/STEAK02.jpg';
 
 export default function AboutSection({ eyebrow, title, description, image, visible }) {
   if (visible === false) return null;
