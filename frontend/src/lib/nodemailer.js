@@ -1,4 +1,6 @@
 import 'server-only';
+import fs from 'node:fs';
+import path from 'node:path';
 import nodemailer from 'nodemailer';
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -10,14 +12,49 @@ const BRAND_ADDRESS = '13090 Inkster Rd, Redford Township, MI 48239';
 const BRAND_PHONE = '(313) 286-3586';
 const BRAND_GOLD = '#C9A96E';
 
+const SMTP_KEYS = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_SECURE', 'SMTP_USER', 'SMTP_PASS', 'GMAIL_USER', 'GMAIL_APP_PASSWORD'];
+let _backendSmtpEnv;
+
+// On the server the backend's .env already holds the Gmail SMTP login (the
+// backend sends order emails with it). When the frontend's own env has no
+// SMTP password, read just the SMTP keys from there instead of skipping mail.
+function backendSmtpEnv() {
+  if (_backendSmtpEnv !== undefined) return _backendSmtpEnv;
+  _backendSmtpEnv = null;
+  const candidates = [
+    path.resolve(process.cwd(), '../backend/.env'),
+    path.resolve(process.cwd(), 'backend/.env')
+  ];
+  for (const file of candidates) {
+    try {
+      if (!fs.existsSync(file)) continue;
+      const values = {};
+      for (const line of fs.readFileSync(file, 'utf8').split(/\r?\n/)) {
+        const match = line.match(/^\s*(?:export\s+)?([A-Z_]+)\s*=\s*(.*)$/);
+        if (!match || !SMTP_KEYS.includes(match[1])) continue;
+        values[match[1]] = match[2].replace(/\s+#.*$/, '').replace(/^(['"])(.*)\1$/, '$2').trim();
+      }
+      if (values.SMTP_PASS || values.GMAIL_APP_PASSWORD) {
+        _backendSmtpEnv = values;
+        break;
+      }
+    } catch {
+      // Unreadable file: fall through to the next candidate.
+    }
+  }
+  return _backendSmtpEnv;
+}
+
 export function getSmtpConfig() {
-  const host = String(process.env.SMTP_HOST || 'smtp.gmail.com').trim();
-  const port = Number(process.env.SMTP_PORT) || 587;
-  const secure = process.env.SMTP_SECURE !== undefined
-    ? String(process.env.SMTP_SECURE).toLowerCase() === 'true'
+  const hasOwnPass = Boolean(String(process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || '').trim());
+  const env = hasOwnPass ? process.env : { ...process.env, ...(backendSmtpEnv() || {}) };
+  const host = String(env.SMTP_HOST || 'smtp.gmail.com').trim();
+  const port = Number(env.SMTP_PORT) || 587;
+  const secure = env.SMTP_SECURE !== undefined
+    ? String(env.SMTP_SECURE).toLowerCase() === 'true'
     : port === 465;
-  const user = String(process.env.SMTP_USER || process.env.GMAIL_USER || 'reservations@prevakitchen.com').trim();
-  const pass = String(process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, '').trim();
+  const user = String(env.SMTP_USER || env.GMAIL_USER || 'reservations@prevakitchen.com').trim();
+  const pass = String(env.SMTP_PASS || env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, '').trim();
 
   return { host, port, secure, user, pass };
 }
