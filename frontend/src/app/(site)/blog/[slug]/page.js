@@ -4,6 +4,7 @@ import SvgIcon from '@/components/SvgIcon';
 import { cmsFetch } from '@/lib/cms';
 import { getCanonicalOrigin } from '@/lib/site-url';
 import { rewriteLegacyBlogLinks } from '@/lib/blog-links';
+import { dropEmptyFaqItems } from '@/lib/blog-faq';
 import { generateBlogPostSchema } from '@/lib/seo-schema';
 
 export async function generateMetadata({ params }) {
@@ -156,7 +157,7 @@ export default async function BlogPost({ params }) {
               <div 
                 className="post-main-content" 
                 style={{ color: '#ccc', fontSize: '1.08rem', lineHeight: '1.85' }} 
-                dangerouslySetInnerHTML={{ __html: rewriteLegacyBlogLinks(post.content) }} 
+                dangerouslySetInnerHTML={{ __html: rewriteLegacyBlogLinks(dropEmptyFaqItems(post.content)) }} 
               />
 
             </div>

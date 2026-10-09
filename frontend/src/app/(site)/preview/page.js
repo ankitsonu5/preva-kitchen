@@ -3,6 +3,7 @@ import { cmsFetch } from '@/lib/cms';
 import PageBuilder from '@/components/PageBuilder';
 import SvgIcon from '@/components/SvgIcon';
 import { rewriteLegacyBlogLinks } from '@/lib/blog-links';
+import { dropEmptyFaqItems } from '@/lib/blog-faq';
 import { getCanonicalOrigin } from '@/lib/site-url';
 import { generateBlogPostSchema } from '@/lib/seo-schema';
 
@@ -223,7 +224,7 @@ export default async function PreviewPage({ searchParams }) {
                   <div 
                     className="post-main-content" 
                     style={{ color: '#ccc', fontSize: '1.08rem', lineHeight: '1.85' }} 
-                    dangerouslySetInnerHTML={{ __html: rewriteLegacyBlogLinks(content.content || '<p>No content written yet.</p>') }} 
+                    dangerouslySetInnerHTML={{ __html: rewriteLegacyBlogLinks(dropEmptyFaqItems(content.content || '<p>No content written yet.</p>')) }} 
                   />
                 </div>
               </div>
@@ -288,7 +289,7 @@ export default async function PreviewPage({ searchParams }) {
                   <div 
                     className="post-main-content" 
                     style={{ color: '#ccc', fontSize: '1.08rem', lineHeight: '1.85' }} 
-                    dangerouslySetInnerHTML={{ __html: rewriteLegacyBlogLinks(content.content || '<p>No content written yet.</p>') }} 
+                    dangerouslySetInnerHTML={{ __html: rewriteLegacyBlogLinks(dropEmptyFaqItems(content.content || '<p>No content written yet.</p>')) }} 
                   />
 
                   <div style={{ marginTop: '50px', background: 'rgba(18, 18, 18, 0.65)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '24px', display: 'flex', gap: '20px', alignItems: 'center' }}>
