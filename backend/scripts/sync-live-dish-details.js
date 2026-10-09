@@ -280,6 +280,9 @@ async function readSource([sourceSlug, shopSlug]) {
 
 const DRY_RUN = process.argv.includes('--dry-run');
 const PRINT_LINKS = process.argv.includes('--print-links');
+// Only refresh the About copy (and its dish links); leave FAQs, prices, names
+// and delivery links exactly as they are in the admin.
+const ABOUT_ONLY = process.argv.includes('--about-only');
 
 function formatDollars(cents) {
   return `$${(cents / 100).toFixed(2)}`;
@@ -378,6 +381,12 @@ for (const snapshot of snapshots) {
     console.log(
       `[price] ${snapshot.shopSlug}: ${existing.priceCents != null ? formatDollars(existing.priceCents) : '(none)'} -> ${formatDollars(snapshot.priceCents)}`
     );
+  }
+
+  if (ABOUT_ONLY) {
+    for (const key of Object.keys(update)) {
+      if (!['aboutTitle', 'aboutContent', 'updatedAt'].includes(key)) delete update[key];
+    }
   }
 
   if (DRY_RUN) {

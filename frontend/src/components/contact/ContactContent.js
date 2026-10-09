@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import SvgIcon from '@/components/SvgIcon';
 import { showError, showSuccess, showWarning } from '@/lib/swal';
-import { Phone, Clock, MapPin, Sparkles, Utensils, Calendar, Mail, ArrowRight, Check, MessageSquare } from 'lucide-react';
+import { Phone, Clock, MapPin, Sparkles, Calendar, Mail, ArrowRight, Check, MessageSquare } from 'lucide-react';
 
 const API = '/api';
 const EMPTY_FORM = {
@@ -23,14 +23,6 @@ const contactOptions = [
   },
   {
     number: '02',
-    icon: Utensils,
-    title: 'Catering & Private Dining',
-    body: 'Custom party trays, corporate lunches, and celebration feasts prepared fresh for your guests.',
-    href: '/catering',
-    cta: 'Explore catering menu'
-  },
-  {
-    number: '03',
     icon: Phone,
     title: 'Order Support & Inquiries',
     body: 'Need assistance with an active pickup or online order? Calling the kitchen directly is always fastest.',

@@ -64,7 +64,7 @@ export default function ReservationsContent() {
       </PageHero>
 
       {/* Same booking form as the home page */}
-      <div id="reserve-form">
+      <div id="reserve-form" className="pk-ref-home">
         <BookingSection />
       </div>
 
