@@ -127,13 +127,15 @@ export default async function MenuCategoryPage({ params }) {
             <span>{category.name}</span>
           </nav>
 
-          <header style={{ margin: '12px 0 28px' }}>
+          <header className="ps-cat-head">
             <span className="ps-kicker">Preva Kitchen Menu</span>
-            <h1 className="ps-h1" style={{ fontSize: 'clamp(26px, 3.4vw, 42px)' }}>{copy.heading}</h1>
-            <p className="ps-lede">{copy.blurb}</p>
-            <p className="ps-lede">
-              Our {copy.noun} menu: {nameList}. Preva Kitchen is at 13090 Inkster Rd in Redford Township, Michigan.
-            </p>
+            <h1 className="ps-h1 ps-cat-head__title">{copy.heading}</h1>
+            <div className="ps-cat-head__copy">
+              <p>{copy.blurb}</p>
+              <p>
+                Our {copy.noun} menu: {nameList}. Preva Kitchen is at 13090 Inkster Rd in Redford Township, Michigan.
+              </p>
+            </div>
           </header>
 
           <div className="ps-grid">
@@ -144,30 +146,34 @@ export default async function MenuCategoryPage({ params }) {
 
           <ReadyToOrder />
 
-          <section style={{ marginTop: '56px' }} aria-labelledby="category-faq">
-            <h2 id="category-faq" className="ps-h1" style={{ fontSize: 'clamp(20px, 2.4vw, 28px)' }}>
-              {category.name} questions
-            </h2>
-            {faqs.map((faq) => (
-              <div key={faq.q} style={{ margin: '18px 0' }}>
-                <h3 style={{ margin: '0 0 6px', fontSize: '1.05rem' }}>{faq.q}</h3>
-                <p className="ps-lede" style={{ margin: 0 }}>{faq.a}</p>
-              </div>
-            ))}
+          <section className="ps-cat-faq" aria-labelledby="category-faq">
+            <h2 id="category-faq" className="ps-cat-title">{category.name} questions</h2>
+            <div className="ps-detail-rule" aria-hidden="true" />
+            <div className="ps-cat-faq__list">
+              {faqs.map((faq) => (
+                <div key={faq.q} className="ps-cat-faq__item">
+                  <h3>{faq.q}</h3>
+                  <p>{faq.a}</p>
+                </div>
+              ))}
+            </div>
           </section>
 
           {category.otherNames.length > 0 && (
-            <nav style={{ marginTop: '48px' }} aria-label="More menu categories">
-              <h2 className="ps-h1" style={{ fontSize: 'clamp(20px, 2.4vw, 28px)' }}>More from the menu</h2>
-              <ul style={{ display: 'flex', flexWrap: 'wrap', gap: '12px 20px', listStyle: 'none', padding: 0, margin: '14px 0 0' }}>
-                {category.otherNames.map((other) => (
-                  <li key={other}>
-                    <Link href={categoryPath(other)}>{other}</Link>
-                  </li>
-                ))}
-                <li><Link href="/menu">Full menu</Link></li>
-              </ul>
-            </nav>
+            <div className="ps-cat-more">
+              <h2 className="ps-cat-title">More from the menu</h2>
+              <div className="ps-detail-rule" aria-hidden="true" />
+              <nav aria-label="More menu categories">
+                <ul className="ps-cat-more__list">
+                  {category.otherNames.map((other) => (
+                    <li key={other}>
+                      <Link href={categoryPath(other)}>{other}</Link>
+                    </li>
+                  ))}
+                  <li><Link href="/menu" className="ps-cat-more__all">Full menu</Link></li>
+                </ul>
+              </nav>
+            </div>
           )}
         </div>
       </div>

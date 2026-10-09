@@ -3,6 +3,7 @@ import { ShopProvider } from '@/components/shop/ShopProvider';
 import ProductGrid from '@/components/shop/ProductGrid';
 import PrivateDiningBanner from '@/components/shop/PrivateDiningBanner';
 import ReadyToOrder from '@/components/shop/ReadyToOrder';
+import MenuOrderSection from '@/components/shop/MenuOrderSection';
 import { getCanonicalOrigin } from '@/lib/site-url';
 import { generateMenuPageSchema } from '@/lib/seo-schema';
 import { FALLBACK_PRODUCTS, FALLBACK_CATEGORIES } from '@/data/fallbackMenu';
@@ -84,6 +85,9 @@ export default async function ShopContent() {
 
           {/* ══ 5. PRIVATE DINING & EXCLUSIVE EVENTS BANNER ══ */}
           <PrivateDiningBanner />
+
+          {/* ══ 6. READY TO ORDER (closing card) ══ */}
+          <MenuOrderSection />
         </div>
       </div>
     </ShopProvider>

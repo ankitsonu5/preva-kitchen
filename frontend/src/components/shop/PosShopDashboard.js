@@ -166,11 +166,6 @@ export default function PosShopDashboard({ products = [], categories = [] }) {
                     >
                       <div style={{ width: '100%', height: '140px', borderRadius: '14px', overflow: 'hidden', marginBottom: '14px', position: 'relative' }}>
                         <img src={imageSrc} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        {product.badge && (
-                          <span style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(0,0,0,0.75)', color: '#C9A84C', padding: '4px 10px', borderRadius: '12px', fontSize: '10px', fontWeight: 'bold', border: '1px solid #C9A84C' }}>
-                            {product.badge}
-                          </span>
-                        )}
                       </div>
 
                       <div>

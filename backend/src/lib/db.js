@@ -62,7 +62,7 @@ const INITIAL_FALLBACK_DATA = {
     },
     {
       _id: new ObjectId('6699a0000000000000000003'),
-      name: "Honey Hot Wings",
+      name: "Honey Hot",
       slug: "honey-hot",
       category: "Preva Wings",
       price: "$16.50",
@@ -77,7 +77,7 @@ const INITIAL_FALLBACK_DATA = {
     },
     {
       _id: new ObjectId('6699a0000000000000000004'),
-      name: "Buffalo Wings",
+      name: "Buffalo",
       slug: "buffalo",
       category: "Preva Wings",
       price: "$16.50",
@@ -92,7 +92,7 @@ const INITIAL_FALLBACK_DATA = {
     },
     {
       _id: new ObjectId('6699a0000000000000000005'),
-      name: "BBQ Wings",
+      name: "BBQ",
       slug: "bbq",
       category: "Preva Wings",
       price: "$16.50",
@@ -107,7 +107,7 @@ const INITIAL_FALLBACK_DATA = {
     },
     {
       _id: new ObjectId('6699a0000000000000000006'),
-      name: "Garlic Parmesan Wings",
+      name: "Garlic Parmesan",
       slug: "garlic-parmesan",
       category: "Preva Wings",
       price: "$16.50",
@@ -122,7 +122,7 @@ const INITIAL_FALLBACK_DATA = {
     },
     {
       _id: new ObjectId('6699a0000000000000000007'),
-      name: "Lemon Pepper Wings",
+      name: "Lemon Pepper",
       slug: "lemon-pepper",
       category: "Preva Wings",
       price: "$16.50",
@@ -137,7 +137,7 @@ const INITIAL_FALLBACK_DATA = {
     },
     {
       _id: new ObjectId('6699a0000000000000000008'),
-      name: "Jerk Wings",
+      name: "Jerk",
       slug: "jerk",
       category: "Preva Wings",
       price: "$16.50",

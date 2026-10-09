@@ -35,8 +35,6 @@ export function ProductCard({ product }) {
 
         <div className="ps-card__chips">
           {soldOut && <span className="ps-chip ps-chip--out">Sold out</span>}
-          {!soldOut && product.badge && <span className="ps-chip">{product.badge}</span>}
-          {!soldOut && !product.badge && product.featured && <span className="ps-chip">Chef&rsquo;s pick</span>}
         </div>
 
       </div>

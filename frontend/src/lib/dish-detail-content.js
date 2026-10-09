@@ -385,6 +385,23 @@ export function parseAboutContent(value, dish) {
   return getDefaultAboutParagraphs(dish);
 }
 
+// About copy can link to sibling dishes with `[label](/menu/<slug>)`. Only
+// those internal dish paths become links; any other bracket text stays plain.
+const ABOUT_LINK = /\[([^\[\]]+)\]\((\/menu\/[a-z0-9-]+)\)/g;
+
+export function splitAboutLinks(paragraph) {
+  const text = String(paragraph || '');
+  const parts = [];
+  let last = 0;
+  for (const match of text.matchAll(ABOUT_LINK)) {
+    if (match.index > last) parts.push({ text: text.slice(last, match.index) });
+    parts.push({ text: match[1], href: match[2] });
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) parts.push({ text: text.slice(last) });
+  return parts;
+}
+
 // "Lamb Chops", "Shrimp Tacos", "Fries" take plural verbs; "Rasta Pasta" does not.
 function isPluralName(name) {
   const lastWord = String(name || '').trim().split(/\s+/).pop() || '';

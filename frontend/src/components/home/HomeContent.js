@@ -76,21 +76,17 @@ const highlights = [
   { icon: BadgeCheck, title: 'Quality Service', text: 'Warm hospitality for every guest at every table.' }
 ];
 
-// Category cards are built from the menu itself: real category names, real item
-// counts, and the photo of the first dish in each category.
+// Category cards are built from the menu itself: real category names and the
+// photo of the first dish in each category.
 function buildCategories(menuProducts) {
   const groups = new Map();
   for (const product of withoutLegacyDuplicates(menuProducts)) {
     if (product.available === false || !product.category) continue;
-    const group = groups.get(product.category) || { name: product.category, count: 0, image: '' };
-    group.count += 1;
+    const group = groups.get(product.category) || { name: product.category, image: '' };
     if (!group.image) group.image = signatureDishPhotos[product.slug] || product.image || '';
     groups.set(product.category, group);
   }
-  return [...groups.values()].map((group) => ({
-    ...group,
-    count: `${group.count} ${group.count === 1 ? 'Item' : 'Items'}`
-  }));
+  return [...groups.values()];
 }
 
 const SIGNATURE_DISH_COUNT = 8;
@@ -430,7 +426,6 @@ export default function Home({ menuProducts = [] }) {
                   <img src={category.image} alt={`${category.name} at Preva Kitchen`} loading="lazy" />
                 </span>
                 <strong>{category.name}</strong>
-                <small>{category.count}</small>
                 <i aria-hidden="true" />
               </Link>
             ))}

@@ -48,6 +48,15 @@ const SOURCE_IMAGE_OVERRIDES = {
   'preva-wings-chilli': '/asset/prevaclub/wp-content/uploads/2026/08/PrevaWingsChilli-768x768.webp'
 };
 
+const RENDERED_SLUG_ALIASES = {
+  'preva-lobster': 'lobster-bites',
+  'preva-steak-bites': 'steak-bites',
+  'preva-lamb-chops': 'lamb-chops',
+  'preva-mac-and-cheese': 'mac-and-cheese',
+  'preva-yams': 'yams',
+  'collard-greens-with-turkey-meat': 'collard-greens-turkey'
+};
+
 const NAMED_ENTITIES = {
   amp: '&', apos: "'", quot: '"', nbsp: ' ', lt: '<', gt: '>',
   '#039': "'", '#8211': '–', '#8212': '—', '#8216': '‘', '#8217': '’'
@@ -128,12 +137,34 @@ function extractFaqs(html) {
   return [];
 }
 
+// The source About copy links to sibling dishes. Keep those links as
+// `[label](/menu/<slug>)` markers (rendered by the dish page) instead of
+// flattening them to plain text; the target is the slug this site serves.
+const LIVE_SLUG_OVERRIDES = { 'preva-greens': 'collard-greens-turkey' };
+
+function siteSlugForLiveSlug(liveSlug) {
+  if (LIVE_SLUG_OVERRIDES[liveSlug]) return LIVE_SLUG_OVERRIDES[liveSlug];
+  const entry = SOURCE_PRODUCTS.find(([sourceSlug]) => sourceSlug === liveSlug);
+  if (!entry) return null;
+  const shopSlug = entry[1];
+  return RENDERED_SLUG_ALIASES[shopSlug] || shopSlug;
+}
+
+function linkifyAbout(html) {
+  return html.replace(/<a\b[^>]*\bhref=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, (whole, href, label) => {
+    const liveSlug = href.match(/prevaclub\.com\/preva-kitchen-menu\/([a-z0-9-]+)\/?(?:[?#].*)?$/i)?.[1];
+    const target = liveSlug && siteSlugForLiveSlug(liveSlug.toLowerCase());
+    const text = plainText(label).replace(/[\[\]]/g, '');
+    return target && text ? `[${text}](/menu/${target})` : label;
+  });
+}
+
 function extractAbout(html) {
   const section = html.match(/<section[^>]*class=["'][^"']*pk-about[^"']*["'][^>]*>([\s\S]*?)<\/section>/i)?.[1];
   if (!section) return null;
   const title = plainText(section.match(/<h2[^>]*class=["'][^"']*pk-about-title[^"']*["'][^>]*>([\s\S]*?)<\/h2>/i)?.[1]);
   const paragraphs = [...section.matchAll(/<p[^>]*class=["'][^"']*pk-about-par[^"']*["'][^>]*>([\s\S]*?)<\/p>/gi)]
-    .map((match) => plainText(match[1]))
+    .map((match) => plainText(linkifyAbout(match[1])))
     .filter(Boolean);
   return title && paragraphs.length ? { title, paragraphs } : null;
 }
@@ -172,6 +203,11 @@ function extractShortDescription(html) {
   return description ? sanitizeSourceText(plainText(description)) : null;
 }
 
+function extractProductName(html) {
+  const name = findSourceProductNode(html)?.name;
+  return name ? sanitizeSourceText(plainText(name)) : null;
+}
+
 function extractAllergens(html) {
   const product = findSourceProductNode(html);
   if (!product) return null;
@@ -184,6 +220,36 @@ function extractAllergens(html) {
     .filter((prop) => prop?.name === 'allergen' && prop?.value)
     .map((prop) => sanitizeSourceText(plainText(String(prop.value))));
   return allergens.length ? allergens : null;
+}
+
+function extractDeliveryLinks(html) {
+  const hrefs = [...html.matchAll(/href=["']([^"']+)["']/gi)]
+    .map((match) => decodeHtml(match[1]));
+  const find = (host, requiredPath = '') => hrefs.find((href) => {
+    try {
+      const url = new URL(href);
+      return url.hostname.endsWith(host) && (!requiredPath || url.pathname.includes(requiredPath));
+    } catch {
+      return false;
+    }
+  }) || '';
+
+  const uberCandidate = find('order.store', '/in/store/preva-kitchen/');
+  let uberEatsUrl = '';
+  try {
+    const url = new URL(uberCandidate);
+    if (url.searchParams.has('modctx')) uberEatsUrl = uberCandidate;
+  } catch {
+    // The source falls back to the restaurant page when no product link exists.
+  }
+
+  return {
+    uberEatsUrl,
+    // DoorDash's canonical source links currently expose only the store page.
+    // Keep this blank so the frontend's explicit restaurant fallback is used.
+    doorDashUrl: '',
+    grubhubUrl: find('grubhub.com', '/menu-item/')
+  };
 }
 
 async function readSource([sourceSlug, shopSlug]) {
@@ -205,12 +271,15 @@ async function readSource([sourceSlug, shopSlug]) {
     faqs,
     about,
     priceCents: extractPriceCents(html),
+    name: extractProductName(html),
     description: extractShortDescription(html),
-    allergens: extractAllergens(html)
+    allergens: extractAllergens(html),
+    ...extractDeliveryLinks(html)
   };
 }
 
 const DRY_RUN = process.argv.includes('--dry-run');
+const PRINT_LINKS = process.argv.includes('--print-links');
 
 function formatDollars(cents) {
   return `$${(cents / 100).toFixed(2)}`;
@@ -221,6 +290,22 @@ for (let index = 0; index < SOURCE_PRODUCTS.length; index += 5) {
   snapshots.push(...await Promise.all(SOURCE_PRODUCTS.slice(index, index + 5).map(readSource)));
 }
 
+if (PRINT_LINKS) {
+  const compact = snapshots.map((item) => {
+    let uber = {};
+    try {
+      const value = new URL(item.uberEatsUrl).searchParams.get('modctx');
+      uber = JSON.parse(decodeURIComponent(decodeURIComponent(value))) || {};
+    } catch {
+      // A source page without an item popup remains blank and is easy to spot.
+    }
+    const grubhubItemId = item.grubhubUrl.match(/\/menu-item\/(\d+)/)?.[1] || '';
+    return [item.shopSlug, uber.sectionUuid || '', uber.subsectionUuid || '', uber.itemUuid || '', grubhubItemId].join('\t');
+  });
+  process.stdout.write(`${compact.join('\n')}\n`);
+  process.exit(0);
+}
+
 const { col } = await import('../src/lib/db.js');
 const menuItems = await col('menuItems');
 const now = new Date();
@@ -229,12 +314,14 @@ let faqCount = 0;
 let faqFallbackCount = 0;
 let priceChangedCount = 0;
 let descriptionChangedCount = 0;
+let nameChangedCount = 0;
 let allergensChangedCount = 0;
+let deliveryLinksChangedCount = 0;
 
 for (const snapshot of snapshots) {
   const existing = await menuItems.findOne(
     { slug: snapshot.shopSlug },
-    { projection: { priceCents: 1, aboutContent: 1, description: 1, allergens: 1 } }
+    { projection: { name: 1, priceCents: 1, available: 1, orderable: 1, aboutContent: 1, description: 1, allergens: 1, uberEatsUrl: 1, doorDashUrl: 1, grubhubUrl: 1 } }
   );
   if (!existing) throw new Error(`Shop product not found for slug: ${snapshot.shopSlug}`);
 
@@ -245,6 +332,19 @@ for (const snapshot of snapshots) {
   };
   if (SOURCE_IMAGE_OVERRIDES[snapshot.shopSlug]) {
     update.image = SOURCE_IMAGE_OVERRIDES[snapshot.shopSlug];
+  }
+  const nameChanged = snapshot.name && snapshot.name !== existing.name;
+  if (nameChanged) {
+    update.name = snapshot.name;
+    nameChangedCount += 1;
+    console.log(`[name] ${snapshot.shopSlug}: "${existing.name || '(none)'}" -> "${snapshot.name}"`);
+  }
+  for (const field of ['uberEatsUrl', 'doorDashUrl', 'grubhubUrl']) {
+    if (snapshot[field] && snapshot[field] !== existing[field]) {
+      update[field] = snapshot[field];
+      deliveryLinksChangedCount += 1;
+      console.log(`[delivery] ${snapshot.shopSlug}: ${field} -> item link`);
+    }
   }
   const descriptionChanged = snapshot.description && snapshot.description !== existing.description;
   if (descriptionChanged) {
@@ -282,15 +382,26 @@ for (const snapshot of snapshots) {
 
   if (DRY_RUN) {
     const aboutChanged = snapshot.about && snapshot.about.paragraphs.join('\n\n') !== existing.aboutContent;
-    console.log(`[dry-run] ${snapshot.shopSlug}: faqs=${snapshot.faqs.length === 5 ? 'sync' : 'skip'} about=${aboutChanged ? 'CHANGE' : 'same'} price=${priceChanged ? 'CHANGE' : 'same'} description=${descriptionChanged ? 'CHANGE' : 'same'} allergens=${allergensChanged ? 'CHANGE' : 'same'}`);
+    console.log(`[dry-run] ${snapshot.shopSlug}: faqs=${snapshot.faqs.length === 5 ? 'sync' : 'skip'} about=${aboutChanged ? 'CHANGE' : 'same'} name=${nameChanged ? 'CHANGE' : 'same'} price=${priceChanged ? 'CHANGE' : 'same'} description=${descriptionChanged ? 'CHANGE' : 'same'} allergens=${allergensChanged ? 'CHANGE' : 'same'} delivery=${Object.keys(update).some((field) => field.endsWith('Url')) ? 'CHANGE' : 'same'}`);
     continue;
   }
 
   const result = await menuItems.updateOne({ slug: snapshot.shopSlug }, { $set: update });
   if (!result.matchedCount) throw new Error(`Shop product not found for slug: ${snapshot.shopSlug}`);
+
+  const renderedSlug = RENDERED_SLUG_ALIASES[snapshot.shopSlug];
+  if (renderedSlug) {
+    const mirrored = { updatedAt: now };
+    for (const field of ['uberEatsUrl', 'doorDashUrl', 'grubhubUrl', 'aboutTitle', 'aboutContent']) {
+      if (update[field]) mirrored[field] = update[field];
+    }
+    if (Object.keys(mirrored).length > 1) {
+      await menuItems.updateOne({ slug: renderedSlug }, { $set: mirrored });
+    }
+  }
 }
 
 console.log(
-  `${DRY_RUN ? '[DRY RUN] Would sync' : 'Synced'} exact source FAQs for ${faqCount} products, source About copy for ${aboutCount} products (brand/claim text sanitized), ${priceChangedCount} price corrections, ${descriptionChangedCount} description updates, ${allergensChangedCount} allergen updates; preserved ${faqFallbackCount} validated FAQ fallback.`
+  `${DRY_RUN ? '[DRY RUN] Would sync' : 'Synced'} exact source FAQs for ${faqCount} products, source About copy for ${aboutCount} products (brand/claim text sanitized), ${nameChangedCount} name corrections, ${priceChangedCount} price corrections, ${descriptionChangedCount} description updates, ${allergensChangedCount} allergen updates, ${deliveryLinksChangedCount} delivery-link updates; preserved ${faqFallbackCount} validated FAQ fallback.`
 );
 process.exit(0);

@@ -8,10 +8,11 @@ import {
   getDefaultAboutTitle,
   getDishFaqs,
   parseAboutContent,
+  splitAboutLinks,
   isWingFlavorPage,
   getCrossCategoryPairings
 } from '@/lib/dish-detail-content';
-import { withoutLegacyDuplicates } from '@/lib/legacy-dish-slugs';
+import { withCanonicalSlugs } from '@/lib/legacy-dish-slugs';
 import { pageMetadata, truncateAtWord } from '@/lib/seo';
 import { dishImage } from '@/lib/dish-images';
 import { getOrderingStatus } from '@/lib/kitchen-hours';
@@ -55,7 +56,7 @@ export default async function ProductPage({ params }) {
   const product = data?.product || getFallbackProduct(slug);
   if (!product) notFound();
 
-  const related = withoutLegacyDuplicates(data?.related?.length > 0 ? data.related : getFallbackRelated(product));
+  const related = withCanonicalSlugs(data?.related?.length > 0 ? data.related : getFallbackRelated(product), product.slug);
   const aboutTitle = product.aboutTitle || getDefaultAboutTitle(product);
   const aboutParagraphs = parseAboutContent(product.aboutContent, product);
   const faqs = getDishFaqs(product);
@@ -221,7 +222,13 @@ export default async function ProductPage({ params }) {
             <div className="ps-detail-rule" aria-hidden="true" />
             <div className="ps-dish-about__copy">
               {aboutParagraphs.map((paragraph, index) => (
-                <p key={`${index}-${paragraph.slice(0, 24)}`}>{paragraph}</p>
+                <p key={`${index}-${paragraph.slice(0, 24)}`}>
+                  {splitAboutLinks(paragraph).map((part, partIndex) => (
+                    part.href
+                      ? <Link key={partIndex} href={part.href}>{part.text}</Link>
+                      : part.text
+                  ))}
+                </p>
               ))}
               {linksBackToWingsHub && (
                 <p>

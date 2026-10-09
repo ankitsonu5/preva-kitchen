@@ -24,7 +24,7 @@ export const KITCHEN_MENU_ITEMS = [
     pairings: ["Fries", "Rice & Peas"]
   },
   {
-    name: "Honey Hot Wings",
+    name: "Honey Hot",
     slug: "honey-hot",
     category: "Preva Wings",
     price: "$16.50",
@@ -35,7 +35,7 @@ export const KITCHEN_MENU_ITEMS = [
     pairings: ["Mac & Cheese", "Fries"]
   },
   {
-    name: "Buffalo Wings",
+    name: "Buffalo",
     slug: "buffalo",
     category: "Preva Wings",
     price: "$16.50",
@@ -46,7 +46,7 @@ export const KITCHEN_MENU_ITEMS = [
     pairings: ["Fries", "House Salad"]
   },
   {
-    name: "BBQ Wings",
+    name: "BBQ",
     slug: "bbq",
     category: "Preva Wings",
     price: "$16.50",
@@ -57,7 +57,7 @@ export const KITCHEN_MENU_ITEMS = [
     pairings: ["Mac & Cheese", "Collard Greens with Turkey Meat"]
   },
   {
-    name: "Garlic Parmesan Wings",
+    name: "Garlic Parmesan",
     slug: "garlic-parmesan",
     category: "Preva Wings",
     price: "$16.50",
@@ -68,7 +68,7 @@ export const KITCHEN_MENU_ITEMS = [
     pairings: ["Fries", "Preva Quesadillas"]
   },
   {
-    name: "Lemon Pepper Wings",
+    name: "Lemon Pepper",
     slug: "lemon-pepper",
     category: "Preva Wings",
     price: "$16.50",
@@ -79,7 +79,7 @@ export const KITCHEN_MENU_ITEMS = [
     pairings: ["Fries", "Fried Plantains"]
   },
   {
-    name: "Jerk Wings",
+    name: "Jerk",
     slug: "jerk",
     category: "Preva Wings",
     price: "$16.50",
@@ -200,7 +200,7 @@ export const KITCHEN_MENU_ITEMS = [
     pairings: ["Fries", "House Salad"]
   },
   {
-    name: "Catfish Bites",
+    name: "Preva Catfish",
     slug: "preva-catfish",
     category: "Preva Bites",
     price: "$15.50",
@@ -211,7 +211,7 @@ export const KITCHEN_MENU_ITEMS = [
     pairings: ["Collard Greens with Turkey Meat", "Fries", "Mac & Cheese"]
   },
   {
-    name: "Lobster Bites",
+    name: "Preva Lobster",
     slug: "preva-lobster",
     category: "Preva Bites",
     price: "$21.50",
@@ -222,7 +222,7 @@ export const KITCHEN_MENU_ITEMS = [
     pairings: ["Rasta Pasta", "Preva Lamb Chops"]
   },
   {
-    name: "Steak Bites",
+    name: "Preva Steak Bites",
     slug: "preva-steak-bites",
     category: "Preva Bites",
     price: "$19.50",
@@ -288,7 +288,7 @@ export const KITCHEN_MENU_ITEMS = [
     pairings: ["Mac & Cheese", "Collard Greens with Turkey Meat"]
   },
   {
-    name: "Mac & Cheese",
+    name: "Preva Mac and Cheese",
     slug: "preva-mac-and-cheese",
     category: "Sides",
     price: "$7.50",
@@ -428,11 +428,66 @@ export function getDishBySlug(slug) {
   return dish || null;
 }
 
+const UBER_STORE_PATH = 'https://www.order.store/in/store/preva-kitchen/dFUjbYXiSHWMrDLYDL9KxA';
+const UBER_STORE_UUID = '7455236d-85e2-4875-8cac-32d80cbf4ac4';
+const UBER_SECTION_UUID = 'eeff3983-4d45-5edd-b2ea-a81b04243540';
+const GRUBHUB_STORE_PATH = 'https://www.grubhub.com/restaurant/preva-kitchen-13090-inkster-rd-redford/14507288';
+
+// IDs are taken from the canonical prevaclub.com dish pages. Flavour pages
+// intentionally share the Preva Wings customizer because Uber/Grubhub sell
+// those flavours as choices on one product, not as separate products.
+const DELIVERY_ITEM_IDS = {
+  'preva-wings': ['503f4470-e4db-57bb-a18d-88b67fd0c7d1', 'd05663d0-ab46-5067-be26-e5504fc96538', '355696049736'],
+  'preva-wings-chilli': ['503f4470-e4db-57bb-a18d-88b67fd0c7d1', 'd05663d0-ab46-5067-be26-e5504fc96538', '355696049736'],
+  'honey-hot': ['503f4470-e4db-57bb-a18d-88b67fd0c7d1', 'd05663d0-ab46-5067-be26-e5504fc96538', '355696049736'],
+  buffalo: ['503f4470-e4db-57bb-a18d-88b67fd0c7d1', 'd05663d0-ab46-5067-be26-e5504fc96538', '355696049736'],
+  bbq: ['503f4470-e4db-57bb-a18d-88b67fd0c7d1', 'd05663d0-ab46-5067-be26-e5504fc96538', '355696049736'],
+  'garlic-parmesan': ['503f4470-e4db-57bb-a18d-88b67fd0c7d1', 'd05663d0-ab46-5067-be26-e5504fc96538', '355696049736'],
+  'lemon-pepper': ['503f4470-e4db-57bb-a18d-88b67fd0c7d1', 'd05663d0-ab46-5067-be26-e5504fc96538', '355696049736'],
+  jerk: ['503f4470-e4db-57bb-a18d-88b67fd0c7d1', 'd05663d0-ab46-5067-be26-e5504fc96538', '355696049736'],
+  'preva-double-smash-burger': ['7ba35e6d-f67c-5cdf-97ff-557e3fa0793f', 'd0a8afb8-dd5c-515f-ba37-75cf476186ce', '355696049704'],
+  'chicken-quesadillas': ['816140c7-1ec8-57dc-897a-4e6a92bb79a5', 'edcc57e7-4f5a-5045-bae3-4b96875ed9a1', '355696049744'],
+  'steak-quesadilla': ['816140c7-1ec8-57dc-897a-4e6a92bb79a5', 'a754f256-4f76-5522-b5be-2f50a7774cc6', '355696049696'],
+  'shrimp-quesadillas': ['816140c7-1ec8-57dc-897a-4e6a92bb79a5', '38901da1-3510-5606-92fc-576743ed63a8', '355696049720'],
+  'shrimp-tacos': ['3909cb31-889f-5876-8d4d-ae3f12c5e2a4', 'd2f7eab6-738b-5009-88ae-4eb1f73744f9', '355289983504'],
+  'steak-tacos': ['3909cb31-889f-5876-8d4d-ae3f12c5e2a4', '0e4f58cc-13d3-5359-9382-d97637185251', '355696049712'],
+  'chicken-tacos': ['3909cb31-889f-5876-8d4d-ae3f12c5e2a4', '307c8b81-44ff-5413-94ee-98302519dc66', '355696049752'],
+  'preva-catfish': ['9b902254-3741-52de-bd88-958f21bf1db9', '3828de3e-1b95-5395-b705-53f5fee32719', '355289983480'],
+  'preva-lobster': ['9b902254-3741-52de-bd88-958f21bf1db9', 'feef50a4-8aa8-55c7-be3c-03c565241d77', '355289983616'],
+  'lobster-bites': ['9b902254-3741-52de-bd88-958f21bf1db9', 'feef50a4-8aa8-55c7-be3c-03c565241d77', '355289983616'],
+  'preva-steak-bites': ['9b902254-3741-52de-bd88-958f21bf1db9', '1671b1f3-99f6-5300-91ce-cc4710a9539a', '355289983520'],
+  'steak-bites': ['9b902254-3741-52de-bd88-958f21bf1db9', '1671b1f3-99f6-5300-91ce-cc4710a9539a', '355289983520'],
+  'veggie-pasta': ['e577fa80-c0ae-5df1-a5cf-d82e8a3a1324', 'e0f8cf5c-3d67-54c6-874e-75bc23f1d746', ''],
+  'rasta-pasta': ['e577fa80-c0ae-5df1-a5cf-d82e8a3a1324', '53ae9272-8d56-5447-b42e-2a65bee8bf35', ''],
+  'preva-lamb-chops': ['2fb0da82-15b9-5e5d-92bb-509bb9081cde', '8e9d60f1-e097-5b4b-aad3-52291a8ca537', '355289983592'],
+  'lamb-chops': ['2fb0da82-15b9-5e5d-92bb-509bb9081cde', '8e9d60f1-e097-5b4b-aad3-52291a8ca537', '355289983592'],
+  'preva-mac-and-cheese': ['da30ce3e-03b8-5435-8cc8-fe59beb91e9f', '02d66484-598d-5e1b-9ffd-3a3d910155e0', '355289983624'],
+  'mac-and-cheese': ['da30ce3e-03b8-5435-8cc8-fe59beb91e9f', '02d66484-598d-5e1b-9ffd-3a3d910155e0', '355289983624'],
+  'preva-yams': ['da30ce3e-03b8-5435-8cc8-fe59beb91e9f', '448207f7-2e09-5006-bd27-491917fbec3d', '355289983552'],
+  yams: ['da30ce3e-03b8-5435-8cc8-fe59beb91e9f', '448207f7-2e09-5006-bd27-491917fbec3d', '355289983552']
+};
+
+function uberItemUrl(dishSlug, subsectionUuid, itemUuid) {
+  const context = encodeURIComponent(encodeURIComponent(JSON.stringify({
+    storeUuid: UBER_STORE_UUID,
+    sectionUuid: UBER_SECTION_UUID,
+    subsectionUuid,
+    itemUuid,
+    showSeeDetailsCTA: true
+  })));
+  return `${UBER_STORE_PATH}?mod=quickView&modctx=${context}&ps=1&utm_source=prevakitchen&utm_medium=website&utm_campaign=menu_page&utm_content=${encodeURIComponent(dishSlug)}`;
+}
+
 export function getDeliveryLinks(dishSlug = 'rasta-pasta') {
+  const [subsectionUuid, itemUuid, grubhubItemId] = DELIVERY_ITEM_IDS[dishSlug] || [];
   return {
-    ubereats: `https://www.order.store/in/store/preva-kitchen/dFUjbYXiSHWMrDLYDL9KxA?utm_source=prevaclub&utm_medium=website&utm_campaign=menu_page&utm_content=${encodeURIComponent(dishSlug)}`,
+    ubereats: itemUuid
+      ? uberItemUrl(dishSlug, subsectionUuid, itemUuid)
+      : `${UBER_STORE_PATH}?utm_source=prevakitchen&utm_medium=website&utm_campaign=menu_page&utm_content=${encodeURIComponent(dishSlug)}`,
     doordash: `https://www.doordash.com/store/preva-kitchen-redford-43388119/107666947/?pickup=true&rwg_token=AE37R_i6mClxnZIQS4kBm8BJCV733mzRGl2vLF0371vhYETHJ__KdRcFTWywB1qBP6BiKOGDs7cE-2P9zF18C-VrubtN7pwBGg%3D%3D&utm_campaign=menu_page&utm_source=prevaclub&utm_medium=website&utm_content=${encodeURIComponent(dishSlug)}`,
-    grubhub: `https://www.grubhub.com/restaurant/preva-kitchen-13090-inkster-rd-redford/14507288?utm_source=prevaclub&utm_medium=website&utm_campaign=menu_page&utm_content=${encodeURIComponent(dishSlug)}`,
+    grubhub: grubhubItemId
+      ? `${GRUBHUB_STORE_PATH}/menu-item/${grubhubItemId}?menu-item-options=&utm_source=prevakitchen&utm_medium=website&utm_campaign=menu_page&utm_content=${encodeURIComponent(dishSlug)}`
+      : `${GRUBHUB_STORE_PATH}?utm_source=prevakitchen&utm_medium=website&utm_campaign=menu_page&utm_content=${encodeURIComponent(dishSlug)}`,
     pickup: `tel:+13132863586`
   };
 }
