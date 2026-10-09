@@ -545,7 +545,7 @@ export default function Footer() {
                     <span><strong>Instagram:</strong><small>@prevakitchen</small></span>
                   </a>
                   <a
-                    href={settings.socialLinks?.facebook || 'https://www.facebook.com/prevakitchen'}
+                    href={settings.socialLinks?.facebook || 'https://www.facebook.com/people/Preva-Kitchen/61586402862277/'}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="footer-social-link"

@@ -3,7 +3,6 @@ import { notFound } from 'next/navigation';
 import { cmsFetch } from '@/lib/cms';
 import { ShopProvider } from '@/components/shop/ShopProvider';
 import { ProductCard } from '@/components/shop/ProductGrid';
-import ReadyToOrder from '@/components/shop/ReadyToOrder';
 import { pageMetadata, truncateAtWord } from '@/lib/seo';
 import { getCanonicalOrigin } from '@/lib/site-url';
 import { generateBreadcrumbSchema } from '@/lib/seo-schema';
@@ -143,8 +142,6 @@ export default async function MenuCategoryPage({ params }) {
               <ProductCard product={product} key={product.id || product._id || product.slug} />
             ))}
           </div>
-
-          <ReadyToOrder />
 
           <section className="ps-cat-faq" aria-labelledby="category-faq">
             <h2 id="category-faq" className="ps-cat-title">{category.name} questions</h2>

@@ -43,7 +43,7 @@ export const BUSINESS_INFO = {
   ],
   sameAs: [
     'https://www.instagram.com/prevakitchen/',
-    'https://www.facebook.com/prevakitchen'
+    'https://www.facebook.com/people/Preva-Kitchen/61586402862277/'
   ]
 };
 

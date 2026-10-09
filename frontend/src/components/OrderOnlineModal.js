@@ -12,7 +12,7 @@ const FALLBACK_PLATFORMS = [
     name: 'DOORDASH',
     availability: 'BOTH',
     description: 'Pickup + Delivery',
-    url: 'https://www.doordash.com/store/preva-kitchen-redford-43388119/',
+    url: 'https://www.doordash.com/store/preva-kitchen-redford-43388119/107666947/',
     logo: 'doordash',
     isActive: true,
   },
@@ -22,7 +22,7 @@ const FALLBACK_PLATFORMS = [
     name: 'UBER EATS',
     availability: 'BOTH',
     description: 'Pickup + Delivery',
-    url: 'https://www.ubereats.com/search?q=Preva%20Kitchen%20Redford',
+    url: 'https://www.order.store/in/store/preva-kitchen/dFUjbYXiSHWMrDLYDL9KxA',
     logo: 'uber-eats',
     isActive: true,
   },
@@ -32,7 +32,7 @@ const FALLBACK_PLATFORMS = [
     name: 'TOAST',
     availability: 'BOTH',
     description: 'Pickup + Delivery',
-    url: '/menu',
+    url: 'https://order.toasttab.com/online/preva-13090-inkster-road',
     logo: 'toast',
     isActive: true,
   },
@@ -42,7 +42,7 @@ const FALLBACK_PLATFORMS = [
     name: 'GRUBHUB',
     availability: 'BOTH',
     description: 'Pickup + Delivery',
-    url: 'https://www.grubhub.com/delivery/mi-redford',
+    url: 'https://www.grubhub.com/restaurant/preva-kitchen-13090-inkster-rd-redford/14507288',
     logo: 'grubhub',
     isActive: true,
   },
@@ -57,6 +57,23 @@ const FALLBACK_PLATFORMS = [
     isActive: true,
   },
 ];
+
+// Same pickup/delivery switch the prevaclub.com popup does: Uber Eats opens in
+// delivery mode and DoorDash in pickup mode only when the guest picks that tab.
+function linkForMode(url, mode) {
+  try {
+    const target = new URL(url);
+    if (target.hostname.endsWith('order.store') && mode === 'delivery' && !target.searchParams.has('diningMode')) {
+      target.searchParams.set('diningMode', 'DELIVERY');
+    }
+    if (target.hostname.endsWith('doordash.com') && mode === 'pickup' && !target.searchParams.has('pickup')) {
+      target.searchParams.set('pickup', 'true');
+    }
+    return target.toString();
+  } catch {
+    return url;
+  }
+}
 
 function platformIdentity(platform) {
   return `${platform.providerKey || platform.name || ''}`.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -258,7 +275,7 @@ export default function OrderOnlineModal({ open, onClose }) {
             return (
               <a
                 key={platform.id || platform.providerKey}
-                href={platform.url}
+                href={linkForMode(platform.url, orderMode)}
                 className={`po-provider ${isCall ? 'po-call-card' : ''}`}
                 data-provider={platform.providerKey}
                 target={isCall || isInternal ? undefined : '_blank'}

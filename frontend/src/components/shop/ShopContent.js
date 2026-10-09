@@ -2,7 +2,6 @@ import { cmsFetch } from '@/lib/cms';
 import { ShopProvider } from '@/components/shop/ShopProvider';
 import ProductGrid from '@/components/shop/ProductGrid';
 import PrivateDiningBanner from '@/components/shop/PrivateDiningBanner';
-import ReadyToOrder from '@/components/shop/ReadyToOrder';
 import MenuOrderSection from '@/components/shop/MenuOrderSection';
 import { getCanonicalOrigin } from '@/lib/site-url';
 import { generateMenuPageSchema } from '@/lib/seo-schema';
@@ -49,9 +48,6 @@ export default async function ShopContent() {
           <div id="signature-creations" style={{ marginBottom: 56 }}>
             <ProductGrid products={list} categories={cats} />
           </div>
-
-          {/* ══ 3. READY TO ORDER ══ */}
-          <ReadyToOrder />
 
           {/* ══ 4. DINING EXPERIENCE GALLERY ══ */}
           <div style={{ marginTop: '88px', marginBottom: '80px' }}>
