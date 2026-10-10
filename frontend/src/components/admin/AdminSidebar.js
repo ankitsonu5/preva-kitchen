@@ -53,12 +53,6 @@ const groups = [
     ]
   },
   {
-    label: 'Online ordering',
-    items: [
-      { label: 'Orders', href: '/admin/orders', icon: ShoppingCart, permission: 'orders' }
-    ]
-  },
-  {
     label: 'Hiring',
     items: [
       { label: 'Hiring Dashboard', href: '/admin/careers', icon: ChartNoAxesCombined, permission: 'careers' },
@@ -71,7 +65,6 @@ const groups = [
     items: [
       { label: 'Contacts', href: '/admin/inbox?kind=contacts', icon: Inbox, permission: 'inbox' },
       { label: 'Reservations', href: '/admin/inbox?kind=reservations', icon: ListTree, permission: 'inbox' },
-      { label: 'Orders', href: '/admin/inbox?kind=orders', icon: FileText, permission: 'inbox' },
       { label: 'Guest List', href: '/admin/inbox?kind=guest-list', icon: CircleUserRound, permission: 'inbox' }
     ]
   },
@@ -107,7 +100,6 @@ export default function AdminSidebar({
   onLogout
 }) {
   const getBadgeCount = (href) => {
-    if (href === '/admin/orders' || href === '/admin/inbox?kind=orders') return badges.openOrders || badges.activeOrders || 0;
     if (href === '/admin/inbox?kind=contacts') return badges.newContacts || badges.unreadEnquiries || 0;
     if (href === '/admin/inbox?kind=reservations') return badges.newReservations || 0;
     if (href === '/admin/career-applications') return badges.careerApps || 0;

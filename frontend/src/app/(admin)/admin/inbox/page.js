@@ -11,7 +11,6 @@ import { Download, Inbox as InboxIcon, Eye, Trash2 } from 'lucide-react';
 const inboxKinds = [
   { key: 'contacts', label: 'Contact Enquiries' },
   { key: 'reservations', label: 'Reservations' },
-  { key: 'orders', label: 'Orders' },
   { key: 'guest-list', label: 'Guest List' }
 ];
 
@@ -66,7 +65,7 @@ function InboxViewer() {
 
   const updateStatus = async (item, newStatus) => {
     try {
-      const method = kind === 'orders' ? 'PATCH' : 'PUT';
+      const method = 'PUT';
       const res = await api(`/admin/${kind}/${item.id}/status`, {
         method,
         body: JSON.stringify({ status: newStatus })
@@ -183,15 +182,6 @@ function InboxViewer() {
                       <th>Status</th>
                     </>
                   )}
-                  {kind === 'orders' && (
-                    <>
-                      <th>Order #</th>
-                      <th>Customer</th>
-                      <th>Type</th>
-                      <th>Total</th>
-                      <th>Status</th>
-                    </>
-                  )}
                   {kind === 'guest-list' && (
                     <>
                       <th>Name</th>
@@ -236,21 +226,6 @@ function InboxViewer() {
                         <td>{[row.date, row.time].filter(Boolean).join(' at ') || '—'}</td>
                         <td>
                           <span className={`badge ${row.status === 'NEW' ? 'badge-draft' : 'badge-published'}`}>
-                            {row.status}
-                          </span>
-                        </td>
-                      </>
-                    )}
-
-                    {/* Orders Specific Layout */}
-                    {kind === 'orders' && (
-                      <>
-                        <td><b style={{ color: '#fff' }}>{row.orderNumber}</b></td>
-                        <td><b style={{ color: '#fff' }}>{row.customer?.name}</b><br /><small style={{ color: '#90a4ae' }}>{row.customer?.phone}</small></td>
-                        <td><span style={{ textTransform: 'uppercase' }}>{row.fulfilment || '—'}</span></td>
-                        <td><strong style={{ color: '#c5a059' }}>${((row.totalCents || 0) / 100).toFixed(2)}</strong></td>
-                        <td>
-                          <span className={`badge ${row.status === 'PENDING' ? 'badge-draft' : 'badge-published'}`}>
                             {row.status}
                           </span>
                         </td>
@@ -314,9 +289,6 @@ function InboxViewer() {
                   <button type="button" className="btn" onClick={() => updateStatus(selectedItem, 'confirmed')}>Approve Booking</button>
                   <button type="button" className="btn btn-danger" onClick={() => updateStatus(selectedItem, 'cancelled')}>Cancel Booking</button>
                 </>
-              )}
-              {kind === 'orders' && ['PAID', 'RECEIVED'].includes(selectedItem.status) && (
-                <button type="button" className="btn" onClick={() => updateStatus(selectedItem, 'PREPARING')}>Start Preparing</button>
               )}
               <button type="button" className="btn" style={{ background: 'rgba(255,255,255,0.06)', color: '#fff' }} onClick={() => setSelectedItem(null)}>Close</button>
             </div>

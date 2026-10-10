@@ -6,7 +6,7 @@ import GoogleReviewsSection from '@/components/sections/GoogleReviewsSection';
 import GallerySection from '@/components/sections/GallerySection';
 import BookingSection from '@/components/home/BookingSection';
 import { getCanonicalOrigin } from '@/lib/site-url';
-import { money } from '@/components/shop/ShopProvider';
+import { money } from '@/lib/money';
 import { withoutLegacyDuplicates } from '@/lib/legacy-dish-slugs';
 import { categoryPath } from '@/lib/menu-categories';
 import {

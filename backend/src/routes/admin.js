@@ -7,10 +7,8 @@ import {
 import { hashPassword } from '../lib/auth.js';
 import { logActivity } from '../lib/activity.js';
 import { loadContentInclude } from './public.js';
-import { stripe, stripeConfigured, paymentStatusSummary } from '../lib/stripe.js';
 import { careerJobsCollection } from '../lib/career-jobs.js';
 import { get, post, put, patch, del, badRequest, forbidden, notFound, result } from '../router.js';
-import { ACTIVE_ORDER_STATUSES, ORDER_STATUSES, transitionOrderStatus } from '../lib/order-workflow.js';
 
 const WRITE = ['SUPER_ADMIN', 'ADMIN', 'EDITOR'];
 const AUTHOR = ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'AUTHOR'];
@@ -25,19 +23,17 @@ const escapeRegex = (value) => String(value || '').replace(/[.*+?^${}()|[\]\\]/g
    ══════════════════════════════════════════════════════════════════════════ */
 
 get('/admin/dashboard', { auth: true }, async () => {
-  const [content, media, contacts, orders, reservations, subscribers, activity, categories, users, services, careerApps] = await Promise.all([
-    col('content'), col('media'), col('contactEnquiry'), col('order'),
+  const [content, media, contacts, reservations, subscribers, activity, categories, users, services, careerApps] = await Promise.all([
+    col('content'), col('media'), col('contactEnquiry'),
     col('reservation'), col('subscriber'), col('activityLog'), col('categories'), col('users'), col('services'), col('careerApplications')
   ]);
-
-  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
   const [
     posts, pages, publishedPosts, draftPosts, mediaCount,
     newContacts, newReservations, subscriberCount, recent,
-    revenue, activeOrders, totalOrders, categoryCount,
+    categoryCount,
     userCount, serviceCount, enquiryCount, careerAppCount,
-    recentPosts, recentEnquiries, recentOrders
+    recentPosts, recentContacts, recentReservations, recentCareerApps
   ] = await Promise.all([
     content.countDocuments({ type: 'POST' }),
     content.countDocuments({ type: 'PAGE' }),
@@ -48,21 +44,40 @@ get('/admin/dashboard', { auth: true }, async () => {
     reservations.countDocuments({ status: { $in: ['NEW', 'PENDING', 'unread'] } }).catch(() => 0),
     subscribers.countDocuments(),
     activity.find().sort({ createdAt: -1 }).limit(10).toArray(),
-    orders.aggregate([
-      { $match: { status: { $in: ['PAID', 'RECEIVED', 'PREPARING', 'READY', 'ON_THE_WAY', 'DELIVERED', 'COMPLETED'] }, createdAt: { $gte: since } } },
-      { $group: { _id: null, total: { $sum: '$totalCents' }, count: { $sum: 1 } } }
-    ]).toArray(),
-    orders.countDocuments({ status: { $in: ['PENDING', 'PAID', 'RECEIVED', 'PREPARING', 'READY', 'ON_THE_WAY'] } }),
-    orders.countDocuments(),
     categories.countDocuments(),
     users.countDocuments({ status: { $ne: 'DISABLED' } }),
     services.countDocuments(),
     contacts.countDocuments(),
     careerApps.countDocuments({ status: { $in: ['NEW', 'PENDING', 'unread'] } }).catch(() => 0),
     content.find({ type: 'POST' }).sort({ updatedAt: -1 }).limit(6).toArray(),
-    contacts.find().sort({ createdAt: -1 }).limit(6).toArray(),
-    orders.find().sort({ createdAt: -1 }).limit(6).toArray()
+    contacts.find().sort({ createdAt: -1 }).limit(8).toArray(),
+    reservations.find().sort({ createdAt: -1 }).limit(8).toArray(),
+    careerApps.find({}, { projection: { resume: 0 } }).sort({ createdAt: -1 }).limit(8).toArray()
   ]);
+
+  // One feed of every website form, newest first, in a single shape the
+  // dashboard can render without knowing which form a row came from.
+  const recentEnquiries = [
+    ...recentContacts.map((row) => ({
+      ...serialize(row),
+      kind: 'contacts',
+      formSource: row.formSource || 'Contact form'
+    })),
+    ...recentReservations.map((row) => ({
+      ...serialize(row),
+      kind: 'reservations',
+      formSource: `Reservation · ${[row.date, row.time].filter(Boolean).join(' ')}${row.guests ? ` · ${row.guests} guests` : ''}`
+    })),
+    ...recentCareerApps.map((row) => ({
+      ...serialize(row),
+      kind: 'career-applications',
+      firstName: undefined,
+      name: [row.firstName, row.lastName].filter(Boolean).join(' '),
+      formSource: `Career application${row.role ? ` · ${row.role}` : ''}`
+    }))
+  ]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 8);
 
   return {
     posts,
@@ -76,20 +91,14 @@ get('/admin/dashboard', { auth: true }, async () => {
     enquiries: enquiryCount,
     unreadEnquiries: newContacts,
     newReservations,
-    activeOrders,
-    totalOrders,
     careerApps: careerAppCount,
     recentPosts: recentPosts.map(serialize),
-    recentEnquiries: recentEnquiries.map(serialize),
-    recentOrders: recentOrders.map(serialize),
+    recentEnquiries,
     counts: {
       posts, pages, drafts: draftPosts, media: mediaCount,
       newContacts, newReservations, subscribers: subscriberCount,
-      openOrders: activeOrders,
       careerApps: careerAppCount
     },
-    revenue30d: revenue[0]?.total || 0,
-    orders30d: revenue[0]?.count || 0,
     recentActivity: recent.map(serialize)
   };
 });
@@ -875,231 +884,6 @@ del('/admin/media/:id', { auth: true, roles: WRITE }, async (ctx) => {
   await logActivity(ctx, 'DELETE', 'MEDIA', current.filename || '');
   return { ok: true };
 });
-
-/* ══════════════════════════════════════════════════════════════════════════
-   Orders and the kitchen display
-   ══════════════════════════════════════════════════════════════════════════ */
-
-function orderFilter(query = {}) {
-  const filter = {};
-  const status = cleanText(query.status, 20).toUpperCase();
-  const fulfilment = cleanText(query.fulfilment, 20).toUpperCase();
-  const search = cleanText(query.search, 100);
-
-  if (status === 'ACTIVE') {
-    filter.status = { $in: ACTIVE_ORDER_STATUSES };
-  } else if (status === 'OPEN' || query.open === 'true') {
-    filter.status = { $in: ['PENDING', 'PAID', 'RECEIVED', 'PREPARING', 'READY', 'ON_THE_WAY'] };
-  } else if (status === 'PAID' || status === 'RECEIVED') {
-    filter.status = { $in: ['PAID', 'RECEIVED'] };
-  } else if (ORDER_STATUSES.includes(status)) {
-    filter.status = status;
-  }
-  if (['PICKUP', 'DELIVERY', 'DINE_IN'].includes(fulfilment)) filter.fulfilment = fulfilment;
-
-  if (search) {
-    const escaped = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const clauses = [
-      { 'customer.name': { $regex: escaped, $options: 'i' } },
-      { 'customer.phone': { $regex: escaped, $options: 'i' } },
-      { 'customer.email': { $regex: escaped, $options: 'i' } }
-    ];
-    const orderNumber = Number(search.replace(/^#/, ''));
-    if (Number.isInteger(orderNumber) && orderNumber > 0) clauses.unshift({ orderNumber });
-    filter.$or = clauses;
-  }
-
-  const from = query.from ? new Date(query.from) : null;
-  const to = query.to ? new Date(query.to) : null;
-  if ((from && !Number.isNaN(from.getTime())) || (to && !Number.isNaN(to.getTime()))) {
-    filter.createdAt = {};
-    if (from && !Number.isNaN(from.getTime())) filter.createdAt.$gte = from;
-    if (to && !Number.isNaN(to.getTime())) filter.createdAt.$lte = to;
-  }
-
-  return filter;
-}
-
-get('/admin/orders', { auth: true }, async ({ query }) => {
-  const orders = await col('order');
-  const limit = Math.min(Math.max(cleanInt(query.limit, 200), 1), 500);
-  const sortDirection = query.sort === 'asc' || query.sort === 'fifo' ? 1 : -1;
-  const rows = await orders.find(orderFilter(query)).sort({ createdAt: sortDirection }).limit(limit).toArray();
-  return rows.map(serialize);
-});
-
-get('/admin/orders-summary', { auth: true }, async () => {
-  const orders = await col('order');
-  const rows = await orders.find().sort({ createdAt: -1 }).limit(5000).toArray();
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const paidStatuses = new Set(['PAID', 'RECEIVED', 'PREPARING', 'READY', 'ON_THE_WAY', 'DELIVERED', 'COMPLETED']);
-  const openStatuses = new Set(['PENDING', 'PAID', 'RECEIVED', 'PREPARING', 'READY', 'ON_THE_WAY']);
-  const counts = Object.fromEntries(ORDER_STATUSES.map((one) => [one, 0]));
-  let todayOrders = 0;
-  let todayRevenueCents = 0;
-  let completedToday = 0;
-  let prepMinutesSum = 0;
-  let prepMinutesCount = 0;
-  let slaBreaches = 0;
-
-  for (const order of rows) {
-    if (counts[order.status] !== undefined) counts[order.status] += 1;
-    const createdAt = order.createdAt ? new Date(order.createdAt) : null;
-    if (createdAt && createdAt >= todayStart && paidStatuses.has(order.status)) {
-      todayOrders += 1;
-      todayRevenueCents += Number(order.totalCents) || 0;
-    }
-
-    const completedAt = order.completedAt ? new Date(order.completedAt) : null;
-    if (completedAt && completedAt >= todayStart && ['COMPLETED', 'DELIVERED'].includes(order.status)) {
-      completedToday += 1;
-    }
-
-    // How long the kitchen actually spent cooking, not counting time spent
-    // waiting before PREPARING started.
-    if (order.preparingAt && order.actualReadyAt) {
-      const minutes = (new Date(order.actualReadyAt).getTime() - new Date(order.preparingAt).getTime()) / 60000;
-      if (minutes >= 0 && minutes < 240) {
-        prepMinutesSum += minutes;
-        prepMinutesCount += 1;
-      }
-    }
-
-    if (openStatuses.has(order.status) && order.estimatedReadyAt && now > new Date(order.estimatedReadyAt)) {
-      slaBreaches += 1;
-    }
-  }
-
-  return {
-    total: rows.length,
-    open: rows.filter((order) => openStatuses.has(order.status)).length,
-    todayOrders,
-    todayRevenueCents,
-    completedToday,
-    avgPrepMinutes: prepMinutesCount ? Math.round((prepMinutesSum / prepMinutesCount) * 10) / 10 : null,
-    slaBreaches,
-    counts
-  };
-});
-
-get('/admin/orders/:id', { auth: true }, async ({ params }) => {
-  const orders = await col('order');
-  const id = asObjectId(params.id);
-  const row = id
-    ? await orders.findOne({ _id: id })
-    : await orders.findOne({ orderNumber: Number(params.id) });
-  if (!row) throw notFound('Order not found.');
-  return serialize(row);
-});
-
-patch('/admin/orders/:id/status', { auth: true }, async (ctx) => {
-  const status = cleanText(ctx.body?.status, 20).toUpperCase();
-  if (!ORDER_STATUSES.includes(status)) throw badRequest('That is not a valid order status.');
-
-  const orders = await col('order');
-  const id = asObjectId(ctx.params.id);
-  const current = id ? await orders.findOne({ _id: id }) : null;
-  if (!current) throw notFound('Order not found.');
-
-  const updated = await transitionOrderStatus({
-    orders,
-    order: current,
-    targetStatus: status,
-    actor: ctx.user?.email || 'admin',
-    reason: cleanText(ctx.body?.reason, 300)
-  });
-  await logActivity(ctx, 'UPDATE', 'ORDER', `#${current.orderNumber} → ${status}`);
-  return serialize(updated);
-});
-
-/**
- * Refund an order.
- *
- * The refund is issued through Stripe and nothing is written here — the
- * `charge.refunded` webhook updates the order. One writer for payment state
- * means the database cannot disagree with Stripe about what was refunded.
- */
-post('/admin/orders/:id/refund', { auth: true, roles: MANAGE }, async (ctx) => {
-  const orders = await col('order');
-  const id = asObjectId(ctx.params.id);
-  const order = id ? await orders.findOne({ _id: id }) : null;
-  if (!order) throw notFound('Order not found.');
-
-  if (order.payment?.provider !== 'stripe' || !order.payment?.paymentIntentId) {
-    throw badRequest('This order was not paid by card, so there is nothing to refund.');
-  }
-  if (!stripeConfigured()) throw badRequest('Stripe is not configured on this server.');
-  if (order.payment?.status === 'REFUNDED') throw badRequest('This order has already been refunded.');
-
-  const paid = Number(order.payment.amountCents || order.totalCents) || 0;
-  const alreadyRefunded = Math.max(0, Number(order.payment.refundedCents) || 0);
-  const refundable = Math.max(0, paid - alreadyRefunded);
-  if (refundable <= 0) throw badRequest('Stripe has already refunded the full payment.');
-
-  const requested = Number.isFinite(Number(ctx.body?.amountCents))
-    ? cleanInt(ctx.body.amountCents, 0)
-    : refundable;
-
-  if (requested <= 0 || requested > refundable) {
-    throw badRequest(`Enter a refund amount between one cent and the remaining refundable amount (${refundable} cents).`);
-  }
-
-  try {
-    // Stripe is the authority for whether this payment can be refunded. The
-    // local record is checked as well, but never trusted on its own.
-    const paymentIntent = await stripe().paymentIntents.retrieve(order.payment.paymentIntentId);
-    if (paymentIntent.status !== 'succeeded') {
-      throw new Error('Stripe does not show this payment as successfully completed.');
-    }
-    if (String(paymentIntent.currency || '').toLowerCase() !== String(order.payment.currency || 'usd').toLowerCase()) {
-      throw new Error('Stripe payment currency does not match this order.');
-    }
-    if (Number(paymentIntent.amount_received) < paid) {
-      throw new Error('Stripe payment amount does not match this order.');
-    }
-    const expectedMode = String(order.payment.mode || '').toLowerCase();
-    const actualMode = paymentIntent.livemode ? 'live' : 'test';
-    if (expectedMode && expectedMode !== actualMode) {
-      throw new Error('Stripe payment mode does not match this order.');
-    }
-
-    const refund = await stripe().refunds.create(
-      {
-        payment_intent: order.payment.paymentIntentId,
-        amount: requested,
-        reason: 'requested_by_customer',
-        metadata: { orderNumber: String(order.orderNumber), by: ctx.user.email }
-      },
-      {
-        // Network retries and repeated clicks return the original Stripe
-        // refund instead of withdrawing the same amount twice.
-        idempotencyKey: `preva-refund-${order._id}-${alreadyRefunded}-${requested}`
-      }
-    );
-
-    await logActivity(ctx, 'REFUND', 'ORDER', `#${order.orderNumber} requested ${(requested / 100).toFixed(2)} via Stripe`);
-    return {
-      ok: true,
-      refundId: refund.id,
-      refundStatus: refund.status,
-      requestedCents: requested,
-      remainingAfterRequestCents: Math.max(0, refundable - requested),
-      note: 'Stripe will confirm the final payment state on the webhook.'
-    };
-  } catch (error) {
-    console.error('[admin] Stripe refund failed', {
-      type: error?.type || 'StripeError',
-      code: error?.code || '',
-      message: String(error?.message || 'Refund failed').slice(0, 300),
-      requestId: error?.requestId || ''
-    });
-    throw badRequest(error?.message || 'Stripe refused that refund.');
-  }
-});
-
-/** Shows the operator whether payments are actually armed. */
-get('/admin/payment-status', { auth: true }, async () => paymentStatusSummary());
 
 /* ══════════════════════════════════════════════════════════════════════════
    Enquiries — contact, reservations, VIP requests, guest list

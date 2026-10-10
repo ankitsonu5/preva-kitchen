@@ -22,7 +22,6 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "server-only": "^0.0.1",
-    "stripe": "^22.5.0",
     "sweetalert2": "^11.26.25"
   },
   "devDependencies": {

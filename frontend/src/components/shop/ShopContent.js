@@ -1,5 +1,4 @@
 import { cmsFetch } from '@/lib/cms';
-import { ShopProvider } from '@/components/shop/ShopProvider';
 import ProductGrid from '@/components/shop/ProductGrid';
 import PrivateDiningBanner from '@/components/shop/PrivateDiningBanner';
 import MenuOrderSection from '@/components/shop/MenuOrderSection';
@@ -20,7 +19,7 @@ export default async function ShopContent() {
   const menuSchema = generateMenuPageSchema(list, origin);
 
   return (
-    <ShopProvider>
+    <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(menuSchema) }}
@@ -86,6 +85,6 @@ export default async function ShopContent() {
           <MenuOrderSection />
         </div>
       </div>
-    </ShopProvider>
+    </>
   );
 }

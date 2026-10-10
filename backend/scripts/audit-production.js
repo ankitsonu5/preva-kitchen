@@ -1,18 +1,5 @@
 import './env.js';
 import { MongoClient } from 'mongodb';
-import Stripe from 'stripe';
-
-const requiredWebhookEvents = [
-  'checkout.session.completed',
-  'checkout.session.async_payment_succeeded',
-  'checkout.session.async_payment_failed',
-  'checkout.session.expired',
-  'payment_intent.payment_failed',
-  'charge.refunded',
-  'refund.created',
-  'refund.updated',
-  'refund.failed'
-];
 
 const checks = [];
 const add = (name, pass, detail) => checks.push({ name, pass: Boolean(pass), detail });
@@ -48,11 +35,6 @@ add(
   jwtSecret.length >= 32 && !/replace[-_ ]?me|change[-_ ]?me|example|default/i.test(jwtSecret),
   jwtSecret ? 'set (redacted)' : '<unset>'
 );
-add(
-  'Unpaid test orders disabled',
-  process.env.ALLOW_UNPAID_TEST_ORDERS !== 'true',
-  process.env.ALLOW_UNPAID_TEST_ORDERS || '<unset>'
-);
 
 const mongoUri = String(process.env.MONGODB_URI || process.env.DATABASE_URL || '').trim();
 let mongoHost = '<unset/invalid>';
@@ -76,15 +58,6 @@ if (mongoUri && !mongoIsLocal) {
   }
 }
 
-const stripeKey = String(process.env.STRIPE_SECRET_KEY || '').trim();
-const stripeMode = stripeKey.includes('_live_') ? 'live' : stripeKey.includes('_test_') ? 'test' : stripeKey ? 'unknown' : 'off';
-add('Stripe secret mode', stripeMode === 'live', stripeMode);
-add(
-  'Stripe webhook secret',
-  String(process.env.STRIPE_WEBHOOK_SECRET || '').startsWith('whsec_'),
-  process.env.STRIPE_WEBHOOK_SECRET ? 'set (redacted)' : '<unset>'
-);
-
 const resendKey = String(process.env.RESEND_API_KEY || '').trim();
 const fromEmail = String(process.env.FROM_EMAIL || process.env.STAFF_EMAIL_FROM || '').trim();
 const adminRecipients = String(
@@ -102,21 +75,6 @@ add(
 add('Reservation admin email', Boolean(adminRecipients), adminRecipients || '<unset>');
 add('Career/HR email', Boolean(careerRecipients), careerRecipients || '<unset>');
 add('Production mail catch-all disabled', !String(process.env.MAIL_CATCH_ALL || '').trim(), process.env.MAIL_CATCH_ALL ? 'set' : '<unset>');
-
-if (stripeKey) {
-  try {
-    const stripe = new Stripe(stripeKey, { apiVersion: '2024-12-18.acacia' });
-    const endpoints = await stripe.webhookEndpoints.list({ limit: 100 });
-    const expectedUrl = siteUrl ? `${siteUrl.origin}/api/stripe/webhook` : '';
-    const endpoint = endpoints.data.find((item) => item.url === expectedUrl && item.status === 'enabled');
-    const events = new Set(endpoint?.enabled_events || []);
-    const coversEvents = endpoint && (events.has('*') || requiredWebhookEvents.every((event) => events.has(event)));
-    add('Stripe webhook endpoint', Boolean(endpoint), expectedUrl || '<site URL unavailable>');
-    add('Stripe webhook events', Boolean(coversEvents), coversEvents ? 'all required events enabled' : 'missing required events');
-  } catch (error) {
-    add('Stripe dashboard access', false, error.message);
-  }
-}
 
 add(
   'Google Places API key',

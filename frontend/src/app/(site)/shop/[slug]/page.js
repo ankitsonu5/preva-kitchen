@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { cmsFetch } from '@/lib/cms';
-import { ShopProvider } from '@/components/shop/ShopProvider';
 import { ProductCard } from '@/components/shop/ProductGrid';
 import ProductBuy from '@/components/shop/ProductBuy';
 import {
@@ -119,7 +118,7 @@ export default async function ProductPage({ params }) {
   const detailSchemaJson = JSON.stringify(detailSchema).replace(/</g, '\\u003c');
 
   return (
-    <ShopProvider>
+    <>
       <div className="ps">
         <script
           type="application/ld+json"
@@ -232,6 +231,6 @@ export default async function ProductPage({ params }) {
           )}
         </div>
       </div>
-    </ShopProvider>
+    </>
   );
 }

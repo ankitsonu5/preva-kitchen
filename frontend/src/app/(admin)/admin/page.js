@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Shell from '@/components/admin/Shell';
 import { EmptyState, LoadingSkeleton, PageHeader, StatsCard, StatusBadge } from '@/components/admin/AdminUI';
 import { api } from '@/lib/admin-api';
-import { Activity, BookOpen, FilePlus2, FileText, FolderTree, Images, Inbox, ListTree, Plus, ShoppingCart, Sparkles, Users } from 'lucide-react';
+import { Activity, BookOpen, FilePlus2, FileText, FolderTree, Images, Inbox, ListTree, Plus, Sparkles, Users } from 'lucide-react';
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
@@ -12,24 +12,34 @@ export default function Dashboard() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    setLoading(true);
-    api('/admin/dashboard')
+    let active = true;
+
+    // First load shows the skeleton; the 30s refreshes update in place so new
+    // submissions appear without reloading the page.
+    const load = () => api('/admin/dashboard')
       .then((res) => {
-        if (!res.ok) {
-          setError('Failed to fetch dashboard statistics.');
-          setLoading(false);
-          return;
-        }
+        if (!res.ok) throw new Error('Failed to fetch dashboard statistics.');
         return res.json();
       })
       .then((data) => {
-        if (data) setStats(data);
-        setLoading(false);
+        if (!active || !data) return;
+        setStats(data);
+        setError('');
       })
-      .catch(() => {
-        setError('Could not connect to API server.');
-        setLoading(false);
+      .catch((err) => {
+        if (active) setError(err.message === 'Failed to fetch dashboard statistics.' ? err.message : 'Could not connect to API server.');
+      })
+      .finally(() => {
+        if (active) setLoading(false);
       });
+
+    setLoading(true);
+    load();
+    const interval = setInterval(load, 30000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
   }, []);
 
   return (
@@ -54,7 +64,6 @@ export default function Dashboard() {
       ) : stats ? (
         <>
           <div className="cards">
-            <StatsCard label="Online Orders" value={stats.activeOrders ?? stats.counts?.openOrders ?? 0} helper={`${stats.totalOrders ?? 0} all-time orders`} icon={ShoppingCart} tone="warning" href="/admin/orders" />
             <StatsCard label="Reservations" value={stats.newReservations ?? stats.counts?.newReservations ?? 0} helper="New booking requests" icon={ListTree} tone="info" href="/admin/inbox?kind=reservations" />
             <StatsCard label="Total posts" value={stats.posts} helper={`${stats.publishedPosts} published · ${stats.draftPosts} drafts`} icon={BookOpen} href="/admin/content?type=POST" />
             <StatsCard label="Pages" value={stats.pages} helper="Published site pages" icon={FileText} tone="info" href="/admin/content?type=PAGE" />
@@ -66,54 +75,6 @@ export default function Dashboard() {
           </div>
 
           <div className="dashboard-grids">
-            {/* Live Recent Orders Panel */}
-            <div className="panel">
-              <div className="panel-heading">
-                <div>
-                  <h3>Recent Orders</h3>
-                  <p>Live food & kitchen orders</p>
-                </div>
-                <a href="/admin/orders">View all orders</a>
-              </div>
-              {stats.recentOrders && stats.recentOrders.length > 0 ? (
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="table">
-                    <thead>
-                      <tr>
-                        <th>Order</th>
-                        <th>Customer</th>
-                        <th>Status</th>
-                        <th>Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {stats.recentOrders.map((ord) => (
-                        <tr key={ord.id || ord.orderNumber}>
-                          <td>
-                            <a href="/admin/orders" style={{ color: '#F5DF97', textDecoration: 'none', fontWeight: 'bold' }}>
-                              #{ord.orderNumber}
-                            </a>
-                          </td>
-                          <td>
-                            <strong>{ord.customer?.name || 'Customer'}</strong>
-                            <div style={{ fontSize: '0.78rem', color: '#888' }}>{ord.fulfilment || 'PICKUP'}</div>
-                          </td>
-                          <td>
-                            <StatusBadge status={ord.status} />
-                          </td>
-                          <td style={{ fontWeight: '700', color: '#ddd' }}>
-                            ${((ord.totalCents || 0) / 100).toFixed(2)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <EmptyState icon={ShoppingCart} title="No orders yet" description="Incoming kitchen orders will appear here in real-time." />
-              )}
-            </div>
-
             {/* Recent Posts Panel */}
             <div className="panel">
               <div className="panel-heading"><div><h3>Recent posts</h3><p>Latest content updates</p></div><a href="/admin/content?type=POST">View all</a></div>

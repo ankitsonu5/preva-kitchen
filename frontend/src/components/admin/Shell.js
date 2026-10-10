@@ -102,9 +102,8 @@ export default function Shell({ children }) {
   }, [router, pathname]);
 
   const [badges, setBadges] = useState({});
-  const [newOrderToast, setNewOrderToast] = useState(null);
 
-  // Poll for live incoming orders & inbox notifications
+  // Poll for inbox notifications
   useEffect(() => {
     if (!user) return;
     let active = true;
@@ -123,23 +122,10 @@ export default function Shell({ children }) {
           return;
         }
 
-        setBadges((prev) => {
-          const newOrders = data.activeOrders ?? data.counts?.openOrders ?? 0;
-          const prevOrders = prev.activeOrders ?? prev.openOrders ?? 0;
-
-          // If new order arrived, trigger visual alert
-          if (newOrders > prevOrders && prevOrders > 0) {
-            setNewOrderToast(`🔔 New Order received! Total active: ${newOrders}`);
-            setTimeout(() => setNewOrderToast(null), 8000);
-          }
-
-          return {
-            openOrders: newOrders,
-            activeOrders: newOrders,
-            newContacts: data.unreadEnquiries ?? data.counts?.newContacts ?? 0,
-            newReservations: data.newReservations ?? data.counts?.newReservations ?? 0,
-            careerApps: data.careerApps ?? data.counts?.careerApps ?? 0
-          };
+        setBadges({
+          newContacts: data.unreadEnquiries ?? data.counts?.newContacts ?? 0,
+          newReservations: data.newReservations ?? data.counts?.newReservations ?? 0,
+          careerApps: data.careerApps ?? data.counts?.careerApps ?? 0
         });
       } catch (e) {}
     };
@@ -215,7 +201,6 @@ export default function Shell({ children }) {
     dashboard: !careersManager,
     content: !careersManager,
     media: !careersManager,
-    orders: !careersManager,
     careers: role === 'SUPER_ADMIN' || role === 'ADMIN' || careersManager,
     users: role === 'SUPER_ADMIN' || role === 'ADMIN',
     settings: role === 'SUPER_ADMIN' || role === 'ADMIN',
@@ -249,51 +234,6 @@ export default function Shell({ children }) {
         />
         {mobileMenuOpen && <button className="mobile-sidebar-backdrop" type="button" aria-label="Close navigation" onClick={() => setMobileMenuOpen(false)} />}
         <div className="admin-content-frame">
-          {newOrderToast && (
-            <div
-              style={{
-                position: 'fixed',
-                top: 20,
-                right: 24,
-                zIndex: 9999,
-                background: 'linear-gradient(135deg, #1f1206 0%, #0d0702 100%)',
-                border: '1.5px solid #C9A84C',
-                color: '#F5DF97',
-                padding: '14px 22px',
-                borderRadius: 14,
-                boxShadow: '0 12px 35px rgba(0, 0, 0, 0.8), 0 0 20px rgba(201, 168, 76, 0.35)',
-                fontWeight: 700,
-                fontSize: '0.92rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                animation: 'slideIn 0.3s ease-out'
-              }}
-            >
-              <span>{newOrderToast}</span>
-              <a
-                href="/admin/orders"
-                style={{
-                  background: '#C9A84C',
-                  color: '#000',
-                  padding: '4px 12px',
-                  borderRadius: 20,
-                  fontSize: '0.78rem',
-                  fontWeight: 800,
-                  textDecoration: 'none'
-                }}
-              >
-                View
-              </a>
-              <button
-                type="button"
-                onClick={() => setNewOrderToast(null)}
-                style={{ background: 'transparent', border: 'none', color: '#999', cursor: 'pointer', fontSize: 16 }}
-              >
-                ×
-              </button>
-            </div>
-          )}
           <main className="main">{children}</main>
         </div>
       </div>

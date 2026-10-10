@@ -11,8 +11,6 @@ import express from 'express';
 import cors from 'cors';
 import { dispatch } from './src/index.js';
 import { currentUser } from './src/lib/auth.js';
-import { handleStripeWebhook } from './src/webhook.js';
-import { stripeConfigured, stripeMode, storefrontUrl, webhookSecret } from './src/lib/stripe.js';
 import { connectDatabase } from './src/lib/db.js';
 
 /**
@@ -39,19 +37,6 @@ if (isProduction) {
   if (!mongoUri) throw new Error('MONGODB_URI is required in production.');
   if (/mongodb(?:\+srv)?:\/\/(?:localhost|127\.0\.0\.1|\[?::1\]?)(?::|\/|$)/i.test(mongoUri)) {
     throw new Error('MONGODB_URI must not point to localhost in production.');
-  }
-
-  storefrontUrl();
-
-  if (process.env.ALLOW_UNPAID_TEST_ORDERS === 'true') {
-    throw new Error('ALLOW_UNPAID_TEST_ORDERS must be false in production.');
-  }
-
-  if (!stripeConfigured()) {
-  throw new Error('STRIPE_SECRET_KEY is required.');
-}
-  if (!webhookSecret().startsWith('whsec_')) {
-    throw new Error('The live STRIPE_WEBHOOK_SECRET is required in production.');
   }
 }
 
@@ -122,16 +107,6 @@ app.use(
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With']
   })
-);
-
-/* ── Stripe webhook — BEFORE the JSON parser ──────────────────────────────
-   Signature verification needs the raw bytes. express.json() would consume
-   and re-serialise the body, changing the bytes and failing every check, so
-   this route is mounted first with a raw parser of its own. */
-app.post(
-  ['/api/stripe/webhook', '/api/shop/webhook'],
-  express.raw({ type: 'application/json' }),
-  handleStripeWebhook
 );
 
 // Admin media uploads use base64 JSON. A 25 MB hero video expands by roughly
@@ -221,9 +196,9 @@ app.use((error, req, res, next) => {
   return res.status(500).json({ message: 'Something went wrong on our side.' });
 });
 
-// Production must never appear healthy while orders and Stripe event claims
-// are unable to persist. Local development may still use the explicit
-// in-memory fallback provided by db.js.
+// Production must never appear healthy while submissions are unable to
+// persist. Local development may still use the explicit in-memory fallback
+// provided by db.js.
 if (isProduction) await connectDatabase();
 
 app.listen(PORT, () => {

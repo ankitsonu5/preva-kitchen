@@ -112,7 +112,7 @@ const nextConfig = {
       { source: '/shop/:path*', destination: '/menu/:path*', permanent: true },
       { source: '/order-online', destination: '/menu', permanent: true },
       { source: '/online-order-platform', destination: '/menu', permanent: true },
-      { source: '/cart', destination: '/checkout', permanent: true },
+      { source: '/cart', destination: '/menu', permanent: true },
       { source: '/my-account', destination: '/menu', permanent: true },
       // Duplicate dish-page slugs consolidated onto one canonical slug per dish
       // (Batch 3 SEO audit, Sheet 03). Both sides confirmed live in production

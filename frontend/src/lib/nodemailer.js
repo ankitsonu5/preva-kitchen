@@ -12,7 +12,7 @@ const BRAND_ADDRESS = '13090 Inkster Rd, Redford Township, MI 48239';
 const BRAND_PHONE = '(313) 286-3586';
 const BRAND_GOLD = '#C9A96E';
 
-const SMTP_KEYS = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_SECURE', 'SMTP_USER', 'SMTP_PASS', 'GMAIL_USER', 'GMAIL_APP_PASSWORD'];
+const SMTP_KEYS = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_SECURE', 'SMTP_USER', 'SMTP_PASS', 'GMAIL_USER', 'GMAIL_APP_PASSWORD', 'CONTACT_SMTP_USER', 'CONTACT_SMTP_PASS'];
 let _backendSmtpEnv;
 
 // On the server the backend's .env already holds the Gmail SMTP login (the
@@ -45,7 +45,12 @@ function backendSmtpEnv() {
   return _backendSmtpEnv;
 }
 
-export function getSmtpConfig() {
+/**
+ * SMTP login for a mail account. 'contact' uses the info@ mailbox
+ * (CONTACT_SMTP_USER / CONTACT_SMTP_PASS) once its App Password is set;
+ * until then, and for every other form, the default reservations@ login is used.
+ */
+export function getSmtpConfig(account = 'default') {
   const hasOwnPass = Boolean(String(process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD || '').trim());
   const env = hasOwnPass ? process.env : { ...process.env, ...(backendSmtpEnv() || {}) };
   const host = String(env.SMTP_HOST || 'smtp.gmail.com').trim();
@@ -53,19 +58,26 @@ export function getSmtpConfig() {
   const secure = env.SMTP_SECURE !== undefined
     ? String(env.SMTP_SECURE).toLowerCase() === 'true'
     : port === 465;
+
+  const contactPass = String(process.env.CONTACT_SMTP_PASS || env.CONTACT_SMTP_PASS || '').replace(/\s+/g, '').trim();
+  if (account === 'contact' && contactPass) {
+    const user = String(process.env.CONTACT_SMTP_USER || env.CONTACT_SMTP_USER || 'info@prevakitchen.com').trim();
+    return { host, port, secure, user, pass: contactPass };
+  }
+
   const user = String(env.SMTP_USER || env.GMAIL_USER || 'reservations@prevakitchen.com').trim();
   const pass = String(env.SMTP_PASS || env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, '').trim();
 
   return { host, port, secure, user, pass };
 }
 
-export function isSmtpConfigured() {
-  const { user, pass } = getSmtpConfig();
+export function isSmtpConfigured(account = 'default') {
+  const { user, pass } = getSmtpConfig(account);
   return Boolean(user && pass);
 }
 
-export function getFromAddress() {
-  const { user } = getSmtpConfig();
+export function getFromAddress(account = 'default') {
+  const { user } = getSmtpConfig(account);
   return `Preva Kitchen <${user || 'reservations@prevakitchen.com'}>`;
 }
 
@@ -85,16 +97,14 @@ export function getSiteUrl() {
   return String(process.env.NEXT_PUBLIC_SITE_URL || 'https://prevakitchen.com').replace(/\/$/, '').trim();
 }
 
-let _transporter = null;
-let _cachedKey = null;
+const _transporters = new Map(); // SMTP login key -> transporter
 
-export function getTransporter() {
-  const { host, port, secure, user, pass } = getSmtpConfig();
+export function getTransporter(account = 'default') {
+  const { host, port, secure, user, pass } = getSmtpConfig(account);
   const key = `${host}:${port}:${secure}:${user}:${pass}`;
 
-  if (!_transporter || _cachedKey !== key) {
-    _cachedKey = key;
-    _transporter = nodemailer.createTransport({
+  if (!_transporters.has(key)) {
+    _transporters.set(key, nodemailer.createTransport({
       host,
       port,
       secure,
@@ -102,9 +112,9 @@ export function getTransporter() {
       connectionTimeout: 6000,
       greetingTimeout: 5000,
       socketTimeout: 10000
-    });
+    }));
   }
-  return _transporter;
+  return _transporters.get(key);
 }
 
 /**
@@ -369,15 +379,15 @@ function wrapCustomerConfirmation({ eyebrow = 'PREVA Concierge', heading, name, 
  * Enforces pure HTML rendering priority so email clients (like Gmail)
  * always render the stunning luxury Black & Gold UI without fallback to plain text.
  */
-export async function sendMail({ to, subject, html, text, replyTo, attachments = [] }) {
-  if (!isSmtpConfigured()) {
+export async function sendMail({ to, subject, html, text, replyTo, attachments = [], account = 'default' }) {
+  if (!isSmtpConfigured(account)) {
     console.warn('[nodemailer] SMTP credentials (SMTP_USER / SMTP_PASS) not configured. Logging email instead.');
     console.log('[nodemailer:mock-send]', { to, subject, replyTo, attachmentsCount: attachments.length });
     return { ok: true, mocked: true };
   }
 
-  const transporter = getTransporter();
-  const from = getFromAddress();
+  const transporter = getTransporter(account);
+  const from = getFromAddress(account);
 
   try {
     const mailOptions = {
@@ -502,6 +512,7 @@ export async function sendContactEmail(data) {
 
   // 1. Admin notification to info@prevakitchen.com
   const adminTask = sendMail({
+    account: 'contact',
     to: recipient,
     replyTo: data.email || undefined,
     subject: `✉️ Contact Enquiry: ${data.name} — ${data.subject || 'General'}`,
@@ -523,6 +534,7 @@ export async function sendContactEmail(data) {
   let customerTask = null;
   if (data.email) {
     customerTask = sendMail({
+      account: 'contact',
       to: data.email,
       replyTo: recipient,
       subject: `Message Received - Preva Kitchen (${data.referenceId || 'Confirmation'})`,

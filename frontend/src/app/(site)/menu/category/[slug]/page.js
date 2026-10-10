@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { cmsFetch } from '@/lib/cms';
-import { ShopProvider } from '@/components/shop/ShopProvider';
 import { ProductCard } from '@/components/shop/ProductGrid';
 import { pageMetadata, truncateAtWord } from '@/lib/seo';
 import { getCanonicalOrigin } from '@/lib/site-url';
@@ -113,7 +112,7 @@ export default async function MenuCategoryPage({ params }) {
   };
 
   return (
-    <ShopProvider>
+    <>
       <div className="ps">
         <script
           type="application/ld+json"
@@ -174,6 +173,6 @@ export default async function MenuCategoryPage({ params }) {
           )}
         </div>
       </div>
-    </ShopProvider>
+    </>
   );
 }

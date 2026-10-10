@@ -1597,21 +1597,6 @@ export async function createIndexes(db) {
     ['users', { email: 1 }, { unique: true, name: 'users_email_unique' }],
     ['menuItems', { slug: 1 }, { unique: true, sparse: true, name: 'menu_items_slug_unique' }],
 
-    /* ── payments ──────────────────────────────────────────────────────────
-       The webhook detects a replayed Stripe event by inserting the event id
-       and catching the duplicate-key error. Without a unique index that
-       insert always succeeds, so every retry Stripe makes is treated as a new
-       event — refunds get applied twice and paid orders get rewritten. This
-       index is what makes that handler correct, not an optimisation. */
-    ['stripeEvent', { eventId: 1 }, { unique: true, name: 'stripe_event_id_unique' }],
-
-    // Every order lookup goes through one of these three.
-    ['order', { orderNumber: 1 }, { unique: true, name: 'order_number_unique' }],
-    ['order', { checkoutAttemptId: 1 }, { unique: true, sparse: true, name: 'order_checkout_attempt_unique' }],
-    ['order', { stripeSessionId: 1 }, { sparse: true, name: 'order_stripe_session' }],
-    ['order', { 'payment.paymentIntentId': 1 }, { sparse: true, name: 'order_payment_intent' }],
-    ['order', { status: 1, createdAt: -1 }, { name: 'order_status_created' }],
-
     ['careerApplications', { status: 1, createdAt: -1 }, { name: 'career_status_created' }],
     ['careerApplications', { role: 1, createdAt: -1 }, { name: 'career_role_created' }],
     ['careerApplications', { email: 1 }, { name: 'career_email' }],

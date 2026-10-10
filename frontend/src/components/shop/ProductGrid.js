@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { money } from './ShopProvider';
+import { money } from '@/lib/money';
 import Tilt3DCard from '../Tilt3DCard';
 import { Sparkles, ArrowRight } from 'lucide-react';
 import { DISH_LOCAL_MAP } from '@/lib/dish-images';
