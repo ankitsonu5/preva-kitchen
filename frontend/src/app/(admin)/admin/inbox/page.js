@@ -230,12 +230,12 @@ function InboxViewer() {
                     {/* Reservations Specific Layout */}
                     {kind === 'reservations' && (
                       <>
-                        <td><b style={{ color: '#fff' }}>{row.fullName}</b><br /><small style={{ color: '#90a4ae' }}>{row.email} • {row.mobile}</small></td>
+                        <td><b style={{ color: '#fff' }}>{row.name}</b><br /><small style={{ color: '#90a4ae' }}>{row.email} • {row.phone}</small></td>
                         <td><b>{row.guests}</b></td>
                         <td>{row.occasion || '—'}</td>
-                        <td>{new Date(row.reservationDate).toLocaleString()}</td>
+                        <td>{[row.date, row.time].filter(Boolean).join(' at ') || '—'}</td>
                         <td>
-                          <span className={`badge ${row.status === 'pending' ? 'badge-draft' : 'badge-published'}`}>
+                          <span className={`badge ${row.status === 'NEW' ? 'badge-draft' : 'badge-published'}`}>
                             {row.status}
                           </span>
                         </td>

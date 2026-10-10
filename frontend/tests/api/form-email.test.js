@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock server-only so Vitest in Node can import route handlers
 vi.mock('server-only', () => ({}));
@@ -31,6 +31,12 @@ describe('Nodemailer SMTP Form Email Routes', () => {
     process.env.RESERVATION_EMAIL = 'reservations@prevakitchen.com';
     process.env.CONTACT_EMAIL = 'info@prevakitchen.com';
     process.env.CAREER_EMAIL = 'donnaw@prevaclub.com';
+    // Never let the routes' backend DB sync reach a real backend/database from tests
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 200 })));
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   describe('Reservation Route (POST /api/reservations)', () => {

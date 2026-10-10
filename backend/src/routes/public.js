@@ -744,7 +744,15 @@ get('/preview/:token', async ({ params }) => {
  * successful form result, while awaiting it prevents work from being dropped
  * if the process or deployment is recycled immediately after the response.
  */
-async function storeEnquiry(collectionName, refPrefix, document, { action, entity, name, ip, pageUrl, skipEmail }, { notifyAdmin, notifyCustomer } = {}) {
+/** Drops local dev URLs (localhost / 127.0.0.1 / ::1) so they never show in the admin. */
+function publicPageUrl(url) {
+  const value = String(url || '').trim();
+  if (!value) return '';
+  return /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/i.test(value) ? '' : value;
+}
+
+async function storeEnquiry(collectionName, refPrefix, document, { action, entity, name, ip, pageUrl: rawPageUrl, skipEmail }, { notifyAdmin, notifyCustomer } = {}) {
+  const pageUrl = publicPageUrl(rawPageUrl);
   const target = await col(collectionName);
   const now = new Date();
   const { insertedId } = await target.insertOne({ ...document, status: 'NEW', createdAt: now, pageUrl: pageUrl || null });

@@ -196,14 +196,7 @@ function wrapEmail({ title, subtitle, referenceId, badgeText = 'Website Notifica
           </tr>
           <tr>
             <td class="header-cell" style="background:linear-gradient(180deg, #1C1710 0%, #13110E 100%);padding:26px 32px 20px;border-bottom:1px solid #382D1B;text-align:center;">
-              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 10px;">
-                <tr>
-                  <td align="center" style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg, #2D2313 0%, #1A1408 100%);border:1px solid #6E5325;text-align:center;line-height:38px;box-shadow:0 4px 14px rgba(0,0,0,0.5);">
-                    <span style="font-family:'Cinzel',Georgia,serif;font-size:19px;font-weight:700;color:#F5D899;letter-spacing:1px;">P</span>
-                  </td>
-                </tr>
-              </table>
-              <div style="margin:0 0 4px;color:#F5D899;font-family:'Cinzel',Georgia,serif;font-size:20px;font-weight:700;letter-spacing:6px;text-transform:uppercase;text-shadow:0 2px 10px rgba(245,216,153,0.2);">PREVA</div>
+              <img src="${escapeHtml(siteUrl)}/asset/preva-kitchen-logo-email.png" width="210" height="70" alt="Preva Kitchen" style="display:block;margin:0 auto 6px;width:210px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;">
               <div style="margin:0 auto;color:#9E8E75;font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">Kitchen &bull; Redford Township</div>
               <div style="width:56px;height:1px;background:linear-gradient(90deg, transparent, #D4AF37 50%, transparent);margin:10px auto 0;"></div>
             </td>
@@ -303,14 +296,7 @@ function wrapCustomerConfirmation({ eyebrow = 'PREVA Concierge', heading, name, 
           </tr>
           <tr>
             <td class="header-cell" style="background:linear-gradient(180deg, #1C1710 0%, #13110E 100%);padding:26px 32px 20px;border-bottom:1px solid #382D1B;text-align:center;">
-              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 10px;">
-                <tr>
-                  <td align="center" style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg, #2D2313 0%, #1A1408 100%);border:1px solid #6E5325;text-align:center;line-height:38px;box-shadow:0 4px 14px rgba(0,0,0,0.5);">
-                    <span style="font-family:'Cinzel',Georgia,serif;font-size:19px;font-weight:700;color:#F5D899;letter-spacing:1px;">P</span>
-                  </td>
-                </tr>
-              </table>
-              <div style="margin:0 0 4px;color:#F5D899;font-family:'Cinzel',Georgia,serif;font-size:20px;font-weight:700;letter-spacing:6px;text-transform:uppercase;text-shadow:0 2px 10px rgba(245,216,153,0.2);">PREVA</div>
+              <img src="${escapeHtml(siteUrl)}/asset/preva-kitchen-logo-email.png" width="210" height="70" alt="Preva Kitchen" style="display:block;margin:0 auto 6px;width:210px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;">
               <div style="margin:0 auto;color:#9E8E75;font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">Kitchen &bull; Redford Township</div>
               <div style="width:56px;height:1px;background:linear-gradient(90deg, transparent, #D4AF37 50%, transparent);margin:10px auto 0;"></div>
             </td>
