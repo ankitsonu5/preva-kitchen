@@ -2936,6 +2936,7 @@ button[type="submit"].btn,
     line-height: 1 !important;
   }
 
+  .site-header .main-navigation .primary-menu>li:first-child,
   .site-header .main-navigation .nav-call-cta {
     margin-left: auto !important;
   }

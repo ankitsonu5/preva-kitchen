@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sendReservationEmail } from '@/lib/nodemailer';
+import { isValidEmail, INVALID_EMAIL_MESSAGE } from '@/lib/email-validation';
 
 function generateReferenceId() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -16,7 +17,7 @@ export async function POST(request) {
 
     // 1. Honeypot check: silent 200 for spam bots
     if (body.hp_field) {
-      console.warn('[reservations] Bot trapped via honeypot field.');
+      console.warn('[reservations] Bot trapped via honeypot field. Value:', JSON.stringify(String(body.hp_field).slice(0, 80)));
       return NextResponse.json({ ok: true, referenceId: 'RES-PROCESSED' }, { status: 200 });
     }
 
@@ -45,9 +46,9 @@ export async function POST(request) {
       );
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!(await isValidEmail(email))) {
       return NextResponse.json(
-        { message: 'Please provide a valid email address.' },
+        { message: INVALID_EMAIL_MESSAGE },
         { status: 400 }
       );
     }

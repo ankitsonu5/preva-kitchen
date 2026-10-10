@@ -463,6 +463,8 @@ const DELIVERY_ITEM_IDS = {
   'lamb-chops': ['2fb0da82-15b9-5e5d-92bb-509bb9081cde', '8e9d60f1-e097-5b4b-aad3-52291a8ca537', '355289983592'],
   'preva-mac-and-cheese': ['da30ce3e-03b8-5435-8cc8-fe59beb91e9f', '02d66484-598d-5e1b-9ffd-3a3d910155e0', '355289983624'],
   'mac-and-cheese': ['da30ce3e-03b8-5435-8cc8-fe59beb91e9f', '02d66484-598d-5e1b-9ffd-3a3d910155e0', '355289983624'],
+  'collard-greens-with-turkey-meat': ['da30ce3e-03b8-5435-8cc8-fe59beb91e9f', 'cde5aad4-1f7e-5382-adf9-f5471abcb93b', '355289983568'],
+  'collard-greens-turkey': ['da30ce3e-03b8-5435-8cc8-fe59beb91e9f', 'cde5aad4-1f7e-5382-adf9-f5471abcb93b', '355289983568'],
   'preva-yams': ['da30ce3e-03b8-5435-8cc8-fe59beb91e9f', '448207f7-2e09-5006-bd27-491917fbec3d', '355289983552'],
   yams: ['da30ce3e-03b8-5435-8cc8-fe59beb91e9f', '448207f7-2e09-5006-bd27-491917fbec3d', '355289983552']
 };

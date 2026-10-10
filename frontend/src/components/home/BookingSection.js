@@ -147,7 +147,7 @@ export default function BookingSection() {
                   tabIndex="-1"
                   autoComplete="off"
                   aria-hidden="true"
-                  style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
+                  data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" style={{ display: 'none' }}
                 />
                 <div className="pk-ref-booking-contact-row">
                   <div className="pk-ref-booking-group">

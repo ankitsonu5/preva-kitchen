@@ -253,13 +253,13 @@ function wrapEmail({ title, subtitle, referenceId, badgeText = 'Website Notifica
           </tr>` : ''}
           <tr>
             <td style="background:#0C0B09;padding:18px 28px;border-top:1px solid #241D12;text-align:center;">
-              <p style="margin:0 0 4px;color:#E5DAC6;font-family:'Cinzel',Georgia,serif;font-size:12px;letter-spacing:2.5px;font-weight:600;">PREVA KITCHEN</p>
-              <p style="margin:0 0 6px;color:#786E5E;font-size:10px;line-height:1.6;">
+              <p style="margin:0 0 4px;color:#E5DAC6;font-family:'Cinzel',Georgia,serif;font-size:16px;letter-spacing:2.5px;font-weight:600;">PREVA KITCHEN</p>
+              <p style="margin:0 0 6px;color:#786E5E;font-size:14px;line-height:1.6;">
                 ${BRAND_ADDRESS}<br>
                 <a href="tel:+13132863586" style="color:#C9A96E;text-decoration:none;">${BRAND_PHONE}</a> &bull;
                 <a href="${escapeHtml(siteUrl)}" style="color:#C9A96E;text-decoration:none;">prevakitchen.com</a>
               </p>
-              ${footerNote ? `<p style="margin:4px 0 0;color:#544D42;font-size:9.5px;font-style:italic;">${escapeHtml(footerNote)}</p>` : ''}
+              ${footerNote ? `<p style="margin:4px 0 0;color:#544D42;font-size:13px;font-style:italic;">${escapeHtml(footerNote)}</p>` : ''}
             </td>
           </tr>
         </table>
@@ -361,13 +361,13 @@ function wrapCustomerConfirmation({ eyebrow = 'PREVA Concierge', heading, name, 
           </tr>
           <tr>
             <td style="background:#0C0B09;padding:18px 28px;border-top:1px solid #241D12;text-align:center;">
-              <p style="margin:0 0 4px;color:#E5DAC6;font-family:'Cinzel',Georgia,serif;font-size:12px;letter-spacing:2.5px;font-weight:600;">PREVA KITCHEN</p>
-              <p style="margin:0 0 6px;color:#786E5E;font-size:10px;line-height:1.6;">
+              <p style="margin:0 0 4px;color:#E5DAC6;font-family:'Cinzel',Georgia,serif;font-size:16px;letter-spacing:2.5px;font-weight:600;">PREVA KITCHEN</p>
+              <p style="margin:0 0 6px;color:#786E5E;font-size:14px;line-height:1.6;">
                 ${BRAND_ADDRESS}<br>
                 <a href="tel:+13132863586" style="color:#C9A96E;text-decoration:none;">${BRAND_PHONE}</a> &bull;
                 <a href="${escapeHtml(siteUrl)}" style="color:#C9A96E;text-decoration:none;">prevakitchen.com</a>
               </p>
-              <p style="margin:0;color:#544D42;font-size:9px;line-height:1.5;">Fine Dining &bull; Redford Township, MI</p>
+              <p style="margin:0;color:#544D42;font-size:13px;line-height:1.5;">Fine Dining &bull; Redford Township, MI</p>
             </td>
           </tr>
         </table>

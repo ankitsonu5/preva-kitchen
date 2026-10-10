@@ -57,7 +57,7 @@ export default function CareerApplicationForm({ initialRole = '', jobs = [] }) {
 
   return (
     <form className="form" onSubmit={submit}>
-      <input type="text" name="hp_field" value={form.hp_field} onChange={update} tabIndex="-1" autoComplete="off" aria-hidden="true" style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }} />
+      <input type="text" name="hp_field" value={form.hp_field} onChange={update} tabIndex="-1" autoComplete="off" aria-hidden="true" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" style={{ display: 'none' }} />
       <div className="field"><label htmlFor="career-first">First name *</label><input id="career-first" name="firstName" value={form.firstName} onChange={update} required /></div>
       <div className="field"><label htmlFor="career-last">Last name *</label><input id="career-last" name="lastName" value={form.lastName} onChange={update} required /></div>
       <div className="field"><label htmlFor="career-email">Email *</label><input id="career-email" name="email" value={form.email} onChange={update} type="email" required /></div>

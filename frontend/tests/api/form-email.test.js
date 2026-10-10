@@ -3,6 +3,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Mock server-only so Vitest in Node can import route handlers
 vi.mock('server-only', () => ({}));
 
+// Skip live MX lookups: these tests cover email dispatch, not deliverability
+vi.mock('@/lib/email-validation', () => ({
+  isValidEmail: async (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '')),
+  INVALID_EMAIL_MESSAGE: 'Please enter a valid, working email address.'
+}));
+
 // Mock nodemailer
 const mockSendMail = vi.fn().mockResolvedValue({ messageId: '<test-message-id@prevakitchen.com>' });
 const mockCreateTransport = vi.fn().mockReturnValue({ sendMail: mockSendMail });

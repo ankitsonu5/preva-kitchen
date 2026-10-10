@@ -533,7 +533,7 @@ export default function ContactContent() {
                     tabIndex="-1"
                     autoComplete="off"
                     aria-hidden="true"
-                    style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
+                    data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" style={{ display: 'none' }}
                   />
                   {error && (
                     <div style={{ padding: '12px 16px', background: 'rgba(230, 90, 90, 0.12)', border: '1px solid rgba(230, 90, 90, 0.4)', borderRadius: '8px', color: '#ffb2b2', fontSize: '0.85rem' }}>
