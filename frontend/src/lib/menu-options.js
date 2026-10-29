@@ -282,13 +282,20 @@ export function getMenuProductDescription(product) {
 
 export function getMenuOptionImage(product, config, selection, fallbackImage) {
   if (MENU_IMAGE_UNAVAILABLE.has(product?.slug) && !product?.image) return null;
-  if (config?.image) return config.image;
-  for (const group of config?.groups || []) {
+  const selectedOptions = (config?.groups || []).map((group) => {
     const selectedId = selection[group.queryKey] || group.defaultOptionId;
-    const option = group.options.find((item) => item.id === selectedId);
-    if (option?.image) return option.image;
-  }
-  return product?.image || fallbackImage || null;
+    return group.options.find((item) => item.id === selectedId);
+  }).filter(Boolean);
+  // A selected style that is a different dish (e.g. Steak Tacos picked on
+  // Chicken Tacos) shows that dish's photo.
+  const otherDish = selectedOptions.find((option) => option.image && option.routeSlug && option.routeSlug !== product?.slug);
+  if (otherDish) return otherDish.image;
+  // Otherwise match the menu card: the admin image always wins.
+  if (product?.image) return product.image;
+  if (config?.image) return config.image;
+  const optionWithImage = selectedOptions.find((option) => option.image);
+  if (optionWithImage) return optionWithImage.image;
+  return fallbackImage || null;
 }
 
 export function formatMenuOptionPrice(config, group, option, selection) {

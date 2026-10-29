@@ -1,6 +1,5 @@
 import { cmsFetch } from '@/lib/cms';
 import ProductGrid from '@/components/shop/ProductGrid';
-import PrivateDiningBanner from '@/components/shop/PrivateDiningBanner';
 import MenuOrderSection from '@/components/shop/MenuOrderSection';
 import { getCanonicalOrigin } from '@/lib/site-url';
 import { generateMenuPageSchema } from '@/lib/seo-schema';
@@ -54,39 +53,6 @@ export default async function ShopContent() {
           <div id="signature-creations" style={{ marginBottom: 56 }}>
             <ProductGrid products={list} categories={cats} />
           </div>
-
-          {/* ══ 4. DINING EXPERIENCE GALLERY ══ */}
-          <div style={{ marginTop: '88px', marginBottom: '80px' }}>
-            <div style={{ marginBottom: '36px' }}>
-              <span style={{ display: 'block', marginBottom: '10px', color: 'var(--accent-gold, #c5a059)', fontSize: '0.8rem', fontWeight: 800, letterSpacing: '3px', textTransform: 'uppercase' }}>
-                AMBIENCE & HOSPITALITY
-              </span>
-              <h2 className="ps-sec-title" style={{ margin: 0 }}>Dining Experience</h2>
-            </div>
-            <div className="ps-exp-grid">
-              <div className="ps-exp-card">
-                <img src="/asset/home-reference/preva-restaurant-hero.png" alt="Dining room at Preva Kitchen" loading="lazy" />
-                <div className="ps-exp-card__overlay">
-                  <span className="ps-exp-card__title">Sophisticated Atmosphere</span>
-                </div>
-              </div>
-              <div className="ps-exp-card">
-                <img src="/asset/home-reference/preva-kitchen-story.jpg" alt="Preparing a dish in the Preva Kitchen" loading="lazy" />
-                <div className="ps-exp-card__overlay">
-                  <span className="ps-exp-card__title">Culinary Mastery</span>
-                </div>
-              </div>
-              <div className="ps-exp-card">
-                <img src="/asset/hero/preva-feast-hero.jpg" alt="A table of Preva Kitchen dishes" loading="lazy" />
-                <div className="ps-exp-card__overlay">
-                  <span className="ps-exp-card__title">Exclusive Fine Dining</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ══ 5. PRIVATE DINING & EXCLUSIVE EVENTS BANNER ══ */}
-          <PrivateDiningBanner />
 
           {/* ══ 6. READY TO ORDER (closing card) ══ */}
           <MenuOrderSection />

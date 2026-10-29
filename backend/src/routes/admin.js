@@ -948,6 +948,21 @@ get('/admin/media', { auth: true }, async ({ query }) => {
 const IMAGE_MEDIA_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']);
 const VIDEO_MEDIA_TYPES = new Set(['video/mp4', 'video/webm', 'video/ogg']);
 const MEDIA_TYPES = new Set([...IMAGE_MEDIA_TYPES, ...VIDEO_MEDIA_TYPES]);
+const MEDIA_EXTENSIONS = {
+  'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/avif': 'avif',
+  'video/mp4': 'mp4', 'video/webm': 'webm', 'video/ogg': 'ogg'
+};
+
+// Readable, unique public name for an upload: "Chicken Quesadilla.WEBP" ->
+// "chicken-quesadilla.webp", then "chicken-quesadilla-2.webp" if taken.
+async function uniqueMediaName(media, filename, mimeType) {
+  const base = slug(filename.replace(/\.[^.]+$/, '')) || 'media';
+  const ext = MEDIA_EXTENSIONS[mimeType];
+  for (let n = 1; ; n += 1) {
+    const name = `${n === 1 ? base : `${base}-${n}`}.${ext}`;
+    if (!(await media.findOne({ slug: name }))) return name;
+  }
+}
 
 post('/admin/media/upload', { auth: true, roles: AUTHOR }, async (ctx) => {
   const incoming = Array.isArray(ctx.body?.files) ? ctx.body.files.slice(0, 10) : [];
@@ -970,8 +985,12 @@ post('/admin/media/upload', { auth: true, roles: AUTHOR }, async (ctx) => {
     }
 
     const now = new Date();
+    const name = await uniqueMediaName(media, filename, mimeType);
+    const url = `/api/media/${name}`;
     const document = {
       filename,
+      slug: name,
+      url,
       title: cleanText(file?.title, 180) || filename.replace(/\.[^.]+$/, ''),
       altText: cleanText(file?.altText, 200),
       caption: cleanText(file?.caption, 500),
@@ -983,9 +1002,7 @@ post('/admin/media/upload', { auth: true, roles: AUTHOR }, async (ctx) => {
       updatedAt: now
     };
     const inserted = await media.insertOne(document);
-    const url = `/api/media/${inserted.insertedId}`;
-    await media.updateOne({ _id: inserted.insertedId }, { $set: { url } });
-    const publicDocument = { ...document, _id: inserted.insertedId, url };
+    const publicDocument = { ...document, _id: inserted.insertedId };
     delete publicDocument.data;
     uploaded.push(serialize(publicDocument));
     await logActivity(ctx, 'CREATE', 'MEDIA', filename);

@@ -415,8 +415,12 @@ get('/google-reviews', async () => {
 
 get('/media/:id', async ({ params }) => {
   const media = await col('media');
-  const id = asObjectId(params.id);
-  const row = id ? await media.findOne({ _id: id }) : null;
+  // New uploads are served by name (/api/media/chicken-quesadilla.webp);
+  // older URLs use the record id and keep working.
+  const id = /^[a-f0-9]{24}$/i.test(params.id || '') ? asObjectId(params.id) : null;
+  const row = id
+    ? await media.findOne({ _id: id })
+    : await media.findOne({ slug: String(params.id || '') });
   const bytes = Buffer.isBuffer(row?.data)
     ? row.data
     : row?.data?.buffer
