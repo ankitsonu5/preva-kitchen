@@ -372,24 +372,62 @@ a:hover .ps-btn--gold {
 .ps-menu-selection__fields > div { min-width: 0; max-width: 250px; flex: 1 1 250px; }
 .ps-menu-selection__fields label {
   display: block;
-  margin-bottom: 6px;
-  color: var(--ps-muted);
-  font-size: 12px;
-  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--ps-gold);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
 }
 .ps-menu-selection__fields select {
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
-  min-height: 42px;
-  padding: 8px 10px;
-  border: 1px solid var(--ps-gold-dim);
-  border-radius: 8px;
-  background: var(--ps-bg);
+  min-height: 46px;
+  padding: 10px 42px 10px 14px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 10px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23C9A84C' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 15px center,
+    rgba(255, 255, 255, .04);
   color: var(--ps-text);
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: border-color .2s var(--ps-ease), box-shadow .2s var(--ps-ease), background-color .2s var(--ps-ease);
 }
+.ps-menu-selection__fields select:hover { border-color: var(--ps-gold-dim); background-color: rgba(255, 255, 255, .06); }
+.ps-menu-selection__fields select:focus-visible {
+  outline: none;
+  border-color: var(--ps-gold);
+  box-shadow: 0 0 0 3px rgba(201, 168, 76, .18);
+}
+.ps-menu-selection__fields select option { background: var(--ps-raised); color: var(--ps-text); }
+
+/* With a selector, price + options sit together in one panel. */
+.ps-menu-selection-row:has(.ps-menu-selection) {
+  max-width: 560px;
+  gap: 0;
+  padding: 18px 22px;
+  border: 1px solid var(--ps-line);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .035), rgba(255, 255, 255, .01));
+}
+.ps-menu-selection-row:has(.ps-menu-selection) > .ps-price {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  padding-right: 24px;
+  margin-right: 24px;
+  border-right: 1px solid var(--ps-line);
+  font-size: 34px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+}
+.ps-menu-selection-row:has(.ps-menu-selection) .ps-menu-selection__fields > div { max-width: none; }
 .ps-menu-summary {
   min-height: 1em;
   margin-top: 6px;
@@ -409,6 +447,14 @@ a:hover .ps-btn--gold {
 }
 @media (max-width: 600px) {
   .ps-menu-selection-row { grid-template-columns: auto minmax(0, 1fr); gap: 10px; }
+  .ps-menu-selection-row:has(.ps-menu-selection) { grid-template-columns: 1fr; padding: 16px; }
+  .ps-menu-selection-row:has(.ps-menu-selection) > .ps-price {
+    padding: 0 0 14px;
+    margin: 0 0 14px;
+    border-right: 0;
+    border-bottom: 1px solid var(--ps-line);
+    font-size: 30px;
+  }
 }
 
 .ps-specs { display: flex; flex-wrap: wrap; gap: 20px 36px; padding: 18px 0 !important; border-block: 1px solid var(--ps-line); }
