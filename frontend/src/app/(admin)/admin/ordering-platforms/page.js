@@ -5,7 +5,7 @@ import { ImagePlus, Plus, ShoppingCart, Upload, Edit, Trash2 } from 'lucide-reac
 import Shell from '@/components/admin/Shell';
 import { EmptyState, LoadingSkeleton, PageHeader, StatusBadge } from '@/components/admin/AdminUI';
 import { useConfirm } from '@/components/admin/ConfirmDialog';
-import { api } from '@/lib/admin-api';
+import { api, uploadMediaFile } from '@/lib/admin-api';
 
 const emptyForm = {
   id: '',
@@ -56,9 +56,7 @@ export default function OrderingPlatformsManager() {
     if (file.size > 5 * 1024 * 1024) return alert('Logo must be smaller than 5MB.');
 
     setUploading(true);
-    const data = new FormData();
-    data.append('files', file);
-    const response = await api('/admin/media/upload', { method: 'POST', body: data });
+    const response = await uploadMediaFile(file);
     if (response.ok) {
       const uploaded = await response.json();
       setForm((current) => ({ ...current, logo: uploaded[0]?.url || current.logo }));

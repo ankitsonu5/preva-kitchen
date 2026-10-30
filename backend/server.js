@@ -192,6 +192,12 @@ app.use((error, req, res, next) => {
   if (error?.message?.includes('CORS')) {
     return res.status(403).json({ message: error.message });
   }
+  if (error?.type === 'entity.too.large') {
+    return res.status(413).json({ message: 'Upload request exceeds the 40 MB request limit.' });
+  }
+  if (error?.type === 'entity.parse.failed') {
+    return res.status(400).json({ message: 'Invalid JSON request body.' });
+  }
   console.error('[server]', error);
   return res.status(500).json({ message: 'Something went wrong on our side.' });
 });

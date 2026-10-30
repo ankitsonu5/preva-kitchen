@@ -72,7 +72,7 @@ export default async function BlogPost({ params }) {
     notFound();
   }
 
-  const postsResponse = await cmsFetch('/posts', { query: { limit: 100 } });
+  const postsResponse = await cmsFetch('/posts', { query: { limit: 100, summary: true } });
   const allPosts = (Array.isArray(postsResponse) ? postsResponse : []).filter((item) => !nonKitchenCopy.test(`${item.title || ''} ${item.excerpt || ''} ${(item.categories || []).map((entry) => entry.category?.name || entry.name || '').join(' ')}`));
   const recentPosts = allPosts.filter((item) => item.slug !== slug).slice(0, 4);
 

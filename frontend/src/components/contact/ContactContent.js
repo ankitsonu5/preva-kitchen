@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import SvgIcon from '@/components/SvgIcon';
 import { showError, showSuccess, showWarning } from '@/lib/swal';
-import { Phone, Clock, MapPin, Sparkles, Calendar, Mail, ArrowRight, Check, MessageSquare } from 'lucide-react';
+import { Phone, Clock, MapPin, Sparkles, Mail, ArrowRight, Check, MessageSquare } from 'lucide-react';
 
 const API = '/api';
 const EMPTY_FORM = {
@@ -13,14 +13,6 @@ const EMPTY_FORM = {
 };
 
 const contactOptions = [
-  {
-    number: '01',
-    icon: Calendar,
-    title: 'Table Reservations',
-    body: 'Planning dinner, a date night, or celebrating a milestone? Send a request and our team will confirm your table.',
-    href: '/reservations',
-    cta: 'Reserve a table'
-  },
   {
     number: '02',
     icon: Phone,
@@ -274,7 +266,7 @@ export default function ContactContent() {
         </div>
       </section>
 
-      {/* ── 2. THREE CONTACT PILLARS ── */}
+      {/* ── 2. CONTACT SUPPORT OPTIONS ── */}
       <section style={{ padding: '80px 0', background: '#090709', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
         <div className="container" style={{ maxWidth: '1240px', margin: '0 auto', padding: '0 24px' }}>
           <div

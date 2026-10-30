@@ -6,7 +6,7 @@ import { Plus, ListTree, Upload, Trash2, Edit, ExternalLink, FolderTree, Search,
 import Shell from '@/components/admin/Shell';
 import { LoadingSkeleton, PageHeader, EmptyState } from '@/components/admin/AdminUI';
 import { useConfirm } from '@/components/admin/ConfirmDialog';
-import { api } from '@/lib/admin-api';
+import { api, uploadMediaFile } from '@/lib/admin-api';
 import { CANONICAL_CATEGORIES, mergeMenuCategories } from '@/lib/menu-categories';
 
 const NEW_CATEGORY = '__new__';
@@ -98,9 +98,7 @@ export default function FoodMenuManager() {
     if (file.size > 5 * 1024 * 1024) return alert('Image must be smaller than 5MB.');
 
     setUploading(true);
-    const data = new FormData();
-    data.append('files', file);
-    const response = await api('/admin/media/upload', { method: 'POST', body: data });
+    const response = await uploadMediaFile(file);
     if (response.ok) {
       const uploaded = await response.json();
       setForm((current) => ({ ...current, image: uploaded[0]?.url || current.image }));
@@ -224,9 +222,7 @@ export default function FoodMenuManager() {
     if (file.size > 5 * 1024 * 1024) return alert('Image must be smaller than 5MB.');
 
     setCategoryUploading(true);
-    const data = new FormData();
-    data.append('files', file);
-    const response = await api('/admin/media/upload', { method: 'POST', body: data });
+    const response = await uploadMediaFile(file);
     if (response.ok) {
       const uploaded = await response.json();
       setCategoryForm((current) => ({ ...current, image: uploaded[0]?.url || current.image }));

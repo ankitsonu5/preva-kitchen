@@ -28,6 +28,22 @@ export async function api(path, opts = {}) {
   return response;
 }
 
+export async function uploadMediaFile(file) {
+  const data = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error || new Error('Could not read the selected file.'));
+    reader.readAsDataURL(file);
+  });
+
+  return api('/admin/media/upload', {
+    method: 'POST',
+    body: JSON.stringify({
+      files: [{ name: file.name, type: file.type, size: file.size, data }]
+    })
+  });
+}
+
 export async function getUser() {
   const response = await api('/auth/me', { redirectOnUnauthorized: false });
   return response.ok ? response.json() : null;

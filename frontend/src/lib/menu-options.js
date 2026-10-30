@@ -75,11 +75,10 @@ export const MENU_CUSTOMIZATIONS = {
     productName: 'Rasta Pasta',
     description: 'Creamy Caribbean-style pasta with bell peppers and house jerk seasoning.',
     routeBasePath: '/menu/rasta-pasta',
-    showSelector: false,
     groups: [
       {
         queryKey: 'protein',
-        label: 'Choose protein',
+        label: 'PROTEIN OPTIONS',
         defaultOptionId: 'none',
         priceDisplay: 'addon',
         options: [
@@ -218,6 +217,26 @@ export function getMenuCustomization(slug, product = null) {
       basePriceCents: productPriceCents({ ...product, slug }, true),
       groups: [WING_SEASONING_GROUP],
       isWings: true
+    };
+  }
+  if (slug === 'rasta-pasta' && Array.isArray(product?.optionGroups) && product.optionGroups.length) {
+    const defaults = MENU_CUSTOMIZATIONS['rasta-pasta'];
+    const fallbackOptions = new Map(defaults.groups[0].options.map((option) => [option.id, option]));
+    return {
+      ...defaults,
+      basePriceCents: productPriceCents({ ...product, slug }, true),
+      groups: product.optionGroups.map((group) => ({
+        queryKey: group.id,
+        label: group.label,
+        defaultOptionId: group.options.find((option) => option.id === 'none')?.id || group.options[0]?.id,
+        priceDisplay: 'addon',
+        options: group.options.map((option) => ({
+          ...fallbackOptions.get(option.id),
+          id: option.id,
+          label: option.label,
+          priceCents: Number(option.priceCents) || 0
+        }))
+      }))
     };
   }
   return MENU_CUSTOMIZATIONS[MENU_CUSTOMIZATION_ALIASES[slug] || slug] || null;

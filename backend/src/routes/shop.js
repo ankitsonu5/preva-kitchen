@@ -1,10 +1,27 @@
 import { col, serialize, asObjectId } from '../lib/db.js';
 import { cleanText, formatMoney } from '../lib/sanitize.js';
+import { RASTA_PASTA_OPTION_GROUPS } from '../lib/menu-options.js';
 import { shopSettings, itemPriceCents } from '../lib/pricing.js';
 import { hiddenMenuCategoryNames, isMenuItemPubliclyVisible } from '../lib/menu-visibility.js';
 import { get, notFound } from '../router.js';
 import { getKitchenOperatingStatus } from '../lib/operatingHours.js';
 
+const PRODUCT_SUMMARY_PROJECTION = {
+  name: 1,
+  slug: 1,
+  category: 1,
+  sortOrder: 1,
+  price: 1,
+  priceCents: 1,
+  description: 1,
+  image: 1,
+  orderable: 1,
+  available: 1,
+  featured: 1,
+  tags: 1,
+  updatedAt: 1,
+  optionGroups: 1
+};
 
 get('/shop/kitchen-status', async () => {
   return getKitchenOperatingStatus();
@@ -18,49 +35,57 @@ get('/shop/kitchen-status', async () => {
    table to keep in step with the menu.
    ══════════════════════════════════════════════════════════════════════════ */
 
-function toProduct(item) {
+function toProduct(item, { summary = false } = {}) {
   const out = serialize(item);
-  return {
+  const optionGroups = (Array.isArray(out.optionGroups) && out.optionGroups.length
+    ? out.optionGroups
+    : out.slug === 'rasta-pasta' ? RASTA_PASTA_OPTION_GROUPS : []).map((group) => ({
+    id: group.id,
+    label: group.label,
+    type: group.type === 'check' ? 'check' : 'radio',
+    required: Boolean(group.required),
+    maxPick: Number(group.maxPick) || 0,
+    options: (group.options || [])
+      .filter((option) => option.available !== false)
+      .map((option) => ({
+        id: option.id,
+        label: option.label,
+        priceCents: Number(option.priceCents) || 0
+      }))
+  }));
+  const product = {
     id: out.id,
     slug: out.slug || out.id,
     name: out.name,
-    seoTitle: out.seoTitle || '',
-    seoDescription: out.seoDescription || '',
-    focusKeyword: out.focusKeyword || '',
     description: out.description || '',
-    aboutTitle: out.aboutTitle || '',
-    aboutContent: out.aboutContent || '',
     priceCents: itemPriceCents(item),
     price: formatMoney(itemPriceCents(item)),
     image: out.image || '',
     category: out.category || 'Others',
     available: out.available !== false,
     featured: Boolean(out.featured),
+    tags: out.tags || [],
+    optionGroups
+  };
+  if (summary) return { ...product, updatedAt: out.updatedAt };
+
+  return {
+    ...product,
+    seoTitle: out.seoTitle || '',
+    seoDescription: out.seoDescription || '',
+    focusKeyword: out.focusKeyword || '',
+    aboutTitle: out.aboutTitle || '',
+    aboutContent: out.aboutContent || '',
     badge: out.badge || '',
     uberEatsUrl: out.uberEatsUrl || '',
     doorDashUrl: out.doorDashUrl || '',
     grubhubUrl: out.grubhubUrl || '',
-    tags: out.tags || [],
     allergens: out.allergens || [],
     pairings: out.pairings || [],
     faqs: out.faqs || [],
     servings: out.servings || '',
     calories: out.calories || null,
-    ...(item.trackInventory ? { stockRemaining: Number.isFinite(item.stockCount) ? item.stockCount : 0 } : {}),
-    optionGroups: (out.optionGroups || []).map((group) => ({
-      id: group.id,
-      label: group.label,
-      type: group.type === 'check' ? 'check' : 'radio',
-      required: Boolean(group.required),
-      maxPick: Number(group.maxPick) || 0,
-      options: (group.options || [])
-        .filter((option) => option.available !== false)
-        .map((option) => ({
-          id: option.id,
-          label: option.label,
-          priceCents: Number(option.priceCents) || 0
-        }))
-    }))
+    ...(item.trackInventory ? { stockRemaining: Number.isFinite(item.stockCount) ? item.stockCount : 0 } : {})
   };
 }
 
@@ -72,9 +97,15 @@ get('/shop/products', async ({ query }) => {
   if (query.category) filter.category = cleanText(query.category, 80);
   if (query.featured === 'true') filter.featured = true;
 
-  const rows = await menuItems.find(filter).sort({ category: 1, sortOrder: 1, name: 1 }).toArray();
+  const summary = query.summary === 'true';
+  const cursor = summary
+    ? menuItems.find(filter, { projection: PRODUCT_SUMMARY_PROJECTION })
+    : menuItems.find(filter);
+  const rows = await cursor.sort({ category: 1, sortOrder: 1, name: 1 }).toArray();
   const hiddenCategories = await hiddenMenuCategoryNames();
-  return rows.filter((item) => isMenuItemPubliclyVisible(item, hiddenCategories)).map(toProduct);
+  return rows
+    .filter((item) => isMenuItemPubliclyVisible(item, hiddenCategories))
+    .map((item) => toProduct(item, { summary }));
 });
 
 get('/shop/categories', async () => {

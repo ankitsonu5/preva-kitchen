@@ -11,7 +11,7 @@ import { money } from '@/lib/money';
 export default async function ShopContent() {
   const origin = getCanonicalOrigin();
   const [products, categories] = await Promise.all([
-    cmsFetch('/shop/products'),
+    cmsFetch('/shop/products', { query: { summary: true } }),
     cmsFetch('/shop/categories')
   ]);
 

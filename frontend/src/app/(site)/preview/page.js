@@ -67,7 +67,7 @@ export default async function PreviewPage({ searchParams }) {
   // If blog post, fetch recent posts for sidebar exactly like the live post route
   let recentPosts = [];
   if (!isPage) {
-    const postsResponse = await cmsFetch('/posts', { query: { limit: 10 } });
+    const postsResponse = await cmsFetch('/posts', { query: { limit: 10, summary: true } });
     const nonKitchenCopy = /night\s*life|night\s*club|\bclub\b|\bvip\b|bottle service|\bdj\b|afrobeats|sports bar|happy hour|pre-game|afterpart|party at|dress code/i;
     const allPosts = (Array.isArray(postsResponse) ? postsResponse : []).filter((item) => !nonKitchenCopy.test(`${item.title || ''} ${item.excerpt || ''} ${(item.categories || []).map((entry) => entry.category?.name || entry.name || '').join(' ')}`));
     recentPosts = allPosts.filter((item) => String(item.id || item._id) !== String(content.id || content._id) && item.slug !== content.slug).slice(0, 4);

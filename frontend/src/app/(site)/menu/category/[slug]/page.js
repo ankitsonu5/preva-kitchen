@@ -20,7 +20,10 @@ import {
 export const dynamic = 'force-dynamic';
 
 async function loadCategory(slug) {
-  const [data, categories] = await Promise.all([cmsFetch('/shop/products'), cmsFetch('/shop/categories')]);
+  const [data, categories] = await Promise.all([
+    cmsFetch('/shop/products', { query: { summary: true } }),
+    cmsFetch('/shop/categories')
+  ]);
   const all = withoutLegacyDuplicates(menuProductsOrFallback(data));
   const available = all.filter((product) => product.category);
   const items = available.filter((product) => categorySlug(product.category) === slug);

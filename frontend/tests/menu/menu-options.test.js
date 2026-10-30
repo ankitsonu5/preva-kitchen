@@ -50,7 +50,8 @@ describe('official PREVA menu options', () => {
 
   it('supports quesadilla, burger, and pasta options', () => {
     expect(getMenuCustomization('preva-quesadillas').showSelector).toBe(false);
-    expect(getMenuCustomization('rasta-pasta').showSelector).toBe(false);
+    expect(getMenuCustomization('rasta-pasta').showSelector).not.toBe(false);
+    expect(getMenuCustomization('rasta-pasta').groups[0].label).toBe('PROTEIN OPTIONS');
     expect(getMenuCustomization('shrimp-tacos').showSelector).toBe(false);
     expect(priceFor('preva-quesadillas', { style: 'steak' })).toBe(1900);
     expect(getMenuRouteOption('preva-quesadillas', 'chicken-quesadillas').id).toBe('chicken');
@@ -63,6 +64,36 @@ describe('official PREVA menu options', () => {
     expect(priceFor('preva-double-smash-burger', { upgrade: 'deluxe' })).toBe(1448);
     expect(priceFor('rasta-pasta', { protein: 'chicken' })).toBe(2700);
     expect(priceFor('rasta-pasta', { protein: 'lobster' })).toBe(3400);
+  });
+
+  it('uses the persisted Rasta Pasta protein options without changing its base price', () => {
+    const config = getMenuCustomization('rasta-pasta', {
+      slug: 'rasta-pasta',
+      price: '$22.00',
+      priceCents: 2200,
+      optionGroups: [{
+        id: 'protein',
+        label: 'PROTEIN OPTIONS',
+        type: 'radio',
+        required: false,
+        maxPick: 1,
+        options: [
+          { id: 'none', label: 'No Extra Protein', priceCents: 0 },
+          { id: 'chicken', label: 'Chicken', priceCents: 500 },
+          { id: 'shrimp', label: 'Shrimp', priceCents: 600 },
+          { id: 'steak', label: 'Steak', priceCents: 700 },
+          { id: 'lobster', label: 'Lobster', priceCents: 1200 }
+        ]
+      }]
+    });
+
+    expect(config.groups[0].label).toBe('PROTEIN OPTIONS');
+    expect(config.groups[0].defaultOptionId).toBe('none');
+    expect(getMenuPriceCents(config, { protein: 'none' })).toBe(2200);
+    expect(getMenuPriceCents(config, { protein: 'chicken' })).toBe(2700);
+    expect(getMenuPriceCents(config, { protein: 'shrimp' })).toBe(2800);
+    expect(getMenuPriceCents(config, { protein: 'steak' })).toBe(2900);
+    expect(getMenuPriceCents(config, { protein: 'lobster' })).toBe(3400);
   });
 
   it('creates direct variant routes for every menu selector option', () => {

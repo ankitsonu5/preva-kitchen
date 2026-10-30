@@ -26,6 +26,7 @@ export const mongoUri = () => getMongoUri();
 export const mongoDatabase = () => getMongoDatabase();
 
 const globalForMongo = globalThis;
+const isLocalMongoUri = (uri) => /mongodb:\/\/(?:[^@/]+@)?(?:localhost|127\.0\.0\.1|\[::1\])(?::|\/)/i.test(uri);
 
 // Full Preva Kitchen & Lounge menu matching official printed menu card
 const INITIAL_FALLBACK_DATA = {
@@ -1517,16 +1518,52 @@ class InMemoryCollection {
 
 function createClient() {
   const uri = getMongoUri();
-  const isAtlas = uri.includes('mongodb+srv://');
+  const isLocal = isLocalMongoUri(uri);
   return new MongoClient(uri, {
     maxPoolSize: Number(process.env.MONGODB_MAX_POOL_SIZE || 20),
     minPoolSize: Number(process.env.MONGODB_MIN_POOL_SIZE || 0),
-    // Atlas needs longer to do DNS SRV lookup + TLS on cold start.
-    // 2 s was too aggressive — bump to 15 s for Atlas, keep 3 s for local.
-    serverSelectionTimeoutMS: isAtlas ? 15000 : 3000,
-    connectTimeoutMS: isAtlas ? 15000 : 3000,
+    serverSelectionTimeoutMS: isLocal ? 3000 : 15000,
+    connectTimeoutMS: isLocal ? 3000 : 15000,
     socketTimeoutMS: 30000
   });
+}
+
+const TRANSIENT_MONGO_ERROR_NAMES = new Set([
+  'MongoNetworkError',
+  'MongoNetworkTimeoutError',
+  'MongoServerSelectionError',
+  'MongoSocketReadTimeoutError'
+]);
+const TRANSIENT_NETWORK_ERROR_CODES = new Set([
+  'ECONNREFUSED',
+  'ECONNRESET',
+  'EHOSTUNREACH',
+  'ENETUNREACH',
+  'ETIMEDOUT'
+]);
+
+export function isMongoConnectionError(error) {
+  const visited = new Set();
+  for (let current = error; current && typeof current === 'object' && !visited.has(current); current = current.cause) {
+    visited.add(current);
+    if (TRANSIENT_MONGO_ERROR_NAMES.has(current.name) || TRANSIENT_NETWORK_ERROR_CODES.has(current.code)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+async function connectWithRetry(client, isLocal) {
+  const delays = [250, 500, 1000, 2000];
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      await client.connect();
+      return;
+    } catch (error) {
+      if (isLocal || attempt >= delays.length || !isMongoConnectionError(error)) throw error;
+      await new Promise((resolve) => setTimeout(resolve, delays[attempt]));
+    }
+  }
 }
 
 export async function connectDatabase({ ensureIndexes = true } = {}) {
@@ -1537,7 +1574,7 @@ export async function connectDatabase({ ensureIndexes = true } = {}) {
       try {
         const client = globalForMongo.__prevaClient || createClient();
         globalForMongo.__prevaClient = client;
-        await client.connect();
+        await connectWithRetry(client, isLocalMongoUri(getMongoUri()));
         const database = client.db(getMongoDatabase());
         if (ensureIndexes) await createIndexes(database);
         globalForMongo.__prevaDb = database;

@@ -85,7 +85,7 @@ export default async function ProductPage({ params, searchParams }) {
   if (isRemovedMenuProduct(slug)) notFound();
   const [response, publicProducts] = await Promise.all([
     cmsFetchWithStatus(`/shop/products/${encodeURIComponent(slug)}`),
-    cmsFetch('/shop/products')
+    cmsFetch('/shop/products', { query: { summary: true } })
   ]);
   if (!response.ok && process.env.NODE_ENV === 'production') notFound();
   const data = response.data;

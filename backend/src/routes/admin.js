@@ -8,7 +8,8 @@ import { hashPassword } from '../lib/auth.js';
 import { logActivity } from '../lib/activity.js';
 import { loadContentInclude } from './public.js';
 import { careerJobsCollection } from '../lib/career-jobs.js';
-import { get, post, put, patch, del, badRequest, forbidden, notFound, result } from '../router.js';
+import { RASTA_PASTA_OPTION_GROUPS } from '../lib/menu-options.js';
+import { get, post, put, patch, del, badRequest, forbidden, notFound, payloadTooLarge, result } from '../router.js';
 
 const WRITE = ['SUPER_ADMIN', 'ADMIN', 'EDITOR'];
 const AUTHOR = ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'AUTHOR'];
@@ -705,13 +706,17 @@ resource({
     const name = cleanText(body?.name, 120);
     if (!name) throw badRequest('An item name is required.');
 
+    const itemSlug = slug(body?.slug || name);
     const priceCents = Number.isFinite(Number(body?.priceCents))
       ? cleanInt(body.priceCents, 0)
       : parseMoney(body?.price);
+    const optionGroups = Array.isArray(body?.optionGroups)
+      ? body.optionGroups
+      : (current?.optionGroups || []);
 
     return {
       name,
-      slug: slug(body?.slug || name),
+      slug: itemSlug,
       seoTitle: cleanText(body?.seoTitle ?? current?.seoTitle, 250),
       seoDescription: cleanText(body?.seoDescription ?? current?.seoDescription, 400),
       focusKeyword: cleanText(body?.focusKeyword ?? current?.focusKeyword, 160),
@@ -744,7 +749,9 @@ resource({
         q: cleanText(f?.q, 200),
         a: cleanText(f?.a, 1000)
       })).filter(f => f.q && f.a),
-      optionGroups: (Array.isArray(body?.optionGroups) ? body.optionGroups : (current?.optionGroups || [])).slice(0, 10).map((group, gi) => ({
+      optionGroups: (itemSlug === 'rasta-pasta' && optionGroups.length === 0
+        ? RASTA_PASTA_OPTION_GROUPS
+        : optionGroups).slice(0, 10).map((group, gi) => ({
         id: cleanText(group?.id, 40) || `g${gi + 1}`,
         label: cleanText(group?.label, 80) || `Option ${gi + 1}`,
         type: group?.type === 'check' ? 'check' : 'radio',
@@ -945,13 +952,23 @@ get('/admin/media', { auth: true }, async ({ query }) => {
   };
 });
 
-const IMAGE_MEDIA_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']);
+const IMAGE_MEDIA_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 const VIDEO_MEDIA_TYPES = new Set(['video/mp4', 'video/webm', 'video/ogg']);
 const MEDIA_TYPES = new Set([...IMAGE_MEDIA_TYPES, ...VIDEO_MEDIA_TYPES]);
 const MEDIA_EXTENSIONS = {
-  'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/avif': 'avif',
+  'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif',
   'video/mp4': 'mp4', 'video/webm': 'webm', 'video/ogg': 'ogg'
 };
+const VALID_MEDIA_EXTENSIONS = {
+  'image/jpeg': new Set(['jpg', 'jpeg']),
+  'image/png': new Set(['png']),
+  'image/webp': new Set(['webp']),
+  'image/gif': new Set(['gif']),
+  'video/mp4': new Set(['mp4']),
+  'video/webm': new Set(['webm']),
+  'video/ogg': new Set(['ogg'])
+};
+const INVALID_MEDIA_TYPE_MESSAGE = 'Unsupported format. Use JPG/PNG/WebP (GIF is also supported); videos may be MP4/WEBM/OGG.';
 
 // Readable, unique public name for an upload: "Chicken Quesadilla.WEBP" ->
 // "chicken-quesadilla.webp", then "chicken-quesadilla-2.webp" if taken.
@@ -966,7 +983,7 @@ async function uniqueMediaName(media, filename, mimeType) {
 
 post('/admin/media/upload', { auth: true, roles: AUTHOR }, async (ctx) => {
   const incoming = Array.isArray(ctx.body?.files) ? ctx.body.files.slice(0, 10) : [];
-  if (!incoming.length) throw badRequest('Choose at least one image or video to upload.');
+  if (!incoming.length) throw badRequest('No file provided. Choose a file to upload.');
 
   const media = await col('media');
   const uploaded = [];
@@ -974,14 +991,20 @@ post('/admin/media/upload', { auth: true, roles: AUTHOR }, async (ctx) => {
     const filename = cleanText(file?.name, 180);
     const mimeType = cleanText(file?.type, 100).toLowerCase();
     const encoded = String(file?.data || '');
-    const match = encoded.match(/^data:([^;,]+);base64,([A-Za-z0-9+/=]+)$/);
-    if (!filename || !match || !MEDIA_TYPES.has(mimeType) || match[1].toLowerCase() !== mimeType) {
-      throw badRequest('Uploads must be JPG, PNG, WEBP, GIF, AVIF, MP4, WEBM, or OGG media.');
+    const match = encoded.match(/^data:([^;,]+);base64,([A-Za-z0-9+/=]*)$/);
+    const extension = filename.split('.').pop()?.toLowerCase();
+    if (!filename) throw badRequest('Invalid upload data. Choose a valid file and try again.');
+    if (!MEDIA_TYPES.has(mimeType) || !VALID_MEDIA_EXTENSIONS[mimeType]?.has(extension) || (match && match[1].toLowerCase() !== mimeType)) {
+      throw badRequest(INVALID_MEDIA_TYPE_MESSAGE);
     }
+    if (!match) throw badRequest('Invalid upload data. Choose a valid file and try again.');
     const bytes = Buffer.from(match[2], 'base64');
     const maxBytes = VIDEO_MEDIA_TYPES.has(mimeType) ? 25 * 1024 * 1024 : 8 * 1024 * 1024;
-    if (!bytes.length || bytes.length > maxBytes) {
-      throw badRequest(VIDEO_MEDIA_TYPES.has(mimeType) ? 'Each video must be 25 MB or smaller.' : 'Each image must be 8 MB or smaller.');
+    if (!bytes.length) throw badRequest('Uploaded file is empty.');
+    if (bytes.length > maxBytes) {
+      throw payloadTooLarge(VIDEO_MEDIA_TYPES.has(mimeType)
+        ? 'File too large. Each video must be 25 MB or smaller.'
+        : 'File too large. Each image must be 8 MB or smaller.');
     }
 
     const now = new Date();

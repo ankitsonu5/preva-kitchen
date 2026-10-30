@@ -13,8 +13,8 @@ export default async function sitemap() {
   const base = getCanonicalOrigin();
   const [pages, posts, products, jobs] = await Promise.all([
     cmsFetch('/pages'),
-    cmsFetch('/posts', { query: { limit: 200 } }),
-    cmsFetch('/shop/products'),
+    cmsFetch('/posts', { query: { limit: 200, summary: true } }),
+    cmsFetch('/shop/products', { query: { summary: true } }),
     getPublishedCareerJobs()
   ]);
 

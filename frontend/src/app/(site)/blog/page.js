@@ -8,7 +8,7 @@ export default async function Blog({ searchParams }) {
   const params = await searchParams;
   const initialPage = Math.max(1, parseInt(params?.page || '1', 10));
 
-  const data = await cmsFetch('/posts', { query: { limit: 100 } });
+  const data = await cmsFetch('/posts', { query: { limit: 100, summary: true } });
   const clean = (Array.isArray(data) ? data : []).filter((post) => !NON_KITCHEN_COPY.test(`${post.title || ''} ${post.excerpt || ''} ${(post.categories || []).map((item) => item.category?.name || item.name || '').join(' ')}`));
   const posts = clean.length > 0 ? clean : FALLBACK_POSTS;
 

@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import Shell from '@/components/admin/Shell';
 import { PageHeader, LoadingSkeleton } from '@/components/admin/AdminUI';
-import { api } from '@/lib/admin-api';
+import { api, uploadMediaFile } from '@/lib/admin-api';
 import { KITCHEN_MENU_ITEMS } from '@/lib/kitchen-menu-data';
 import { getDefaultAboutTitle, getDefaultFaqs } from '@/lib/dish-detail-content';
 import { mergeMenuCategories } from '@/lib/menu-categories';
@@ -191,9 +191,7 @@ export default function DishDetailsTemplateManager() {
     if (file.size > 5 * 1024 * 1024) return alert('Image must be smaller than 5MB.');
 
     setUploading(true);
-    const data = new FormData();
-    data.append('files', file);
-    const response = await api('/admin/media/upload', { method: 'POST', body: data });
+    const response = await uploadMediaFile(file);
     if (response.ok) {
       const uploaded = await response.json();
       setForm(prev => ({ ...prev, image: uploaded[0]?.url || prev.image }));

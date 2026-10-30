@@ -1,11 +1,11 @@
 import slugify from 'slugify';
-import { col, serialize, asObjectId } from '../lib/db.js';
+import { col, serialize, asObjectId, isMongoConnectionError } from '../lib/db.js';
 import { cleanText, cleanEmail } from '../lib/sanitize.js';
 import {
   SESSION_COOKIE, signSession, sessionCookieOptions, verifyPassword, hashPassword,
   loginBlocked, noteFailedLogin, clearLoginAttempts
 } from '../lib/auth.js';
-import { get, post, result, badRequest, notFound, unauthorized } from '../router.js';
+import { get, post, result, badRequest, notFound, serviceUnavailable, unauthorized } from '../router.js';
 import { logActivity } from '../lib/activity.js';
 import { careerJobsCollection } from '../lib/career-jobs.js';
 import { hiddenMenuCategoryNames, isMenuItemPubliclyVisible } from '../lib/menu-visibility.js';
@@ -24,15 +24,45 @@ import { rewriteLegacyBlogLinks, blogCanonical } from '../lib/blog-links.js';
    Helpers
    ══════════════════════════════════════════════════════════════════════════ */
 
-export async function loadContentInclude(items) {
+const POST_SUMMARY_FIELDS = [
+  'title',
+  'slug',
+  'type',
+  'status',
+  'excerpt',
+  'publishedAt',
+  'createdAt',
+  'updatedAt',
+  'featuredImage',
+  'featuredImageAlt',
+  'noIndex'
+];
+const POST_SUMMARY_PROJECTION = {
+  title: 1,
+  slug: 1,
+  type: 1,
+  status: 1,
+  excerpt: 1,
+  publishedAt: 1,
+  createdAt: 1,
+  updatedAt: 1,
+  featuredImage: 1,
+  featuredImageAlt: 1,
+  noIndex: 1,
+  categoryIds: 1
+};
+
+export async function loadContentInclude(items, { summary = false } = {}) {
   const content = Array.isArray(items) ? items : [items];
   if (content.length === 0) return [];
 
   const categoryIds = [...new Set(content.flatMap((i) => i.categoryIds || []))].map(asObjectId).filter(Boolean);
-  const tagIds = [...new Set(content.flatMap((i) => i.tagIds || []))].map(asObjectId).filter(Boolean);
-  const authorIds = [...new Set(content.map((i) => i.authorId).filter(Boolean))].map(asObjectId).filter(Boolean);
+  const tagIds = summary ? [] : [...new Set(content.flatMap((i) => i.tagIds || []))].map(asObjectId).filter(Boolean);
+  const authorIds = summary ? [] : [...new Set(content.map((i) => i.authorId).filter(Boolean))].map(asObjectId).filter(Boolean);
 
-  const [categoriesCol, tagsCol, usersCol] = await Promise.all([col('categories'), col('tags'), col('users')]);
+  const [categoriesCol, tagsCol, usersCol] = summary
+    ? [await col('categories'), null, null]
+    : await Promise.all([col('categories'), col('tags'), col('users')]);
   const [categories, tags, authors] = await Promise.all([
     categoryIds.length ? categoriesCol.find({ _id: { $in: categoryIds } }).toArray() : [],
     tagIds.length ? tagsCol.find({ _id: { $in: tagIds } }).toArray() : [],
@@ -46,16 +76,25 @@ export async function loadContentInclude(items) {
   );
 
   return content.map((item) => {
-    const out = serialize(item);
-    // The admin editor and public React pages use `content`; Mongo keeps the
-    // canonical HTML in `body` for backwards compatibility.
-    out.content = rewriteLegacyBlogLinks(out.body || '');
+    const out = summary
+      ? Object.fromEntries(POST_SUMMARY_FIELDS
+        .filter((field) => item[field] !== undefined)
+        .map((field) => [field, item[field]]))
+      : serialize(item);
+    if (item._id) out.id = item._id.toString();
+    if (!summary) {
+      // The admin editor and public React pages use `content`; Mongo keeps the
+      // canonical HTML in `body` for backwards compatibility.
+      out.content = rewriteLegacyBlogLinks(item.body || '');
+    }
     if (item.type === 'POST') {
       out.canonicalUrl = blogCanonical(item.slug);
     }
     out.categories = (item.categoryIds || []).map((id) => ({ category: categoryMap.get(String(id)) || { id: String(id) } }));
-    out.tags = (item.tagIds || []).map((id) => ({ tag: tagMap.get(String(id)) || { id: String(id) } }));
-    out.author = item.authorId ? authorMap.get(String(item.authorId)) || null : null;
+    if (!summary) {
+      out.tags = (item.tagIds || []).map((id) => ({ tag: tagMap.get(String(id)) || { id: String(id) } }));
+      out.author = item.authorId ? authorMap.get(String(item.authorId)) || null : null;
+    }
     return out;
   });
 }
@@ -682,23 +721,41 @@ const publiclyVisibleContent = (type, extra = {}) => ({
   ]
 });
 
+let lastPostsDatabaseWarningAt = 0;
+function throwPostsUnavailable(error) {
+  if (!isMongoConnectionError(error)) throw error;
+  if (Date.now() - lastPostsDatabaseWarningAt >= 60000) {
+    console.error('[api] MongoDB is unavailable for public blog requests.');
+    lastPostsDatabaseWarningAt = Date.now();
+  }
+  throw serviceUnavailable('Blog content is temporarily unavailable. Please try again shortly.');
+}
+
 get('/posts', async ({ query }) => {
-  const content = await col('content');
-  const limit = Math.min(Number(query.limit) || 24, 100);
-  const rows = await content
-    .find(publiclyVisibleContent('POST'))
-    .sort({ publishedAt: -1 })
-    .limit(limit)
-    .toArray();
-  return loadContentInclude(rows);
+  try {
+    const content = await col('content');
+    const limit = Math.min(Number(query.limit) || 24, 100);
+    const summary = query.summary === 'true';
+    const cursor = summary
+      ? content.find(publiclyVisibleContent('POST'), { projection: POST_SUMMARY_PROJECTION })
+      : content.find(publiclyVisibleContent('POST'));
+    const rows = await cursor.sort({ publishedAt: -1 }).limit(limit).toArray();
+    return await loadContentInclude(rows, { summary });
+  } catch (error) {
+    throwPostsUnavailable(error);
+  }
 });
 
 get('/posts/:slug', async ({ params }) => {
-  const content = await col('content');
-  const row = await content.findOne(publiclyVisibleContent('POST', { slug: params.slug }));
-  if (!row) throw notFound('Post not found.');
-  const [withRelations] = await loadContentInclude([row]);
-  return withRelations;
+  try {
+    const content = await col('content');
+    const row = await content.findOne(publiclyVisibleContent('POST', { slug: params.slug }));
+    if (!row) throw notFound('Post not found.');
+    const [withRelations] = await loadContentInclude([row]);
+    return withRelations;
+  } catch (error) {
+    throwPostsUnavailable(error);
+  }
 });
 
 get('/pages', async () => {
