@@ -562,6 +562,140 @@ const INITIAL_FALLBACK_DATA = {
     { key: 'shopTipPresets', value: [15, 18, 20] }
   ],
   contentSections: [],
+  galleries: [
+    {
+      _id: new ObjectId('6699c0000000000000000001'),
+      title: 'Food & Drinks',
+      name: 'Food & Drinks',
+      slug: 'food-drinks',
+      description: 'Signature dishes from the Preva Kitchen menu.',
+      status: 'PUBLISHED',
+      visible: true,
+      sortOrder: 1,
+      homeGallery: false,
+      images: [
+        {
+          url: '/asset/gallery/STEAK02.jpg',
+          title: 'Signature Steak Bites',
+          alt: 'Signature steak bites from Preva Kitchen',
+          caption: 'Signature Steak Bites',
+          sortOrder: 0,
+          visible: true
+        },
+        {
+          url: '/asset/gallery/CATFISH01.jpg',
+          title: 'Southern Catfish',
+          alt: 'Southern catfish from Preva Kitchen',
+          caption: 'Southern Catfish',
+          sortOrder: 1,
+          visible: true
+        },
+        {
+          url: '/asset/gallery/RASTA05.webp',
+          title: 'Rasta Pasta',
+          alt: 'Preva Kitchen Rasta Pasta',
+          caption: 'Rasta Pasta',
+          sortOrder: 2,
+          visible: true
+        },
+        {
+          url: '/asset/prevaclub/wp-content/uploads/2026/08/PrevaWings-768x768.webp',
+          title: 'Preva Wings',
+          alt: 'Signature Preva Kitchen wings',
+          caption: 'Preva Wings',
+          sortOrder: 3,
+          visible: true
+        },
+        {
+          url: '/asset/prevaclub/wp-content/uploads/2026/08/PrevaLobster-768x768.webp',
+          title: 'Lobster Bites',
+          alt: 'Preva Kitchen lobster bites',
+          caption: 'Lobster Bites',
+          sortOrder: 4,
+          visible: true
+        }
+      ],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    },
+    {
+      _id: new ObjectId('6699c0000000000000000002'),
+      title: 'Kitchen & Chefs',
+      name: 'Kitchen & Chefs',
+      slug: 'kitchen-chefs',
+      description: 'A look behind the kitchen at Preva.',
+      status: 'PUBLISHED',
+      visible: true,
+      sortOrder: 2,
+      homeGallery: false,
+      images: [
+        {
+          url: '/asset/home-reference/preva-kitchen-story.jpg',
+          title: 'Behind the Kitchen',
+          alt: 'Inside the Preva Kitchen',
+          caption: 'Behind the Kitchen',
+          sortOrder: 0,
+          visible: true
+        }
+      ],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    },
+    {
+      _id: new ObjectId('6699c0000000000000000003'),
+      title: 'Dining & Ambience',
+      name: 'Dining & Ambience',
+      slug: 'dining-ambience',
+      description: 'The dining atmosphere at Preva Kitchen.',
+      status: 'PUBLISHED',
+      visible: true,
+      sortOrder: 3,
+      homeGallery: false,
+      images: [
+        {
+          url: '/asset/prevaclub/wp-content/uploads/2026/06/hero-preva-kitchen-.jpeg',
+          title: 'The Preva Experience',
+          alt: 'Preva Kitchen dining atmosphere',
+          caption: 'The Preva Experience',
+          sortOrder: 0,
+          visible: true
+        },
+        {
+          url: '/asset/home-reference/preva-restaurant-hero.webp',
+          title: 'Dining at Preva',
+          alt: 'Preva Kitchen restaurant interior',
+          caption: 'Dining at Preva',
+          sortOrder: 1,
+          visible: true
+        }
+      ],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    },
+    {
+      _id: new ObjectId('6699c0000000000000000004'),
+      title: 'Events & Celebrations',
+      name: 'Events & Celebrations',
+      slug: 'events-celebrations',
+      description: 'A setting for memorable occasions at Preva.',
+      status: 'PUBLISHED',
+      visible: true,
+      sortOrder: 4,
+      homeGallery: false,
+      images: [
+        {
+          url: '/asset/reservation-dining.jpg',
+          title: 'Events at Preva',
+          alt: 'Event atmosphere at Preva',
+          caption: 'Events at Preva',
+          sortOrder: 0,
+          visible: true
+        }
+      ],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+  ],
   categories: [
     { name: "Preva Wings", slug: "preva-wings" },
     { name: "Preva Burger", slug: "preva-burger" },

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Sparkles, MapPin, ChefHat, Utensils, Clock, Phone } from 'lucide-react';
+import { Sparkles, MapPin, ChefHat, Utensils, Phone } from 'lucide-react';
 import {
   PageShell,
   PageHero,
@@ -25,7 +25,6 @@ export default function AboutContent() {
       >
         <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
           <PrimaryButton href="/menu" icon={Utensils}>See the menu</PrimaryButton>
-          <SecondaryButton href="/reservations" icon={Clock}>Reserve a table</SecondaryButton>
         </div>
       </PageHero>
 
@@ -93,8 +92,10 @@ export default function AboutContent() {
           <p style={{ color: COLORS.textMuted, fontSize: '0.98rem', lineHeight: 1.8, margin: '0 0 22px' }}>
             <strong style={{ color: '#fff' }}>Preva Kitchen</strong><br />
             13090 Inkster Rd, Redford Township, MI 48239<br />
-            Dine-In: Tuesday – Sunday, 5:00 PM – 10:00 PM<br />
-            Pickup &amp; Delivery: Monday – Friday, 11:00 AM – 3:30 PM<br />
+            Pickup &amp; Third-Party Delivery:<br />
+            Monday – Friday, 11:00 AM – 1:00 AM<br />
+            Saturday, 8:00 AM – 1:00 AM<br />
+            Sunday: Delivery not currently scheduled<br />
             <a href="tel:+13132863586" style={{ color: COLORS.gold, textDecoration: 'none' }}>(313) 286-3586</a>
           </p>
           <p style={{ color: COLORS.textMuted, fontSize: '0.98rem', lineHeight: 1.8, margin: '0 0 22px' }}>
@@ -104,7 +105,6 @@ export default function AboutContent() {
           </p>
           <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
             <PrimaryButton href="/menu" icon={Utensils}>Order Online</PrimaryButton>
-            <SecondaryButton href="/reservations" icon={Clock}>Reserve a Table</SecondaryButton>
             <SecondaryButton href="tel:+13132863586" icon={Phone}>Call the Kitchen</SecondaryButton>
           </div>
         </Card>

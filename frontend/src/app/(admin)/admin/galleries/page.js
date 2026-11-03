@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Shell from '@/components/admin/Shell';
 import { LoadingSkeleton, PageHeader } from '@/components/admin/AdminUI';
 import { useConfirm } from '@/components/admin/ConfirmDialog';
@@ -17,6 +17,8 @@ export default function GalleriesManager() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [mediaPickerTarget, setMediaPickerTarget] = useState('cover'); // 'cover' or 'images'
+  const [selectedMediaIds, setSelectedMediaIds] = useState([]);
+  const draggedImageIndex = useRef(null);
   
   // Gallery Form State
   const [form, setForm] = useState({
@@ -25,6 +27,8 @@ export default function GalleriesManager() {
     slug: '',
     description: '',
     coverImage: '',
+    homeGallery: false,
+    sortOrder: 0,
     status: 'DRAFT',
     images: [] // items: { url: '', altText: '', caption: '', sortOrder: 0 }
   });
@@ -56,6 +60,8 @@ export default function GalleriesManager() {
       slug: '',
       description: '',
       coverImage: '',
+      homeGallery: false,
+      sortOrder: 0,
       status: 'DRAFT',
       images: []
     });
@@ -69,8 +75,15 @@ export default function GalleriesManager() {
       slug: g.slug || '',
       description: g.description || '',
       coverImage: g.coverImage || '',
+      homeGallery: g.homeGallery === true,
+      sortOrder: g.sortOrder || 0,
       status: g.status || 'DRAFT',
-      images: g.images || []
+      images: (g.images || []).map((image, index) => ({
+        ...image,
+        altText: image.altText || image.alt || '',
+        sortOrder: image.sortOrder ?? index,
+        visible: image.visible !== false
+      }))
     });
     setEditorOpen(true);
   };
@@ -83,15 +96,41 @@ export default function GalleriesManager() {
   const addMediaToGallery = (url) => {
     if (mediaPickerTarget === 'cover') {
       setForm(prev => ({ ...prev, coverImage: url }));
-    } else {
+      setMediaPickerOpen(false);
+    } else if (mediaPickerTarget.startsWith('replace:')) {
+      const index = Number(mediaPickerTarget.split(':')[1]);
       setForm(prev => ({
         ...prev,
-        images: [
-          ...prev.images,
-          { url, altText: '', caption: '', sortOrder: prev.images.length }
-        ]
+        images: prev.images.map((image, imageIndex) => (
+          imageIndex === index
+            ? { ...image, url, title: '', altText: '', caption: '', description: '' }
+            : image
+        ))
       }));
+      setMediaPickerOpen(false);
+    } else {
+      setSelectedMediaIds((ids) => ids.includes(url) ? ids.filter((id) => id !== url) : [...ids, url]);
     }
+  };
+
+  const addSelectedMedia = () => {
+    const selectedMedia = media.filter((item) => selectedMediaIds.includes(item.url));
+    setForm((prev) => ({
+      ...prev,
+      images: [
+        ...prev.images,
+        ...selectedMedia.map((item, index) => ({
+          url: item.url,
+          title: item.title || '',
+          altText: item.altText || '',
+          caption: item.caption || '',
+          description: item.description || '',
+          sortOrder: prev.images.length + index,
+          visible: true
+        }))
+      ]
+    }));
+    setSelectedMediaIds([]);
     setMediaPickerOpen(false);
   };
 
@@ -111,10 +150,9 @@ export default function GalleriesManager() {
   };
 
   // Move items in array for sorting
-  const moveImage = (index, direction) => {
+  const moveImage = (index, targetIndex) => {
     setForm(prev => {
       const images = [...prev.images];
-      const targetIndex = index + direction;
       if (targetIndex < 0 || targetIndex >= images.length) return prev;
       
       // Swap items
@@ -184,6 +222,8 @@ export default function GalleriesManager() {
                 <th>Title</th>
                 <th>Slug</th>
                 <th>Total Images</th>
+                <th>Homepage</th>
+                <th>Order</th>
                 <th>Status</th>
                 <th>Last Updated</th>
                 <th>Actions</th>
@@ -206,6 +246,8 @@ export default function GalleriesManager() {
                   </td>
                   <td>{g.slug}</td>
                   <td>{g.images?.length || 0} images</td>
+                  <td>{g.homeGallery ? 'Homepage gallery' : '—'}</td>
+                  <td>{g.sortOrder ?? 0}</td>
                   <td>
                     <span className={`badge ${g.status === 'PUBLISHED' ? 'badge-published' : 'badge-draft'}`}>
                       {g.status}
@@ -245,12 +287,22 @@ export default function GalleriesManager() {
 
                 <label>Description</label>
                 <textarea className="input" name="description" rows="2" value={form.description} onChange={handleInputChange} />
+                <label>Display Order</label>
+                <input className="input" type="number" name="sortOrder" value={form.sortOrder} onChange={handleInputChange} />
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input
+                    type="checkbox"
+                    checked={form.homeGallery}
+                    onChange={(e) => setForm((prev) => ({ ...prev, homeGallery: e.target.checked }))}
+                  />
+                  Use as the homepage food gallery
+                </label>
 
                 {/* Gallery Images List with Sorting */}
                 <div style={{ marginTop: '16px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                     <label style={{ margin: 0 }}>Gallery Images ({form.images.length})</label>
-                    <button type="button" className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => { setMediaPickerTarget('images'); setMediaPickerOpen(true); }}>
+                    <button type="button" className="btn" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => { setMediaPickerTarget('images'); setSelectedMediaIds([]); setMediaPickerOpen(true); }}>
                       + Add Image
                     </button>
                   </div>
@@ -258,11 +310,32 @@ export default function GalleriesManager() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {form.images.length > 0 ? (
                       form.images.map((img, idx) => (
-                        <div key={idx} style={{ display: 'grid', gridTemplateColumns: '80px 1fr auto', gap: '12px', background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <div
+                          key={`${img.url}-${idx}`}
+                          draggable
+                          onDragStart={() => { draggedImageIndex.current = idx; }}
+                          onDragOver={(event) => event.preventDefault()}
+                          onDrop={(event) => {
+                            event.preventDefault();
+                            if (draggedImageIndex.current !== null) moveImage(draggedImageIndex.current, idx);
+                            draggedImageIndex.current = null;
+                          }}
+                          onDragEnd={() => { draggedImageIndex.current = null; }}
+                          style={{ display: 'grid', gridTemplateColumns: '80px 1fr auto', gap: '12px', background: img.visible === false ? 'rgba(255,255,255,0.01)' : 'rgba(255,255,255,0.02)', opacity: img.visible === false ? 0.65 : 1, padding: '10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)', cursor: 'grab' }}
+                        >
                           <img src={img.url} alt="" style={{ width: '80px', height: '60px', objectFit: 'cover', borderRadius: '4px' }} />
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <input
+                              className="input"
+                              aria-label="Image title"
+                              placeholder="Image title"
+                              value={img.title || ''}
+                              onChange={(e) => updateImageMeta(idx, 'title', e.target.value)}
+                              style={{ margin: 0, padding: '4px 8px', fontSize: '0.8rem' }}
+                            />
                             <input 
                               className="input" 
+                              aria-label="Image alt text"
                               placeholder="Alt text" 
                               value={img.altText || ''} 
                               onChange={(e) => updateImageMeta(idx, 'altText', e.target.value)} 
@@ -270,15 +343,33 @@ export default function GalleriesManager() {
                             />
                             <input 
                               className="input" 
+                              aria-label="Image caption"
                               placeholder="Caption" 
                               value={img.caption || ''} 
                               onChange={(e) => updateImageMeta(idx, 'caption', e.target.value)} 
                               style={{ margin: 0, padding: '4px 8px', fontSize: '0.8rem' }}
                             />
+                            <input
+                              className="input"
+                              aria-label="Image description"
+                              placeholder="Description (optional)"
+                              value={img.description || ''}
+                              onChange={(e) => updateImageMeta(idx, 'description', e.target.value)}
+                              style={{ margin: 0, padding: '4px 8px', fontSize: '0.8rem' }}
+                            />
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem' }}>
+                              <input
+                                type="checkbox"
+                                checked={img.visible !== false}
+                                onChange={(e) => updateImageMeta(idx, 'visible', e.target.checked)}
+                              />
+                              Published
+                            </label>
                           </div>
                           <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '4px' }}>
-                            <button type="button" className="btn btn-action-arrow" disabled={idx === 0} onClick={() => moveImage(idx, -1)}>▲</button>
-                            <button type="button" className="btn btn-action-arrow" disabled={idx === form.images.length - 1} onClick={() => moveImage(idx, 1)}>▼</button>
+                            <button type="button" className="btn btn-action-arrow" disabled={idx === 0} onClick={() => moveImage(idx, idx - 1)} aria-label="Move image up">▲</button>
+                            <button type="button" className="btn btn-action-arrow" disabled={idx === form.images.length - 1} onClick={() => moveImage(idx, idx + 1)} aria-label="Move image down">▼</button>
+                            <button type="button" className="btn btn-secondary" onClick={() => { setMediaPickerTarget(`replace:${idx}`); setSelectedMediaIds([]); setMediaPickerOpen(true); }}>Replace</button>
                             <button type="button" className="btn btn-action-delete" onClick={() => removeImage(idx)}>✕</button>
                           </div>
                         </div>
@@ -339,17 +430,34 @@ export default function GalleriesManager() {
               <h3 style={{ margin: 0, color: '#fff' }}>Choose Image</h3>
               <button onClick={() => setMediaPickerOpen(false)} style={{ background: 'transparent', border: 'none', color: '#fff', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
             </div>
-            <div style={{ flex: 1, overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '10px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', alignContent: 'start', gap: '10px' }}>
               {media.length > 0 ? (
                 media.map(item => (
-                  <div key={item.id} className="media-card" onClick={() => addMediaToGallery(item.url)}>
+                  <button
+                    type="button"
+                    key={item.id}
+                    className="media-card"
+                    onClick={() => addMediaToGallery(item.url)}
+                    aria-label={`${mediaPickerTarget === 'images' ? (selectedMediaIds.includes(item.url) ? 'Deselect' : 'Select') : 'Use'} ${item.title || item.filename}`}
+                    style={{
+                      padding: 0,
+                      overflow: 'hidden',
+                      border: selectedMediaIds.includes(item.url) ? '2px solid #c5a059' : undefined,
+                      cursor: 'pointer'
+                    }}
+                  >
                     <img src={item.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
+                  </button>
                 ))
               ) : (
                 <p style={{ color: '#666', gridColumn: '1/-1', textAlign: 'center' }}>No media uploads found.</p>
               )}
             </div>
+            {mediaPickerTarget === 'images' && (
+              <button type="button" className="btn" onClick={addSelectedMedia} disabled={!selectedMediaIds.length} style={{ marginTop: '14px' }}>
+                Add {selectedMediaIds.length ? `${selectedMediaIds.length} selected image${selectedMediaIds.length === 1 ? '' : 's'}` : 'selected images'}
+              </button>
+            )}
           </div>
         </div>
       )}

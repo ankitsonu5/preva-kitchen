@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import GoogleReviewsSection from '@/components/sections/GoogleReviewsSection';
 import GallerySection from '@/components/sections/GallerySection';
@@ -8,8 +8,9 @@ import BookingSection from '@/components/home/BookingSection';
 import { getCanonicalOrigin } from '@/lib/site-url';
 import { money } from '@/lib/money';
 import { withoutLegacyDuplicates } from '@/lib/legacy-dish-slugs';
-import { categoryPath, sortMenuCategoryNames } from '@/lib/menu-categories';
-import { withoutRemovedMenuProducts } from '@/lib/menu-options';
+import { categoryPath, menuCategoryOptions } from '@/lib/menu-categories';
+import { getMenuDisplayName, getProductMenuPriceCents } from '@/lib/menu-options';
+import PageBuilder from '@/components/PageBuilder';
 import {
   ArrowRight,
   BadgeCheck,
@@ -75,63 +76,84 @@ const highlights = [
   { icon: BadgeCheck, title: 'Quality Service', text: 'Warm hospitality for every guest at every table.' }
 ];
 
-// Category cards are built from the menu itself: real category names and the
-// category photo set in the admin, else the photo of the first dish in it.
 function buildCategories(menuProducts, menuCategories = []) {
-  const categoryImages = new Map(
-    menuCategories.filter((category) => category?.categoryImage).map((category) => [category.name, category.categoryImage])
-  );
-  const groups = new Map();
-  for (const product of withoutLegacyDuplicates(withoutRemovedMenuProducts(menuProducts))) {
-    if (product.available === false || !product.category) continue;
-    const group = groups.get(product.category) || { name: product.category, image: categoryImages.get(product.category) || '' };
-    if (!group.image) group.image = product.image || signatureDishPhotos[product.slug] || '';
-    groups.set(product.category, group);
-  }
-  const groupsByName = new Map([...groups.values()].map((category) => [category.name, category]));
-  return sortMenuCategoryNames([...groupsByName.keys()], menuCategories).map((name) => groupsByName.get(name));
+  return menuCategoryOptions(withoutLegacyDuplicates(menuProducts), menuCategories);
 }
 
 const SIGNATURE_DISH_COUNT = 8;
-
-// Home-page crops for a few dishes, used only when the dish has no image set
-// in the admin (the admin image always wins).
-const signatureDishPhotos = {
-  'mac-and-cheese': '/asset/home-reference/signature-dishes/PrevaMac-600x600.webp',
-  'preva-mac-and-cheese': '/asset/home-reference/signature-dishes/PrevaMac-600x600.webp',
-  'lamb-chops': '/asset/home-reference/signature-dishes/prevaLamb-600x600.webp',
-  'preva-lamb-chops': '/asset/home-reference/signature-dishes/prevaLamb-600x600.webp',
-  'steak-bites': '/asset/home-reference/signature-dishes/PrevaSteakBites-600x600.webp',
-  'preva-steak-bites': '/asset/home-reference/signature-dishes/PrevaSteakBites-600x600.webp',
-  'preva-catfish': '/asset/home-reference/signature-dishes/PrevaCatfish-600x600.webp',
-  'shrimp-tacos': '/asset/home-reference/signature-dishes/ShrimpTacos-600x600.webp',
-  'preva-quesadillas': '/asset/home-reference/signature-dishes/PrevaQuesadilla-600x600.webp',
-  'preva-double-smash-burger': '/asset/home-reference/signature-dishes/PrevaDoubleSmashBurger-600x600.webp',
-  'preva-wings-chilli': '/asset/home-reference/signature-dishes/PrevaWingsChilli-1024x1024.webp'
-};
 
 // "Preva Favorites" is taken straight from the menu: featured dishes first,
 // then the rest in menu order, 8 in total. Name, price, description and link
 // are the menu's own, so the home page can never disagree with /menu.
 function buildSignatureDishes(menuProducts) {
-  const available = withoutLegacyDuplicates(withoutRemovedMenuProducts(menuProducts))
-    .filter((product) => product.available !== false && product.slug);
-  const featured = available.filter((product) => product.featured);
-  const rest = available.filter((product) => !product.featured);
+  const visible = withoutLegacyDuplicates(menuProducts).filter((product) => product.slug);
+  const featured = visible.filter((product) => product.featured);
+  const rest = visible.filter((product) => !product.featured);
   return [...featured, ...rest]
     .slice(0, SIGNATURE_DISH_COUNT)
     .map((product) => ({
-      name: product.name,
+      id: product.id,
+      name: getMenuDisplayName(product.name, product.slug),
       slug: product.slug,
-      price: money(product.priceCents),
+      price: money(getProductMenuPriceCents(product)),
       description: product.description || '',
-      image: product.image || signatureDishPhotos[product.slug] || '/asset/home-reference/signature-dishes/Rasta-Pasta.webp'
+      image: product.image || '',
+      available: product.available !== false
     }));
 }
 
-export default function Home({ menuProducts = [], menuCategories = [] }) {
+function plainText(value) {
+  return String(value || '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function sectionData(sections, type) {
+  return sections.find((section) => section?.type === type && section.enabled !== false)?.data || {};
+}
+
+function galleryBlockImages(data) {
+  if (!Array.isArray(data?.images)) return [];
+  return data.images
+    .map((image) => ({
+      src: image?.src || image?.url || '',
+      caption: image?.caption || image?.alt || ''
+    }))
+    .filter((image) => image.src)
+    .slice(0, 5);
+}
+
+export default function Home({ menuProducts = [], menuCategories = [], cmsPage = null, galleryImages }) {
   const signatureDishes = buildSignatureDishes(menuProducts);
   const categories = buildCategories(menuProducts, menuCategories);
+  const homeSections = Array.isArray(cmsPage?.sections) ? cmsPage.sections : [];
+  const heroContent = sectionData(homeSections, 'hero');
+  const storyContent = sectionData(homeSections, 'about');
+  const configuredGallery = galleryBlockImages(sectionData(homeSections, 'gallery'));
+  const homeText = plainText(cmsPage?.content);
+  const customBlocks = homeSections.filter((section) => (
+    section?.enabled !== false &&
+    !['hero', 'about', 'gallery', 'kitchen', 'food_menu_grid', 'nightlife', 'reservations', 'testimonials', 'newsletter', 'contact', 'posts_grid'].includes(section?.type)
+  ));
+  const visibleGalleryImages = galleryImages?.length >= 5
+    ? galleryImages
+    : configuredGallery.length >= 5
+      ? configuredGallery
+      : restaurantGalleryImages;
+  const displayedHeroSlides = useMemo(() => heroSlides.map((slide, index) => (
+    cmsPage?.featuredImage && index === 0
+      ? { ...slide, poster: cmsPage.featuredImage }
+      : cmsPage?.featuredImage && index === 1
+        ? { ...slide, image: cmsPage.featuredImage, mobileImage: cmsPage.featuredImage }
+        : slide
+  )), [cmsPage?.featuredImage]);
   // Autoplaying background video is exactly what prefers-reduced-motion
   // asks sites to avoid — fall back to the poster image (a still frame) for
   // anyone who has that on, instead of forcing the motion on them.
@@ -193,12 +215,12 @@ export default function Home({ menuProducts = [], menuCategories = [] }) {
   // (see the <video onEnded>  below) once it finishes playing, so it isn't
   // cut short or dragged out relative to its own length.
   useEffect(() => {
-    if (reduceMotion || heroSlides[activeHeroSlide].type !== 'image') return undefined;
+    if (reduceMotion || displayedHeroSlides[activeHeroSlide].type !== 'image') return undefined;
     const timer = window.setTimeout(() => {
       setActiveHeroSlide((current) => (current + 1) % heroSlides.length);
     }, HERO_IMAGE_SLIDE_DELAY);
     return () => window.clearTimeout(timer);
-  }, [activeHeroSlide, reduceMotion]);
+  }, [activeHeroSlide, reduceMotion, displayedHeroSlides]);
 
   // Play/pause the (always-mounted, so it never has to re-buffer) hero video
   // to match whether its slide is actually the one showing right now. Skipped
@@ -220,12 +242,12 @@ export default function Home({ menuProducts = [], menuCategories = [] }) {
   // its poster forever (it normally advances itself via onEnded once
   // playback finishes) — advance it on the same timer used for image slides.
   useEffect(() => {
-    if (!skipVideo || reduceMotion || heroSlides[activeHeroSlide].type !== 'video') return undefined;
+    if (!skipVideo || reduceMotion || displayedHeroSlides[activeHeroSlide].type !== 'video') return undefined;
     const timer = window.setTimeout(() => {
       setActiveHeroSlide((current) => (current + 1) % heroSlides.length);
     }, HERO_IMAGE_SLIDE_DELAY);
     return () => window.clearTimeout(timer);
-  }, [activeHeroSlide, reduceMotion, skipVideo]);
+  }, [activeHeroSlide, reduceMotion, skipVideo, displayedHeroSlides]);
 
 
 
@@ -235,7 +257,7 @@ export default function Home({ menuProducts = [], menuCategories = [] }) {
 
       <section className="pk-ref-hero" aria-labelledby="pk-ref-hero-title">
         <div className="pk-ref-hero-slides" aria-live="polite">
-          {heroSlides.map((slide, index) =>
+          {displayedHeroSlides.map((slide, index) =>
             slide.type === 'video' ? (
               <video
                 key={slide.name}
@@ -269,11 +291,11 @@ export default function Home({ menuProducts = [], menuCategories = [] }) {
         <div className="pk-ref-hero-shade" aria-hidden="true" />
         <div className="pk-ref-wrap pk-ref-hero-inner">
           <div className="pk-ref-hero-copy">
-            <h1 id="pk-ref-hero-title">
+            <h1 id="pk-ref-hero-title" style={{ whiteSpace: 'pre-line' }}>
               <span className="pk-ref-h1-eyebrow">Preva Kitchen – Restaurant in Redford Township, MI</span>
-              Good Food<br />Good Mood
+              {heroContent.headline || 'Good Food\nGood Mood'}
             </h1>
-            <p className="pk-ref-hero-lead">Experience the perfect blend of bold flavor, warm ambience and genuine hospitality. Every dish is made fresh with care.</p>
+            <p className="pk-ref-hero-lead">{heroContent.supportingText || heroContent.subhead || cmsPage?.excerpt || 'Experience the perfect blend of bold flavor, warm ambience and genuine hospitality. Every dish is made fresh with care.'}</p>
             <div className="pk-ref-hero-actions">
               <Link className="pk-ref-button pk-ref-button--gold" href="/menu">
                 Explore Menu <UtensilsCrossed size={17} aria-hidden="true" />
@@ -310,14 +332,15 @@ export default function Home({ menuProducts = [], menuCategories = [] }) {
         </div>
       </section>
 
-      <section className="pk-ref-story" id="pk-ref-story" aria-labelledby="pk-ref-story-title">
+      <section className={`pk-ref-story${storyContent.image ? ' pk-ref-story--cms-image' : ''}`} id="pk-ref-story" aria-labelledby="pk-ref-story-title">
+        {storyContent.image ? <img className="pk-ref-story-image" src={storyContent.image} alt="" /> : null}
         <div className="pk-ref-story-shade" aria-hidden="true" />
         <div className="pk-ref-wrap pk-ref-story-inner">
           <div className="pk-ref-story-copy">
-            <p className="pk-ref-kicker"><span /> Our Story</p>
-            <h2 id="pk-ref-story-title">A Passion For Flavor<br />A Love For People</h2>
+            <p className="pk-ref-kicker"><span /> {storyContent.eyebrow || 'Our Story'}</p>
+            <h2 id="pk-ref-story-title" style={{ whiteSpace: 'pre-line' }}>{storyContent.title || 'A Passion For Flavor\nA Love For People'}</h2>
             <div className="pk-ref-ornament" aria-hidden="true"><i /><Sparkles size={17} /><i /></div>
-            <p>At Preva Kitchen, great food brings people together. Our journey is rooted in serving craveable dishes made from quality ingredients in a warm, welcoming atmosphere.</p>
+            <p>{storyContent.description || homeText || 'At Preva Kitchen, great food brings people together. Our journey is rooted in serving craveable dishes made from quality ingredients in a warm, welcoming atmosphere.'}</p>
             <p>From casual dinners to milestone celebrations, every plate and every guest receives our full attention.</p>
             <Link className="pk-ref-button pk-ref-button--wine" href="/about">
               Explore Preva Kitchen <ArrowRight size={18} aria-hidden="true" />
@@ -360,9 +383,13 @@ export default function Home({ menuProducts = [], menuCategories = [] }) {
 
           <div className="pk-ref-dish-grid">
             {signatureDishes.map((dish) => (
-              <article className="pk-ref-dish-card" key={dish.slug}>
+              <article className="pk-ref-dish-card" key={dish.id || dish.slug}>
                 <Link className="pk-ref-dish-media" href={`/menu/${dish.slug}`} aria-label={`View ${dish.name}`}>
-                  <img src={dish.image} alt={dish.name} loading="lazy" />
+                  {dish.image ? (
+                    <img src={dish.image} alt={dish.name} loading="lazy" />
+                  ) : (
+                    <span className="pk-ref-dish-no-image" role="img" aria-label={`${dish.name} photo unavailable`}>Photo unavailable</span>
+                  )}
                 </Link>
                 <div className="pk-ref-dish-body">
                   <div className="pk-ref-dish-title-row">
@@ -370,9 +397,11 @@ export default function Home({ menuProducts = [], menuCategories = [] }) {
                     <strong>{dish.price}</strong>
                   </div>
                   <p>{dish.description}</p>
-                  <Link className="pk-ref-dish-order" href={`/menu/${dish.slug}`}>
-                    Order Now <ArrowRight size={16} aria-hidden="true" />
-                  </Link>
+                  {dish.available ? (
+                    <Link className="pk-ref-dish-order" href={`/menu/${dish.slug}`}>
+                      Order Now <ArrowRight size={16} aria-hidden="true" />
+                    </Link>
+                  ) : <span className="pk-ref-dish-order">Sold Out</span>}
                 </div>
               </article>
             ))}
@@ -386,7 +415,8 @@ export default function Home({ menuProducts = [], menuCategories = [] }) {
       {/* TEMPORARY: reservation form hidden on the home page for now. Original:
       <BookingSection /> */}
 
-      <GallerySection images={restaurantGalleryImages} visible />
+      {customBlocks.length > 0 ? <PageBuilder sections={customBlocks} /> : null}
+      <GallerySection images={visibleGalleryImages} visible />
     </div>
   );
 }

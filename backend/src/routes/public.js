@@ -635,17 +635,44 @@ get('/sections', async () => {
   return rows.map(serialize);
 });
 
-get('/galleries', async () => {
+get('/galleries', async ({ query }) => {
   const galleries = await col('galleries');
-  const rows = await galleries.find({ $or: [{ status: 'PUBLISHED' }, { visible: true }] }).sort({ updatedAt: -1 }).toArray();
-  return rows.map(serialize);
+  const photoGalleryView = query.view === 'photo-gallery';
+  const filter = photoGalleryView
+    ? {
+        $or: [
+          { status: 'PUBLISHED' },
+          { status: { $exists: false }, visible: true }
+        ]
+      }
+    : { $or: [{ status: 'PUBLISHED' }, { visible: true }] };
+  const sort = photoGalleryView ? { sortOrder: 1, updatedAt: -1 } : { updatedAt: -1 };
+  const rows = await galleries.find(filter).sort(sort).toArray();
+  if (!photoGalleryView) return rows.map(serialize);
+  return rows.map((gallery) => serialize({
+    ...gallery,
+    images: (Array.isArray(gallery.images) ? gallery.images : [])
+      .filter((image) => image && (typeof image === 'string' || image.visible !== false))
+      .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+  }));
 });
 
 get('/galleries/:slug', async ({ params }) => {
   const galleries = await col('galleries');
-  const row = await galleries.findOne({ slug: params.slug, $or: [{ status: 'PUBLISHED' }, { visible: true }] });
+  const row = await galleries.findOne({
+    slug: params.slug,
+    $or: [
+      { status: 'PUBLISHED' },
+      { status: { $exists: false }, visible: true }
+    ]
+  });
   if (!row) throw notFound('Gallery not found.');
-  return serialize(row);
+  return serialize({
+    ...row,
+    images: (Array.isArray(row.images) ? row.images : [])
+      .filter((image) => image && (typeof image === 'string' || image.visible !== false))
+      .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+  });
 });
 
 get('/services', async () => {

@@ -492,21 +492,36 @@ resource({
 
 resource({
   path: 'galleries', collection: 'galleries', entity: 'GALLERY', unique: 'slug',
-  sort: { updatedAt: -1 },
+  sort: { sortOrder: 1, title: 1 },
   build: (body, current = null) => {
     const title = cleanText(body?.title, 200);
     if (!title) throw badRequest('A gallery title is required.');
+    const now = new Date();
     return {
       title,
       name: title,
       slug: slug(body?.slug || title),
       description: cleanText(body?.description, 1000),
       coverImage: cleanText(body?.coverImage, 2000),
-      images: (Array.isArray(body?.images) ? body.images : []).slice(0, 200).map((image) => ({
-        url: cleanText(image?.url ?? image, 2000),
-        alt: cleanText(image?.alt, 200),
-        caption: cleanText(image?.caption, 300)
-      })),
+      homeGallery: cleanBool(body?.homeGallery, false),
+      sortOrder: cleanInt(body?.sortOrder, current?.sortOrder || 0),
+      images: (Array.isArray(body?.images) ? body.images : []).slice(0, 200).map((image, index) => {
+        const url = cleanText(image?.url ?? image, 2000);
+        const existing = current?.images?.find((currentImage) => currentImage.url === url);
+        const altText = cleanText(image?.altText ?? image?.alt, 200);
+        return {
+          url,
+          title: cleanText(image?.title, 180),
+          alt: altText,
+          altText,
+          caption: cleanText(image?.caption, 300),
+          description: cleanText(image?.description, 1000),
+          sortOrder: cleanInt(image?.sortOrder, index),
+          visible: image?.visible !== false,
+          createdAt: existing?.createdAt || now,
+          updatedAt: now
+        };
+      }),
       status: String(body?.status).toUpperCase() === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT'
     };
   }

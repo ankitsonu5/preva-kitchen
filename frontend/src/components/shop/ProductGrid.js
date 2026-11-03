@@ -6,7 +6,7 @@ import { money } from '@/lib/money';
 import Tilt3DCard from '../Tilt3DCard';
 import { ArrowRight, Search } from 'lucide-react';
 import { dishImage } from '@/lib/dish-images';
-import { CATEGORY_IMAGES, CANONICAL_CATEGORIES, normalizeCategoryName, categoryPath } from '@/lib/menu-categories';
+import { CATEGORY_IMAGES, menuCategoryOptions, normalizeCategoryName, categoryPath } from '@/lib/menu-categories';
 import {
   getMenuDisplayName,
   getProductMenuPriceCents,
@@ -83,28 +83,14 @@ export default function ProductGrid({ products, categories }) {
     }));
   }, [products]);
 
-  // Categories managed in the admin bring their own image and sort order.
-  const managedCategories = useMemo(() => {
-    const map = new Map();
-    for (const category of Array.isArray(categories) ? categories : []) {
-      if (category?.managed) map.set(normalizeCategoryName(category.name), category);
-    }
-    return map;
-  }, [categories]);
-
-  // Extract deduplicated unique categories: admin order first, then canonical
-  const distinctCategories = useMemo(() => {
-    const present = new Set(normalizedProducts.map((p) => p.normalizedCategory));
-    const rank = (cat) => {
-      const managed = managedCategories.get(cat);
-      if (managed) return Number(managed.sortOrder) || 0;
-      // Built-in categories sit at 0, 10, 20 ... so an admin sort order can
-      // slot a new category between them.
-      const canonical = CANONICAL_CATEGORIES.indexOf(cat);
-      return canonical === -1 ? 999 : canonical * 10;
-    };
-    return [...present].sort((a, b) => rank(a) - rank(b));
-  }, [normalizedProducts, managedCategories]);
+  const categoryOptions = useMemo(
+    () => menuCategoryOptions(products, categories),
+    [products, categories]
+  );
+  const distinctCategories = useMemo(
+    () => categoryOptions.map((category) => category.name),
+    [categoryOptions]
+  );
 
   // Group products by category
   const categoryGroups = useMemo(() => {
@@ -169,12 +155,7 @@ export default function ProductGrid({ products, categories }) {
           <span className="ps-cat-circle__name">All Dishes</span>
         </button>
 
-        {distinctCategories.map((catName) => {
-          const imgSrc = managedCategories.get(catName)?.categoryImage
-            || CATEGORY_IMAGES[catName]
-            || normalizedProducts.find((p) => p.normalizedCategory === catName && p.image)?.image
-            || '/asset/home-reference/signature-dishes/Rasta-Pasta.webp';
-
+        {categoryOptions.map(({ name: catName, image: imgSrc }) => {
           return (
             <button
               key={catName}

@@ -1,7 +1,6 @@
 import { pageMetadata } from '@/lib/seo';
 import { cmsFetch } from '@/lib/cms';
 import HomeContent from '@/components/home/HomeContent';
-import { menuCategoriesOrFallback, menuProductsOrFallback } from '@/lib/menu-data';
 
 export const metadata = pageMetadata({
   title: 'Preva Kitchen | Restaurant in Redford Township, MI',
@@ -20,12 +19,30 @@ export const metadata = pageMetadata({
 });
 
 export default async function HomePage() {
-  // Same source and fallback as /menu, so "Preva Favorites" always matches it.
-  const [products, categories] = await Promise.all([
+  // Use the same public menu queries as /menu without development fallback data.
+  const [products, categories, homePage, galleries] = await Promise.all([
     cmsFetch('/shop/products', { query: { summary: true } }),
-    cmsFetch('/shop/categories')
+    cmsFetch('/shop/categories'),
+    cmsFetch('/pages/home'),
+    cmsFetch('/galleries')
   ]);
-  const menuProducts = menuProductsOrFallback(products);
-  const menuCategories = menuCategoriesOrFallback(categories);
-  return <HomeContent menuProducts={menuProducts} menuCategories={menuCategories} />;
+  const menuProducts = Array.isArray(products) ? products : [];
+  const menuCategories = Array.isArray(categories) ? categories : [];
+  const homeGallery = Array.isArray(galleries)
+    ? galleries.find((gallery) => gallery.homeGallery && gallery.status === 'PUBLISHED')
+    : null;
+  const galleryImages = homeGallery?.images?.length >= 5
+    ? homeGallery.images.slice(0, 5).map((image) => ({
+        src: image.url,
+        caption: image.caption || image.alt || ''
+      }))
+    : undefined;
+  return (
+    <HomeContent
+      menuProducts={menuProducts}
+      menuCategories={menuCategories}
+      cmsPage={homePage}
+      galleryImages={galleryImages}
+    />
+  );
 }

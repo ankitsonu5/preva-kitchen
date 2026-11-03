@@ -40,6 +40,36 @@ export function sortMenuCategoryNames(names, managed = []) {
   ));
 }
 
+export function menuCategoryOptions(products = [], categories = []) {
+  const managed = new Map(
+    categories
+      .filter((category) => category?.managed)
+      .map((category) => [normalizeCategoryName(category.name), category])
+  );
+  const normalizedProducts = products.map((product) => ({
+    ...product,
+    normalizedCategory: normalizeCategoryName(product.category)
+  }));
+  const names = [...new Set(normalizedProducts.map((product) => product.normalizedCategory))];
+  const ordered = names.sort((a, b) => {
+    const rank = (name) => {
+      const category = managed.get(name);
+      if (category) return Number(category.sortOrder) || 0;
+      const canonical = CANONICAL_CATEGORIES.indexOf(name);
+      return canonical === -1 ? 999 : canonical * 10;
+    };
+    return rank(a) - rank(b) || a.localeCompare(b);
+  });
+
+  return ordered.map((name) => ({
+    name,
+    image: managed.get(name)?.categoryImage
+      || CATEGORY_IMAGES[name]
+      || normalizedProducts.find((product) => product.normalizedCategory === name && product.image)?.image
+      || '/asset/home-reference/signature-dishes/Rasta-Pasta.webp'
+  }));
+}
+
 // Category names for the admin pickers, in menu order: categories saved in the
 // admin use their sort order, built-in ones sit at 0, 10, 20 ..., and any other
 // name a dish already uses goes last.

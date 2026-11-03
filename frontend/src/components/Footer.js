@@ -28,6 +28,14 @@ const FALLBACK_INSTAGRAM_POSTS = [
   url: `https://www.instagram.com/p/${post.shortcode}/`
 }));
 
+const FOOTER_NAVIGATION = [
+  { title: 'Menu', url: '/menu' },
+  { title: 'Gallery', url: '/gallery' },
+  { title: 'Careers', url: '/careers' },
+  { title: 'Contact', url: '/contact' },
+  { title: 'Blog', url: '/blog' }
+];
+
 export default function Footer() {
   const pathname = usePathname();
 
@@ -62,12 +70,6 @@ export default function Footer() {
     }
   });
 
-  const [menuItems, setMenuItems] = useState([
-    { title: 'Reserve a Table', url: '/reservations' },
-    { title: 'View Menu', url: '/menu' },
-    { title: 'Order Online', url: '/menu' },
-    { title: 'Contact Us', url: '/contact' }
-  ]);
   const [instagramPosts, setInstagramPosts] = useState(FALLBACK_INSTAGRAM_POSTS);
 
   useEffect(() => {
@@ -82,14 +84,6 @@ export default function Footer() {
             ...data,
             socialLinks: { ...prev.socialLinks, ...(data.socialLinks || {}) }
           }));
-        }
-        const menuRes = await fetch(`${API}/menus/footer`);
-        if (menuRes.ok) {
-          const menuData = await menuRes.json();
-          if (menuData && menuData.items && menuData.items.length > 0) {
-            const kitchenItems = menuData.items.filter((item) => !/night\s*life|night\s*club|\bclub\b|\bvip\b|bottle|guest list|tickets?/i.test(`${item.title || ''} ${item.url || ''}`));
-            if (kitchenItems.length) setMenuItems(kitchenItems);
-          }
         }
         const instagramRes = await fetch(`${API}/instagram-feed`);
         if (instagramRes.ok) {
@@ -495,10 +489,9 @@ export default function Footer() {
               <h4 className="footer-heading">NAVIGATION</h4>
               <div className="footer-heading-divider"></div>
               <ul className="footer-links">
-                {/* TEMPORARY: reservation link hidden for now (still in menu data). */}
-                {menuItems.filter((item) => item.visible !== false && !/reserv/i.test(`${item.title || ''} ${item.url || ''}`)).map((item, idx) => (
-                  <li key={idx}>
-                    <a href={item.url} target={item.openInNewTab ? '_blank' : undefined} rel={item.openInNewTab ? 'noopener noreferrer' : undefined}>{item.title}</a>
+                {FOOTER_NAVIGATION.map((item) => (
+                  <li key={item.url}>
+                    <a href={item.url}>{item.title}</a>
                   </li>
                 ))}
               </ul>
@@ -506,7 +499,7 @@ export default function Footer() {
 
             {/* Hours Column */}
             <div className="footer-col hours-col">
-              <h4 className="footer-heading">DELIVERY HOURS</h4>
+              <h4 className="footer-heading">PICKUP &amp; THIRD-PARTY DELIVERY</h4>
               <div className="footer-heading-divider"></div>
               <ul className="footer-info-list">
                 <li>
@@ -519,7 +512,14 @@ export default function Footer() {
                 <li>
                   <span className="icon-gold"><SvgIcon name="clock" size={16} /></span>
                   <div>
-                  <strong>Saturday evening & Sunday:</strong><br />
+                    <strong>Saturday:</strong><br />
+                    8:00 am - 1:00 am
+                  </div>
+                </li>
+                <li>
+                  <span className="icon-gold"><SvgIcon name="clock" size={16} /></span>
+                  <div>
+                    <strong>Sunday:</strong><br />
                     Delivery not currently scheduled
                   </div> 
                 </li>
