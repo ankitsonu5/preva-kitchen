@@ -14,6 +14,15 @@ function toTelHref(phone) {
   return `tel:+${digits}`;
 }
 
+function getDirectionsHref(address) {
+  const query = new URLSearchParams({ query: `Preva Kitchen, ${address}` });
+  return `https://www.google.com/maps/search/?api=1&${query.toString()}`;
+}
+
+function firstNonEmptySetting(...values) {
+  return values.find((value) => typeof value === 'string' && value.trim())?.trim() || '';
+}
+
 const FALLBACK_INSTAGRAM_POSTS = [
   { shortcode: 'DbYY080Ez5X', caption: 'Fresh Flavors & Late-Night Bites at Preva Kitchen', image: '/asset/prevaclub/wp-content/uploads/2026/08/Preva-Burger-768x768.jpg' },
   { shortcode: 'DbTZCiolhU8', caption: 'Preva Signature Crispy Jumbo Wings', image: '/asset/prevaclub/wp-content/uploads/2026/08/Preva-Wings-768x768.jpg' },
@@ -82,6 +91,9 @@ export default function Footer() {
           setSettings((prev) => ({
             ...prev,
             ...data,
+            address: firstNonEmptySetting(data.address, prev.address),
+            phone: firstNonEmptySetting(data.phone, prev.phone),
+            contactEmail: firstNonEmptySetting(data.contactEmail, prev.contactEmail),
             socialLinks: { ...prev.socialLinks, ...(data.socialLinks || {}) }
           }));
         }
@@ -471,7 +483,16 @@ export default function Footer() {
               <ul className="footer-info-list footer-brand-contact">
                 <li>
                   <span className="icon-gold"><SvgIcon name="location" size={16} /></span>
-                  <span>{settings.address}</span>
+                  <span>
+                    <a
+                      href={getDirectionsHref(settings.address)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: 'inherit', textDecoration: 'none' }}
+                    >
+                      {settings.address}
+                    </a>
+                  </span>
                 </li>
                 <li>
                   <span className="icon-gold"><SvgIcon name="phone" size={16} /></span>
@@ -589,7 +610,7 @@ export default function Footer() {
                 }}
               >
                 <a
-                  href="https://www.google.com/maps/search/?api=1&query=Preva+Kitchen,+13090+Inkster+Rd,+Redford+Township,+MI+48239,+United+States"
+                  href={getDirectionsHref(settings.address)}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{

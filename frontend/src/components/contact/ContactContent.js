@@ -429,12 +429,12 @@ export default function ContactContent() {
                   </div>
                   <div>
                     <span style={{ display: 'block', color: '#c5a059', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '4px' }}>
-                      DELIVERY HOURS
+                      PICKUP &amp; THIRD-PARTY DELIVERY
                     </span>
                     <p style={{ margin: 0, color: '#d5d0c8', fontSize: '0.94rem', lineHeight: 1.6 }}>
                       Monday - Friday: <strong>11:00 AM – 1:00 AM</strong><br />
-                      Saturday evening & Sunday: <strong>Delivery not currently scheduled</strong><br />
-                      <small style={{ color: '#888' }}>Friday orders close at 1:00 AM, Saturday. Pickup availability is subject to confirmation.</small>
+                      Saturday: <strong>8:00 AM – 1:00 AM</strong><br />
+                      Sunday: <strong>Delivery not currently scheduled</strong><br />
                     </p>
                   </div>
                 </div>

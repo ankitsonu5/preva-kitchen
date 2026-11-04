@@ -169,7 +169,7 @@ export default async function BlogPost({ params }) {
             {/* Widget 1: About Preva Venue */}
             <div className="sidebar-widget-card">
               <div style={{ textAlign: 'center', marginBottom: '14px' }}>
-                <img src="/asset/preva-logo-silver.png" alt="Preva Kitchen" style={{ height: '42px', width: 'auto', margin: '0 auto 10px auto', display: 'block' }} />
+                <img src="/asset/preva-kitchen-logo.webp" alt="Preva Kitchen" style={{ height: '42px', width: 'auto', maxWidth: '100%', objectFit: 'contain', margin: '0 auto 10px auto', display: 'block' }} />
                 <span style={{ fontSize: '0.78rem', color: 'var(--color-gold, #c5a059)', letterSpacing: '2px', textTransform: 'uppercase', fontWeight: 'bold' }}>
                   Cook • Share • Gather
                 </span>
@@ -223,16 +223,6 @@ export default async function BlogPost({ params }) {
                 <Link href="/blog" className="sidebar-category-chip">Events</Link>
                 <Link href="/blog" className="sidebar-category-chip">Journal</Link>
               </div>
-            </div>
-
-            {/* Sticky kitchen reservation CTA */}
-            <div className="sidebar-widget-card sidebar-vip-cta">
-              <div style={{ marginBottom: '8px', color: '#c9a84c' }}><SvgIcon name="utensils" size={30} /></div>
-              <h3>Plan Your Next Meal</h3>
-              <p>Book a table or tell our kitchen team about your next group meal.</p>
-              <Link href="/reservations" className="sidebar-vip-btn">
-                Reserve a Table
-              </Link>
             </div>
 
           </aside>
