@@ -161,3 +161,63 @@ test('menu items with orderable false are excluded in both summary and full resp
   assert.equal(summaryResponse.body.some((item) => item.slug === slug), false);
   assert.equal(fullResponse.body.some((item) => item.slug === slug), false);
 });
+
+test('menu item gallery visibility is independently saved and returned by the public menu API', async () => {
+  const menuItems = await col('menuItems');
+  const slug = 'gallery-visibility-test';
+  const inserted = await menuItems.insertOne({
+    name: 'Gallery Visibility Test',
+    slug,
+    category: 'Test',
+    image: '/gallery-visibility-test.jpg',
+    available: true,
+    isVisible: true,
+    orderable: true,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  });
+
+  const updated = await dispatch({
+    method: 'PUT',
+    path: `/admin/menu-items/${inserted.insertedId}`,
+    user: { role: 'ADMIN', id: 'gallery-visibility-admin' },
+    body: {
+      name: 'Gallery Visibility Test',
+      slug,
+      category: 'Test',
+      image: '/gallery-visibility-test.jpg',
+      available: true,
+      isVisible: true,
+      orderable: true,
+      galleryVisible: false
+    }
+  });
+  assert.equal(updated.status, 200);
+  assert.equal(updated.body.galleryVisible, false);
+
+  const publicMenu = await dispatch({ method: 'GET', path: '/menu-items' });
+  const publicItem = publicMenu.body.find((item) => item.slug === slug);
+  assert.ok(publicItem);
+  assert.equal(publicItem.galleryVisible, false);
+  assert.equal(publicItem.isVisible, true);
+
+  const restore = await dispatch({
+    method: 'PATCH',
+    path: '/admin/menu-gallery-visibility',
+    user: { role: 'ADMIN', id: 'gallery-visibility-admin' },
+    body: { id: inserted.insertedId.toString(), galleryVisible: true }
+  });
+  assert.equal(restore.status, 200);
+  assert.equal(restore.body.galleryVisible, true);
+
+  const hideAgain = await dispatch({
+    method: 'PATCH',
+    path: '/admin/menu-gallery-visibility',
+    user: { role: 'ADMIN', id: 'gallery-visibility-admin' },
+    body: { id: inserted.insertedId.toString(), galleryVisible: false }
+  });
+  assert.equal(hideAgain.status, 200);
+
+  const saved = await menuItems.findOne({ _id: inserted.insertedId });
+  assert.equal(saved.galleryVisible, false);
+});

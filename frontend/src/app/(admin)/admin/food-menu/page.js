@@ -27,6 +27,7 @@ const emptyForm = {
   doorDashUrl: '',
   grubhubUrl: '',
   available: true,
+  galleryVisible: true,
   featured: false,
   servings: '1 Person',
   showServings: false,
@@ -49,6 +50,7 @@ export default function FoodMenuManager() {
   const [categoryForm, setCategoryForm] = useState(emptyCategory);
   const [categoryUploading, setCategoryUploading] = useState(false);
   const [visibilitySaving, setVisibilitySaving] = useState('');
+  const [galleryVisibilitySaving, setGalleryVisibilitySaving] = useState('');
 
   async function load() {
     setLoading(true);
@@ -75,6 +77,7 @@ export default function FoodMenuManager() {
     setForm({
       ...emptyForm,
       ...row,
+      galleryVisible: row.galleryVisible !== false,
       tags: Array.isArray(row.tags) ? row.tags.join(', ') : (row.tags || ''),
       pairings: Array.isArray(row.pairings) ? row.pairings.join(', ') : (row.pairings || '')
     });
@@ -195,6 +198,30 @@ export default function FoodMenuManager() {
       alert(error.message || 'Could not update visibility.');
     } finally {
       setVisibilitySaving('');
+    }
+  }
+
+  async function setGalleryVisibility(row, galleryVisible) {
+    if (!galleryVisible && !await confirmAction({
+      title: 'Delete from gallery?',
+      description: `"${row.name}" will be removed from the gallery but will remain on the menu and available for ordering.`,
+      confirmLabel: 'Delete from gallery',
+      tone: 'danger'
+    })) return;
+
+    setGalleryVisibilitySaving(row.id);
+    try {
+      const response = await api('/admin/menu-gallery-visibility', {
+        method: 'PATCH',
+        body: JSON.stringify({ id: row.id, galleryVisible })
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.message || 'Could not update gallery visibility.');
+      setRows((current) => current.map((item) => item.id === row.id ? { ...item, galleryVisible } : item));
+    } catch (error) {
+      alert(error.message || 'Could not update gallery visibility.');
+    } finally {
+      setGalleryVisibilitySaving('');
     }
   }
 
@@ -389,6 +416,7 @@ export default function FoodMenuManager() {
                 <th>Tags</th>
                 <th>Status</th>
                 <th>Visibility</th>
+                <th>Gallery</th>
                 <th>Sort Order</th>
                 <th>Actions</th>
               </tr>
@@ -465,6 +493,23 @@ export default function FoodMenuManager() {
                           onClick={() => setVisibility('item', row, row.isVisible === false)}
                         >
                           {visibilitySaving === `item:${row.id}` ? 'Saving…' : row.isVisible === false ? 'Unhide' : 'Hide'}
+                        </button>
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span className={`badge ${row.galleryVisible === false ? 'badge-trash' : 'badge-published'}`}>
+                          {row.galleryVisible === false ? 'Hidden' : 'Visible'}
+                        </span>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          disabled={galleryVisibilitySaving === row.id}
+                          onClick={() => setGalleryVisibility(row, row.galleryVisible === false)}
+                        >
+                          {galleryVisibilitySaving === row.id
+                            ? 'Saving…'
+                            : row.galleryVisible === false ? 'Show' : 'Delete'}
                         </button>
                       </div>
                     </td>
@@ -610,6 +655,11 @@ export default function FoodMenuManager() {
               <label className="field" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginTop: '10px' }}>
                 <input type="checkbox" name="available" checked={form.available} onChange={change} />
                 Available to order
+              </label>
+
+              <label className="field" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginTop: '10px' }}>
+                <input type="checkbox" name="galleryVisible" checked={form.galleryVisible} onChange={change} />
+                Show in Gallery
               </label>
 
               <label className="field" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginTop: '10px' }}>

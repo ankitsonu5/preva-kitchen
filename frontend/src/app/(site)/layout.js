@@ -16,6 +16,7 @@ import './styles/reference-home.css';
 import './styles/preva-selection-modal.css';
 import '@/styles/typography.css';
 import Shell from '@/components/Shell';
+import CustomIntegrationScripts from '@/components/CustomIntegrationScripts';
 import { cmsFetch } from '@/lib/cms';
 import { roboto } from '@/lib/fonts';
 import { DEFAULT_OG_IMAGE } from '@/lib/seo';
@@ -149,9 +150,10 @@ export async function generateMetadata() {
   };
 }
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
   const origin = getCanonicalOrigin();
   const jsonLd = generateSiteWideSchema(origin);
+  const settings = await cmsFetch('/settings');
 
   return (
     <html lang="en" className={roboto.variable} suppressHydrationWarning>
@@ -163,12 +165,15 @@ export default function RootLayout({ children }) {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        {/* <GoogleAnalytics /> */}
       </head>
       <body id="preva-app" className={roboto.className} suppressHydrationWarning>
             <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TBSJ2TTS"
 height="0" width="0" style={{ display: 'none', visibility: 'hidden' }}></iframe></noscript>
         <Shell>{children}</Shell>
+        <CustomIntegrationScripts
+          headerScripts={settings?.headerScripts}
+          footerScripts={settings?.footerScripts}
+        />
 <Script
   id="google-tag-manager"
   strategy="afterInteractive"

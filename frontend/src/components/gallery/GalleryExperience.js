@@ -5,34 +5,27 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 import styles from './GalleryExperience.module.css';
 
-function getGalleryImages(galleries) {
-  return galleries.flatMap((gallery) => {
-    const images = Array.isArray(gallery.images) ? [...gallery.images] : [];
-    return images
-      .filter((image) => image && image.visible !== false && (typeof image === 'string' || image.url || image.src))
-      .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
-      .map((image, index) => {
-        const url = typeof image === 'string' ? image : image.url || image.src;
-        return {
-          id: `${gallery.id || gallery.slug || gallery.title}-${image.id || url}-${index}`,
-          url,
-          title: typeof image === 'string' ? '' : image.title || image.caption || '',
-          alt: typeof image === 'string' ? '' : image.altText || image.alt || image.title || image.caption || gallery.title || '',
-          categoryId: gallery.id || gallery.slug || gallery.title,
-          category: gallery.title || 'Gallery',
-          description: typeof image === 'string' ? '' : image.description || ''
-        };
-      });
-  });
+function getMenuImages(menuItems) {
+  return menuItems
+    .filter((item) => item && item.galleryVisible !== false && typeof item.image === 'string' && item.image.trim())
+    .map((item, index) => ({
+      id: item.id || item.slug || `${item.name}-${index}`,
+      url: item.image,
+      title: item.name || '',
+      alt: item.name || 'Preva Kitchen menu item',
+      categoryId: item.category || 'menu',
+      category: item.category || 'Menu',
+      description: item.description || ''
+    }));
 }
 
-export default function GalleryExperience({ galleries = [], dataAvailable = true }) {
+export default function GalleryExperience({ menuItems = [], dataAvailable = true }) {
   const [activeCategory, setActiveCategory] = useState('all');
   const [lightboxIndex, setLightboxIndex] = useState(null);
   const previousFocus = useRef(null);
   const closeButton = useRef(null);
   const touchStart = useRef(null);
-  const images = useMemo(() => getGalleryImages(galleries), [galleries]);
+  const images = useMemo(() => getMenuImages(menuItems), [menuItems]);
   const categories = useMemo(() => {
     const visibleCategories = new Map();
     images.forEach((image) => visibleCategories.set(image.categoryId, image.category));
@@ -93,23 +86,23 @@ export default function GalleryExperience({ galleries = [], dataAvailable = true
       <section className={styles.hero}>
         <div className={styles.container}>
           <p className={styles.eyebrow}>The Preva Experience</p>
-          <h1>A Taste of Preva, <em>In Pictures</em></h1>
+          <h1>Preva Menu, <em>In Pictures</em></h1>
           <p className={styles.intro}>
-            Explore our signature dishes, kitchen moments, and dining atmosphere. Discover the flavors and experiences that make Preva Kitchen special.
+            Browse the dishes currently featured on the Preva Kitchen menu.
           </p>
         </div>
       </section>
 
-      <section className={styles.gallerySection} aria-label="Preva Kitchen photo gallery">
+      <section className={styles.gallerySection} aria-label="Preva Kitchen menu images">
         <div className={styles.container}>
-          <div className={styles.filters} role="group" aria-label="Filter photos by category">
+          <div className={styles.filters} role="group" aria-label="Filter menu items by category">
             <button
               type="button"
               className={activeCategory === 'all' ? styles.activeFilter : styles.filter}
               aria-pressed={activeCategory === 'all'}
               onClick={() => changeCategory('all')}
             >
-              All Photos
+              All Menu Items
             </button>
             {categories.map((category) => (
               <button
@@ -154,7 +147,7 @@ export default function GalleryExperience({ galleries = [], dataAvailable = true
             </div>
           ) : (
             <p className={styles.empty}>
-              {dataAvailable ? 'No published gallery photos are available yet.' : 'Gallery photos are temporarily unavailable.'}
+              {dataAvailable ? 'No menu item images are available yet.' : 'Menu images are temporarily unavailable.'}
             </p>
           )}
 

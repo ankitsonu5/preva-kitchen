@@ -746,6 +746,9 @@ resource({
       isVisible: body?.isVisible === undefined
         ? current?.isVisible !== false
         : cleanBool(body.isVisible, current?.isVisible !== false),
+      galleryVisible: body?.galleryVisible === undefined
+        ? current?.galleryVisible !== false
+        : cleanBool(body.galleryVisible, current?.galleryVisible !== false),
       // A dish added in the admin should get its /menu page straight away, so
       // new items default to orderable; existing items keep what they had.
       orderable: cleanBool(body?.orderable, current?.orderable ?? true),
@@ -784,6 +787,21 @@ resource({
       sortOrder: cleanInt(body?.sortOrder, 0)
     };
   }
+});
+
+patch('/admin/menu-gallery-visibility', { auth: true, roles: MANAGE }, async (ctx) => {
+  const id = asObjectId(ctx.body?.id);
+  const galleryVisible = ctx.body?.galleryVisible;
+  if (!id) throw badRequest('A valid menu item is required.');
+  if (typeof galleryVisible !== 'boolean') throw badRequest('Gallery visibility must be true or false.');
+
+  const items = await col('menuItems');
+  const current = await items.findOne({ _id: id });
+  if (!current) throw notFound('Menu item not found.');
+
+  await items.updateOne({ _id: id }, { $set: { galleryVisible, updatedAt: new Date() } });
+  await logActivity(ctx, 'UPDATE', 'MENU_ITEM_GALLERY_VISIBILITY', current.name);
+  return { id: id.toString(), galleryVisible };
 });
 
 patch('/admin/menu-visibility', { auth: true, roles: MANAGE }, async (ctx) => {
