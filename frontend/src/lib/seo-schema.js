@@ -316,9 +316,9 @@ export function extractFaqsFromContent(htmlContent = '') {
 
 
 
-  // Match \<h2> or \<h3> ending with ? or starting with FAQ / Question
+  // Match <h2> or <h3> ending with ? or starting with FAQ / Question
 
-  const headingRegex = /\<h[23][^>]*>(.*?)<**\/**&#x68;[23]>([\s\S]*?)(?=\<h[23]|$)/gi;
+  const headingRegex = /<h[23][^>]*>(.*?)<\/h[23]>([\s\S]*?)(?=<h[23]|$)/gi;
 
   let match;
 
