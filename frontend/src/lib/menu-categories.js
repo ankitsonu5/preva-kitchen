@@ -63,11 +63,24 @@ export function menuCategoryOptions(products = [], categories = []) {
 
   return ordered.map((name) => ({
     name,
-    image: managed.get(name)?.categoryImage
-      || CATEGORY_IMAGES[name]
-      || normalizedProducts.find((product) => product.normalizedCategory === name && product.image)?.image
-      || '/asset/home-reference/signature-dishes/Rasta-Pasta.webp'
+    image: categoryImageFor(
+      name,
+      managed.get(name),
+      normalizedProducts.filter((product) => product.normalizedCategory === name)
+    ) || '/asset/home-reference/signature-dishes/Rasta-Pasta.webp'
   }));
+}
+
+// Image for a category tile. Admin data wins over the built-in photos: the
+// category image set in the admin first, then a dish photo uploaded in the
+// admin (/api/media/...), then the built-in photo, then any dish photo.
+export function categoryImageFor(name, managedCategory, products = []) {
+  const uploaded = products.find((product) => String(product?.image || '').startsWith('/api/media/'));
+  return managedCategory?.categoryImage
+    || uploaded?.image
+    || CATEGORY_IMAGES[name]
+    || products.find((product) => product?.image)?.image
+    || '';
 }
 
 // Category names for the admin pickers, in menu order: categories saved in the

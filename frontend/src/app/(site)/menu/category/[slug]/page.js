@@ -9,7 +9,7 @@ import { withoutLegacyDuplicates } from '@/lib/legacy-dish-slugs';
 import { getMenuDisplayName } from '@/lib/menu-options';
 import { menuProductsOrFallback } from '@/lib/menu-data';
 import {
-  CATEGORY_IMAGES,
+  categoryImageFor,
   categoryCopy,
   categoryPath,
   categorySlug,
@@ -35,7 +35,7 @@ async function loadCategory(slug) {
     Array.isArray(categories) ? categories : []
   );
   const managed = (Array.isArray(categories) ? categories : []).find((category) => category.name === items[0].category);
-  return { name, items, otherNames, image: managed?.categoryImage || CATEGORY_IMAGES[name] || items.find((item) => item.image)?.image };
+  return { name, items, otherNames, image: categoryImageFor(name, managed, items) || undefined };
 }
 
 export async function generateMetadata({ params }) {
