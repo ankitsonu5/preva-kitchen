@@ -433,7 +433,7 @@ export default function ContactContent() {
                     </span>
                     <p style={{ margin: 0, color: '#d5d0c8', fontSize: '0.94rem', lineHeight: 1.6 }}>
                       Monday - Friday: <strong>11:00 AM – 1:00 AM</strong><br />
-                      Saturday: <strong>8:00 AM – 1:00 AM</strong><br />
+                      Saturday: <strong>8:00 PM – 1:00 AM</strong><br />
                       Sunday: <strong>Delivery not currently scheduled</strong><br />
                     </p>
                   </div>

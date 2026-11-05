@@ -534,7 +534,7 @@ export default function Footer() {
                   <span className="icon-gold"><SvgIcon name="clock" size={16} /></span>
                   <div>
                     <strong>Saturday:</strong><br />
-                    8:00 am - 1:00 am
+                    8:00 pm - 1:00 am
                   </div>
                 </li>
                 <li>

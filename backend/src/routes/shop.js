@@ -37,7 +37,7 @@ get('/shop/kitchen-status', async () => {
 
 function toProduct(item, { summary = false } = {}) {
   const out = serialize(item);
-  const optionGroups = (Array.isArray(out.optionGroups) && out.optionGroups.length
+  const optionGroups = (Array.isArray(out.optionGroups)
     ? out.optionGroups
     : out.slug === 'rasta-pasta' ? RASTA_PASTA_OPTION_GROUPS : []).map((group) => ({
     id: group.id,
@@ -45,6 +45,7 @@ function toProduct(item, { summary = false } = {}) {
     type: group.type === 'check' ? 'check' : 'radio',
     required: Boolean(group.required),
     maxPick: Number(group.maxPick) || 0,
+    defaultOptionId: group.defaultOptionId || group.options?.[0]?.id || '',
     options: (group.options || [])
       .filter((option) => option.available !== false)
       .map((option) => ({

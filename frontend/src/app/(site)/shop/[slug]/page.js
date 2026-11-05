@@ -270,7 +270,7 @@ export default async function ProductPage({ params, searchParams }) {
             </div>
           </section>
 
-          {crossCategoryPairings.length > 0 && (
+          {product.slug !== 'rasta-pasta' && crossCategoryPairings.length > 0 && (
             <section className="ps-dish-about" aria-labelledby="pairings-title">
               <span className="ps-detail-kicker">Pairs well with</span>
               <h2 id="pairings-title" className="ps-detail-title">Complete the Plate</h2>

@@ -121,6 +121,52 @@ test('Rasta Pasta receives its optional protein modifier and admin writes persis
   assert.deepEqual(publicWings.body.product.optionGroups, []);
 });
 
+test('admin-managed menu option groups are returned for any menu item', async () => {
+  const slug = 'dynamic-option-groups-test';
+  const createResponse = await dispatch({
+    method: 'POST',
+    path: '/admin/menu-items',
+    user: { role: 'ADMIN', id: 'test-admin' },
+    body: {
+      name: 'Dynamic Option Groups Test',
+      slug,
+      price: '$8.00',
+      category: 'Test',
+      available: true,
+      orderable: true,
+      optionGroups: [{
+        id: 'protein',
+        label: 'Protein options',
+        type: 'radio',
+        defaultOptionId: 'chicken',
+        options: [
+          { id: 'chicken', label: 'Chicken', priceCents: 400 },
+          { id: 'shrimp', label: 'Shrimp', priceCents: 600 }
+        ]
+      }]
+    }
+  });
+  assert.equal(createResponse.status, 201);
+
+  const publicResponse = await dispatch({ method: 'GET', path: `/shop/products/${slug}` });
+  assert.equal(publicResponse.status, 200);
+  assert.deepEqual(publicResponse.body.product.optionGroups, [{
+    id: 'protein',
+    label: 'Protein options',
+    type: 'radio',
+    required: false,
+    maxPick: 0,
+    defaultOptionId: 'chicken',
+    options: [
+      { id: 'chicken', label: 'Chicken', priceCents: 400 },
+      { id: 'shrimp', label: 'Shrimp', priceCents: 600 }
+    ]
+  }]);
+
+  const menuItems = await col('menuItems');
+  await menuItems.deleteOne({ slug });
+});
+
 test('menu summary responses omit detail-only fields and keep Rasta Pasta pricing data', async () => {
   const response = await dispatch({
     method: 'GET',

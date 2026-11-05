@@ -96,6 +96,36 @@ describe('official PREVA menu options', () => {
     expect(getMenuPriceCents(config, { protein: 'lobster' })).toBe(3400);
   });
 
+  it('uses item-specific option groups and prices for any menu item', () => {
+    const config = getMenuCustomization('mac-and-cheese', {
+      slug: 'mac-and-cheese',
+      name: 'Mac & Cheese',
+      priceCents: 600,
+      optionGroups: [{
+        id: 'protein',
+        label: 'Protein options',
+        defaultOptionId: 'chicken',
+        options: [
+          { id: 'chicken', label: 'Chicken', priceCents: 400 },
+          { id: 'shrimp', label: 'Shrimp', priceCents: 600 }
+        ]
+      }]
+    });
+
+    expect(config.groups[0].queryKey).toBe('protein');
+    expect(config.groups[0].defaultOptionId).toBe('chicken');
+    expect(getMenuPriceCents(config, normalizeMenuSelection(config))).toBe(1000);
+    expect(getMenuPriceCents(config, { protein: 'shrimp' })).toBe(1200);
+  });
+
+  it('respects an explicitly empty Rasta Pasta option group list', () => {
+    expect(getMenuCustomization('rasta-pasta', {
+      slug: 'rasta-pasta',
+      priceCents: 2200,
+      optionGroups: []
+    })).toBeNull();
+  });
+
   it('creates direct variant routes for every menu selector option', () => {
     const products = [
       ['preva-quesadillas', 'preva-quesadilla'],

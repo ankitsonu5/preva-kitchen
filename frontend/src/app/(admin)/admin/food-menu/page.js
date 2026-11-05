@@ -8,10 +8,51 @@ import { LoadingSkeleton, PageHeader, EmptyState } from '@/components/admin/Admi
 import { useConfirm } from '@/components/admin/ConfirmDialog';
 import { api, uploadMediaFile } from '@/lib/admin-api';
 import { CANONICAL_CATEGORIES, mergeMenuCategories } from '@/lib/menu-categories';
+import { getMenuCustomization } from '@/lib/menu-options';
 
 const NEW_CATEGORY = '__new__';
 
 const emptyCategory = { id: '', name: '', image: '', sortOrder: 100 };
+const optionIdFromLabel = (label, fallback) => (
+  String(label || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || fallback
+);
+function uniqueOptionId(group, candidate, excludedIndex) {
+  let id = candidate;
+  let suffix = 2;
+  while (group.options.some((option, index) => index !== excludedIndex && option.id === id)) {
+    id = `${candidate}-${suffix}`;
+    suffix += 1;
+  }
+  return id;
+}
+const makeOptionGroup = (index) => ({
+  id: `options-${index + 1}`,
+  label: 'Options',
+  type: 'radio',
+  required: false,
+  maxPick: 1,
+  defaultOptionId: '',
+  options: []
+});
+
+function getEditorOptionGroups(item) {
+  if (Array.isArray(item.optionGroups)) return item.optionGroups;
+  if (item.slug !== 'rasta-pasta') return [];
+  return (getMenuCustomization(item.slug, item)?.groups || []).map((group) => ({
+    id: group.queryKey,
+    label: group.label,
+    type: 'radio',
+    required: false,
+    maxPick: 1,
+    defaultOptionId: group.defaultOptionId,
+    options: group.options.map((option) => ({
+      id: option.id,
+      label: option.label,
+      priceCents: option.priceCents,
+      available: true
+    }))
+  }));
+}
 
 const emptyForm = {
   id: '',
@@ -26,6 +67,7 @@ const emptyForm = {
   uberEatsUrl: '',
   doorDashUrl: '',
   grubhubUrl: '',
+  optionGroups: [],
   available: true,
   galleryVisible: true,
   featured: false,
@@ -79,7 +121,16 @@ export default function FoodMenuManager() {
       ...row,
       galleryVisible: row.galleryVisible !== false,
       tags: Array.isArray(row.tags) ? row.tags.join(', ') : (row.tags || ''),
-      pairings: Array.isArray(row.pairings) ? row.pairings.join(', ') : (row.pairings || '')
+      pairings: Array.isArray(row.pairings) ? row.pairings.join(', ') : (row.pairings || ''),
+      optionGroups: getEditorOptionGroups(row).map((group) => ({
+        ...group,
+        defaultOptionId: group.defaultOptionId || group.options?.[0]?.id || '',
+        options: Array.isArray(group.options) ? group.options.map((option) => ({
+          ...option,
+          priceCents: Number(option.priceCents) || 0,
+          available: option.available !== false
+        })) : []
+      }))
     });
     setNewCategoryName('');
     setOpen(true);
@@ -90,6 +141,99 @@ export default function FoodMenuManager() {
     setForm((current) => ({
       ...current,
       [name]: type === 'checkbox' ? checked : value
+    }));
+  }
+
+  function addOptionGroup() {
+    setForm((current) => {
+      const optionGroups = current.optionGroups || [];
+      let groupNumber = optionGroups.length + 1;
+      while (optionGroups.some((group) => group.id === `options-${groupNumber}`)) groupNumber += 1;
+      return {
+        ...current,
+        optionGroups: [...optionGroups, makeOptionGroup(groupNumber - 1)]
+      };
+    });
+  }
+
+  function updateOptionGroup(groupIndex, field, value) {
+    setForm((current) => ({
+      ...current,
+      optionGroups: current.optionGroups.map((group, index) => {
+        if (index !== groupIndex) return group;
+        return { ...group, [field]: value };
+      })
+    }));
+  }
+
+  function removeOptionGroup(groupIndex) {
+    setForm((current) => ({
+      ...current,
+      optionGroups: current.optionGroups.filter((_, index) => index !== groupIndex)
+    }));
+  }
+
+  function addOption(groupIndex) {
+    setForm((current) => ({
+      ...current,
+      optionGroups: current.optionGroups.map((group, index) => {
+        if (index !== groupIndex) return group;
+        let optionNumber = group.options.length + 1;
+        while (group.options.some((item) => item.id === `option-${optionNumber}`)) optionNumber += 1;
+        const option = { id: `option-${optionNumber}`, label: '', priceCents: 0, available: true };
+        return {
+          ...group,
+          options: [...group.options, option],
+          defaultOptionId: group.defaultOptionId || option.id
+        };
+      })
+    }));
+  }
+
+  function updateOption(groupIndex, optionIndex, field, value) {
+    setForm((current) => ({
+      ...current,
+      optionGroups: current.optionGroups.map((group, currentGroupIndex) => {
+        if (currentGroupIndex !== groupIndex) return group;
+        const options = group.options.map((option, currentOptionIndex) => {
+          if (currentOptionIndex !== optionIndex) return option;
+          const updated = { ...option, [field]: value };
+          if (field === 'label' && option.id === optionIdFromLabel(option.label, `option-${optionIndex + 1}`)) {
+            updated.id = uniqueOptionId(
+              group,
+              optionIdFromLabel(value, `option-${optionIndex + 1}`),
+              optionIndex
+            );
+          }
+          return updated;
+        });
+        const previousOption = group.options[optionIndex];
+        const nextOption = options[optionIndex];
+        return {
+          ...group,
+          options,
+          ...(field === 'label' && group.defaultOptionId === previousOption?.id
+            ? { defaultOptionId: nextOption?.id || '' }
+            : {})
+        };
+      })
+    }));
+  }
+
+  function removeOption(groupIndex, optionIndex) {
+    setForm((current) => ({
+      ...current,
+      optionGroups: current.optionGroups.map((group, index) => {
+        if (index !== groupIndex) return group;
+        const options = group.options.filter((_, optionIndexToKeep) => optionIndexToKeep !== optionIndex);
+        return {
+          ...group,
+          options,
+          defaultOptionId: options.some((option) => option.id === group.defaultOptionId)
+            ? group.defaultOptionId
+            : options[0]?.id || ''
+        };
+      })
     }));
   }
 
@@ -641,6 +785,95 @@ export default function FoodMenuManager() {
                 Suggested Pairings (comma separated dish names)
                 <input className="input" name="pairings" value={form.pairings || ''} onChange={change} placeholder="e.g. Preva Quesadillas, Mac & Cheese, House Salad" />
               </label>
+
+              <div className="field field-span" style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', marginTop: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                  <div>
+                    <strong style={{ color: 'var(--ink)' }}>Menu Options</strong>
+                    <div style={{ fontSize: '11px', color: 'var(--ink-muted)', marginTop: '3px' }}>
+                      Add item-specific choices such as protein or size. Prices are added to this dish&rsquo;s base price.
+                    </div>
+                  </div>
+                  <button type="button" className="btn btn-secondary" onClick={addOptionGroup} style={{ padding: '5px 10px', whiteSpace: 'nowrap' }}>
+                    <Plus size={13} /> Add option group
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {(form.optionGroups || []).map((group, groupIndex) => (
+                    <div key={`${group.id}-${groupIndex}`} style={{ padding: '12px', background: 'var(--surface-raised)', border: '1px solid var(--border)', borderRadius: '8px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '8px', alignItems: 'end', marginBottom: '10px' }}>
+                        <label className="field" style={{ margin: 0 }}>
+                          Option group label
+                          <input
+                            className="input"
+                            value={group.label || ''}
+                            onChange={(event) => updateOptionGroup(groupIndex, 'label', event.target.value)}
+                            placeholder="e.g. Protein options"
+                          />
+                        </label>
+                        <button type="button" className="icon-button" onClick={() => removeOptionGroup(groupIndex)} title="Remove option group" style={{ color: 'var(--danger)' }}>
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+
+                      {group.options.length > 0 && (
+                        <label className="field" style={{ marginBottom: '10px' }}>
+                          Default choice
+                          <select
+                            className="input"
+                            value={group.defaultOptionId || ''}
+                            onChange={(event) => updateOptionGroup(groupIndex, 'defaultOptionId', event.target.value)}
+                          >
+                            {group.options.map((option) => (
+                              <option key={option.id} value={option.id}>{option.label || 'Unnamed option'}</option>
+                            ))}
+                          </select>
+                        </label>
+                      )}
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {group.options.map((option, optionIndex) => (
+                          <div key={`${option.id}-${optionIndex}`} style={{ display: 'grid', gridTemplateColumns: 'minmax(120px, 1fr) 100px auto auto', gap: '8px', alignItems: 'center' }}>
+                            <input
+                              className="input"
+                              aria-label="Option name"
+                              value={option.label || ''}
+                              onChange={(event) => updateOption(groupIndex, optionIndex, 'label', event.target.value)}
+                              placeholder="e.g. Chicken"
+                              style={{ margin: 0 }}
+                            />
+                            <input
+                              className="input"
+                              aria-label="Additional price in dollars"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={(Number(option.priceCents) / 100).toFixed(2)}
+                              onChange={(event) => updateOption(groupIndex, optionIndex, 'priceCents', Math.max(0, Math.round((Number(event.target.value) || 0) * 100)))}
+                              style={{ margin: 0 }}
+                            />
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', whiteSpace: 'nowrap' }}>
+                              <input
+                                type="checkbox"
+                                checked={option.available !== false}
+                                onChange={(event) => updateOption(groupIndex, optionIndex, 'available', event.target.checked)}
+                              />
+                              Active
+                            </label>
+                            <button type="button" className="icon-button" onClick={() => removeOption(groupIndex, optionIndex)} title="Remove option" style={{ color: 'var(--danger)' }}>
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <button type="button" className="btn btn-secondary" onClick={() => addOption(groupIndex)} style={{ marginTop: '10px', padding: '5px 10px', fontSize: '12px' }}>
+                        <Plus size={13} /> Add choice
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               <label className="field">
                 Custom Uber Eats Link (optional)
