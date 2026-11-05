@@ -144,36 +144,6 @@ const SECTIONS = [
     title: 'Gallery',
     visible: true,
     data: {}
-  },
-  {
-    key: 'testimonials',
-    title: 'Testimonials / Reviews',
-    visible: true,
-    data: {
-      list: [
-        {
-          id: '1',
-          author: 'Marcus T.',
-          rating: 5,
-          text: 'Best spot in Detroit! The wings are incredible and the nightlife experience is unmatched. VIP bottle service was top tier.',
-          date: '2026-06-15'
-        },
-        {
-          id: '2',
-          author: 'Jasmine R.',
-          rating: 5,
-          text: "Came for dinner, stayed for the party. The food quality is restaurant-level and the DJ set was 🔥. Preva does it all perfectly.",
-          date: '2026-05-28'
-        },
-        {
-          id: '3',
-          author: 'Devon M.',
-          rating: 5,
-          text: 'Celebrated my birthday here and it was unforgettable. The staff, the food, the atmosphere — 10/10 would recommend.',
-          date: '2026-06-02'
-        }
-      ]
-    }
   }
 ];
 

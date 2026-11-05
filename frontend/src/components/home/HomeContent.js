@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import GoogleReviewsSection from '@/components/sections/GoogleReviewsSection';
 import GallerySection from '@/components/sections/GallerySection';
 import BookingSection from '@/components/home/BookingSection';
 import { getCanonicalOrigin } from '@/lib/site-url';
@@ -408,9 +407,6 @@ export default function Home({ menuProducts = [], menuCategories = [], cmsPage =
           </div>
         </div>
       </section>
-
-      {/* Hidden for now; set visible back to true when real reviews are ready to show. */}
-      <GoogleReviewsSection visible={false} />
 
       {/* TEMPORARY: reservation form hidden on the home page for now. Original:
       <BookingSection /> */}

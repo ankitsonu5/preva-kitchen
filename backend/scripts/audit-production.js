@@ -76,12 +76,6 @@ add('Reservation admin email', Boolean(adminRecipients), adminRecipients || '<un
 add('Career/HR email', Boolean(careerRecipients), careerRecipients || '<unset>');
 add('Production mail catch-all disabled', !String(process.env.MAIL_CATCH_ALL || '').trim(), process.env.MAIL_CATCH_ALL ? 'set' : '<unset>');
 
-add(
-  'Google Places API key',
-  Boolean(String(process.env.GOOGLE_PLACES_API_KEY || '').trim()),
-  process.env.GOOGLE_PLACES_API_KEY ? 'set (redacted)' : '<unset>'
-);
-
 for (const check of checks) {
   console.log(`${check.pass ? 'PASS' : 'FAIL'}  ${check.name}: ${check.detail}`);
 }

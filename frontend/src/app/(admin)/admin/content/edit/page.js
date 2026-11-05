@@ -145,7 +145,6 @@ const SECTION_TEMPLATES = [
   { type: 'food_menu_grid', title: 'Food Menu Grid', icon: '🥘', desc: 'Full interactive food & drink menu', category: 'Restaurant' },
   { type: 'nightlife', title: 'Nightlife Section', icon: '🎉', desc: 'VIP bottle service & DJ announcements', category: 'Restaurant' },
   { type: 'reservations', title: 'Reservation Form', icon: '📅', desc: 'Dining & VIP booth booking form', category: 'Restaurant' },
-  { type: 'testimonials', title: 'Google Reviews', icon: '⭐', desc: 'Live Google Business reviews carousel', category: 'Restaurant' },
   { type: 'newsletter', title: 'VIP Newsletter', icon: '✉', desc: 'Exclusive club subscription card', category: 'Restaurant' },
   { type: 'contact', title: 'Contact & Map', icon: '📍', desc: 'Address, hours & inquiry form', category: 'Restaurant' },
   { type: 'posts_grid', title: 'Blog Posts Grid', icon: '📰', desc: 'Grid of latest news & blog articles', category: 'Restaurant' }
@@ -169,7 +168,7 @@ const mkTab = (active) => ({ padding: '8px 18px', fontSize: '0.79rem', fontWeigh
 const TYPE_COLORS = {
   container: '#6366f1', grid: '#0ea5e9', form: '#10b981', custom_html: '#f59e0b',
   hero: '#ec4899', about: '#8b5cf6', kitchen: '#f97316', food_menu_grid: '#84cc16',
-  nightlife: '#a855f7', reservations: '#06b6d4', testimonials: '#f43f5e',
+  nightlife: '#a855f7', reservations: '#06b6d4',
   newsletter: '#eab308', contact: '#14b8a6', posts_grid: '#64748b',
   text: '#3b82f6', banner: '#f43f5e', button: '#eab308', cta: '#f97316',
   image: '#06b6d4', video: '#a855f7', gallery: '#ec4899', gallery_text: '#8b5cf6',

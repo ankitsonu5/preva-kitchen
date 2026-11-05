@@ -6,7 +6,6 @@ import AboutSection from './sections/AboutSection';
 import CulinarySection from './sections/CulinarySection';
 import ReservationsSection from './sections/ReservationsSection';
 import GallerySection from './sections/GallerySection';
-import GoogleReviewsSection from './sections/GoogleReviewsSection';
 import NewsletterSection from './sections/NewsletterSection';
 import SvgIcon from './SvgIcon';
 import { showError, showSuccess } from '../lib/swal';
@@ -53,7 +52,7 @@ function RenderBlock({ sec, index }) {
     if (d.images && Array.isArray(d.images)) return <GalleryBlock data={d} />;
     return <GallerySection visible={true} />;
   }
-  if (type === 'testimonials') return <GoogleReviewsSection visible={true} />;
+  if (type === 'testimonials') return null;
   if (type === 'newsletter') return <NewsletterSection />;
 
   // General Layout & Content Blocks
