@@ -118,6 +118,73 @@ describe('official PREVA menu options', () => {
     expect(getMenuPriceCents(config, { protein: 'shrimp' })).toBe(1200);
   });
 
+  it('uses saved prices, names, and descriptions for quesadilla and taco products', () => {
+    const products = [
+      { id: '6a859bee6c90cff4f8b2ba70', slug: 'chicken-quesadillas', name: 'Updated Chicken Quesadillas', priceCents: 1950 },
+      { id: '6a859bee6c90cff4f8b2ba71', slug: 'steak-quesadilla', name: 'Updated Steak Quesadilla', priceCents: 2050 },
+      { id: '6a859bee6c90cff4f8b2ba72', slug: 'shrimp-quesadillas', name: 'Updated Shrimp Quesadillas', priceCents: 2050 },
+      { id: '6ae334c67f9aec7e22426183', slug: 'lobster-quesadillas', name: 'Updated Lobster Quesadillas', priceCents: 2350 },
+      { id: '6a859bee6c90cff4f8b2ba77', slug: 'chicken-tacos', name: 'Updated Chicken Tacos', priceCents: 1600 },
+      { id: '6a859bee6c90cff4f8b2ba76', slug: 'steak-tacos', name: 'Updated Steak Tacos', priceCents: 1750 },
+      { id: '6a859bee6c90cff4f8b2ba75', slug: 'shrimp-tacos', name: 'Updated Shrimp Tacos', priceCents: 1600 },
+      { id: '6ae475b7fc46d34cf75d20cd', slug: 'ground-beef-tacos', name: 'Updated Ground Beef Tacos', priceCents: 1600 }
+    ];
+
+    for (const product of products) {
+      product.price = `$${(product.priceCents / 100).toFixed(2)}`;
+      const config = getMenuCustomization(product.slug, product);
+      const selection = normalizeMenuSelection(config, {}, product.slug);
+
+      expect(getMenuProductName(config, selection)).toBe(product.name);
+      expect(getProductMenuPriceCents(product)).toBe(product.priceCents);
+    }
+
+    const updatedDescription = {
+      ...products[0],
+      description: 'Updated chicken quesadilla description.'
+    };
+    expect(getMenuCustomization(updatedDescription.slug, updatedDescription).description)
+      .toBe(updatedDescription.description);
+    expect(getProductMenuPriceCents({
+      id: '6a859bee6c90cff4f8b2ba71',
+      slug: 'lamb-chops',
+      price: '$33.50',
+      priceCents: 3350
+    })).toBe(3350);
+  });
+
+  it('uses saved names, descriptions, and prices for customized products', () => {
+    const pasta = {
+      id: '6a859bee6c90cff4f8b2ba80',
+      slug: 'rasta-pasta',
+      name: 'Updated Pasta Name',
+      description: 'Updated pasta description.',
+      price: '$24.00',
+      priceCents: 2400
+    };
+    const config = getMenuCustomization(pasta.slug, pasta);
+    const selection = normalizeMenuSelection(config, {}, pasta.slug);
+
+    expect(getMenuProductName(config, selection)).toBe(pasta.name);
+    expect(config.description).toBe(pasta.description);
+    expect(getMenuPriceCents(config, selection)).toBe(pasta.priceCents);
+
+    const burger = {
+      id: '6a859bee6c90cff4f8b2ba81',
+      slug: 'preva-double-smash-burger',
+      name: 'Updated Burger Name',
+      description: 'Updated burger description.',
+      price: '$12.49',
+      priceCents: 1249
+    };
+    const burgerConfig = getMenuCustomization(burger.slug, burger);
+    const burgerSelection = normalizeMenuSelection(burgerConfig, {}, burger.slug);
+
+    expect(getMenuProductName(burgerConfig, burgerSelection)).toBe(burger.name);
+    expect(burgerConfig.description).toBe(burger.description);
+    expect(getMenuPriceCents(burgerConfig, burgerSelection)).toBe(burger.priceCents);
+  });
+
   it('respects an explicitly empty Rasta Pasta option group list', () => {
     expect(getMenuCustomization('rasta-pasta', {
       slug: 'rasta-pasta',

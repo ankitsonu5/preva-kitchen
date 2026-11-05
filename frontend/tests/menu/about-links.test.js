@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { splitAboutLinks } from '../../src/lib/dish-detail-content.js';
+import {
+  getDefaultAboutParagraphs,
+  getDefaultFaqs,
+  getDishPairingNames,
+  splitAboutLinks
+} from '../../src/lib/dish-detail-content.js';
 
 describe('About copy dish links', () => {
   it('turns [label](/menu/slug) markers into links and keeps the surrounding text', () => {
@@ -19,5 +24,17 @@ describe('About copy dish links', () => {
   it('only links internal dish paths', () => {
     const external = 'See [this](https://example.com) or [that](/admin).';
     expect(splitAboutLinks(external)).toEqual([{ text: external }]);
+  });
+
+  it('uses admin-saved pairings in generated about copy and FAQs', () => {
+    const dish = {
+      name: 'Test Dish',
+      category: 'Sides',
+      pairings: ['Kitchen Special', 'Preva Wings']
+    };
+
+    expect(getDishPairingNames(dish)).toEqual(dish.pairings);
+    expect(getDefaultAboutParagraphs(dish).at(-1)).toContain('Kitchen Special, Preva Wings');
+    expect(getDefaultFaqs(dish).at(-1).a).toContain('Kitchen Special, Preva Wings');
   });
 });

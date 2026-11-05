@@ -201,6 +201,7 @@ a:hover .ps-btn--gold {
 }
 .ps-chip--out { border-color: rgba(255, 255, 255, 0.2); color: var(--ps-faint); }
 .ps-chip--live { border-color: rgba(25, 158, 108, .6); color: var(--ps-emerald-lit); }
+.ps-product-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 
 /* ══ circular category bar (matching Image 2) ══════════════════════════ */
 .ps-circle-category-bar {

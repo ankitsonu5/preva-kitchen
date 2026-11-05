@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { trackEvent } from '@/components/GoogleAnalytics';
 import MenuSelectionContext from '@/components/shop/MenuSelectionContext';
 import { dishImage } from '@/lib/dish-images';
+import ProductTags from '@/components/shop/ProductTags';
 import {
   formatMenuOptionPrice,
   getMenuPriceCents,
@@ -118,6 +119,7 @@ export default function MenuCustomizer({ product, config, initialSelection, chil
           )}
         </div>
 
+        <ProductTags tags={product.tags} />
         {product.description && <p className="ps-lede">{product.description}</p>}
 
         <MenuSelectionContext.Provider value={{ priceCents, selection, productName: selectedProductName }}>

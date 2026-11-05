@@ -8,6 +8,7 @@ import {
   getDishFaqs,
   getDishDisplayName,
   getDishMetaDescription,
+  getDishPairingNames,
   withDishArticle,
   isPluralName,
   parseAboutContent,
@@ -24,6 +25,7 @@ import { getFallbackProduct, getFallbackRelated } from '@/data/fallbackMenu';
 import { categoryPath as menuCategoryPath } from '@/lib/menu-categories';
 import { money } from '@/lib/money';
 import MenuCustomizer from '@/components/shop/MenuCustomizer';
+import ProductTags from '@/components/shop/ProductTags';
 import MenuProductBreadcrumbName from '@/components/shop/MenuProductBreadcrumbName';
 import {
   getMenuCustomization,
@@ -123,8 +125,21 @@ export default async function ProductPage({ params, searchParams }) {
     ? publicProducts
     : process.env.NODE_ENV === 'production' ? [] : FALLBACK_PRODUCTS;
   const visiblePairingSlugs = new Set(pairingProducts.map((item) => item.slug));
-  const crossCategoryPairings = getCrossCategoryPairings(product)
-    .filter((pairing) => visiblePairingSlugs.has(pairing.slug));
+  const savedPairings = getDishPairingNames(product);
+  const pairingItems = savedPairings.length
+    ? savedPairings.map((name) => {
+        const normalizedName = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        const match = pairingProducts.find((item) => {
+          const itemName = String(item.name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+          return item.slug === normalizedName || itemName === normalizedName;
+        });
+        return { name, slug: match?.slug || '' };
+      })
+    : product.slug === 'rasta-pasta'
+      ? []
+      : getCrossCategoryPairings(product).filter((pairing) => visiblePairingSlugs.has(pairing.slug));
   const siteOrigin = getCanonicalOrigin();
   const productUrl = `${siteOrigin}/menu/${encodeURIComponent(slug)}`;
   const photo = MENU_IMAGE_UNAVAILABLE.has(product.slug)
@@ -237,6 +252,7 @@ export default async function ProductPage({ params, searchParams }) {
                   </div>
 
                   <p className="ps-price ps-price--lg">{money(menuPriceCents)}</p>
+                  <ProductTags tags={product.tags} />
 
                   {product.description && <p className="ps-lede">{product.description}</p>}
 
@@ -270,16 +286,20 @@ export default async function ProductPage({ params, searchParams }) {
             </div>
           </section>
 
-          {product.slug !== 'rasta-pasta' && crossCategoryPairings.length > 0 && (
+          {pairingItems.length > 0 && (
             <section className="ps-dish-about" aria-labelledby="pairings-title">
               <span className="ps-detail-kicker">Pairs well with</span>
               <h2 id="pairings-title" className="ps-detail-title">Complete the Plate</h2>
               <div className="ps-detail-rule" aria-hidden="true" />
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                {crossCategoryPairings.map((item) => (
-                  <Link key={item.slug} href={`/menu/${item.slug}`} className="ps-chip">
-                    {getMenuDisplayName(item.name, item.slug)}
-                  </Link>
+                {pairingItems.map((item) => (
+                  item.slug ? (
+                    <Link key={`${item.name}-${item.slug}`} href={`/menu/${item.slug}`} className="ps-chip">
+                      {item.name}
+                    </Link>
+                  ) : (
+                    <span key={item.name} className="ps-chip">{item.name}</span>
+                  )
                 ))}
               </div>
             </section>

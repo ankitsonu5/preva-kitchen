@@ -199,16 +199,42 @@ function productPriceCents(product, useListedPrice = false) {
     const parsedPrice = Number.parseFloat(String(product?.price || '').replace(/[^\d.]/g, ''));
     return Number.isFinite(parsedPrice) ? Math.round(parsedPrice * 100) : null;
   };
+  const price = listedPrice();
+  if (/^[\da-f]{24}$/i.test(String(product?.id || '')) && price !== null) return price;
   if (useListedPrice) {
-    const price = listedPrice();
     if (price !== null) return price;
     const fallbackPrice = FALLBACK_PRODUCTS.find((item) => item.slug === product?.slug)?.priceCents;
     if (fallbackPrice !== undefined) return fallbackPrice;
   }
   if (MENU_PRICE_OVERRIDES[product?.slug] !== undefined) return MENU_PRICE_OVERRIDES[product.slug];
-  const price = listedPrice();
   if (price !== null) return price;
   return FALLBACK_PRODUCTS.find((item) => item.slug === product?.slug)?.priceCents || 0;
+}
+
+function withPersistedProductValues(config, slug, product) {
+  const selection = normalizeMenuSelection(config, {}, slug);
+  const selectedPriceAdjustment = config.groups.reduce((total, group) => {
+    const option = group.options.find((item) => item.id === selection[group.queryKey]);
+    return total + (option?.priceCents || 0);
+  }, 0);
+  const selectedOptions = new Set(
+    config.groups.map((group) => `${group.queryKey}:${selection[group.queryKey]}`)
+  );
+
+  return {
+    ...config,
+    basePriceCents: productPriceCents({ ...product, slug }, true) - selectedPriceAdjustment,
+    productName: product.name || config.productName,
+    description: product.description ?? config.description,
+    groups: config.groups.map((group) => ({
+      ...group,
+      options: group.options.map((option) => (
+        selectedOptions.has(`${group.queryKey}:${option.id}`)
+          ? { ...option, productName: product.name || option.productName }
+          : option
+      ))
+    }))
+  };
 }
 
 export function getMenuCustomization(slug, product = null) {
@@ -252,7 +278,11 @@ export function getMenuCustomization(slug, product = null) {
       isWings: true
     };
   }
-  return MENU_CUSTOMIZATIONS[MENU_CUSTOMIZATION_ALIASES[slug] || slug] || null;
+  const config = MENU_CUSTOMIZATIONS[MENU_CUSTOMIZATION_ALIASES[slug] || slug];
+  if (config && /^[\da-f]{24}$/i.test(String(product?.id || ''))) {
+    return withPersistedProductValues(config, slug, product);
+  }
+  return config || null;
 }
 
 export function getMenuProductName(config, selection) {

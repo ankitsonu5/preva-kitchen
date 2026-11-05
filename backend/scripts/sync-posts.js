@@ -5,6 +5,7 @@ dotenv.config();
 import { MongoClient } from 'mongodb';
 import sanitizeHtml from 'sanitize-html';
 import { blogCanonical, rewriteLegacyBlogLinks } from '../src/lib/blog-links.js';
+import { normalizeLegacyBlogHours } from '../src/lib/pickup-delivery-hours-content.js';
 
 const WORDPRESS_ORIGIN = (process.env.WORDPRESS_ORIGIN || 'https://prevaclub.com').replace(/\/$/, '');
 const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/preva';
@@ -117,7 +118,10 @@ async function syncPosts() {
       const existing = await content.findOne({ slug: item.slug });
       const title = plainText(item.title?.rendered, 250) || item.slug;
       const description = seoDescription(item, title);
-      const body = rewriteLegacyBlogLinks(item.content?.rendered || '');
+      const body = normalizeLegacyBlogHours(
+        item.slug,
+        rewriteLegacyBlogLinks(item.content?.rendered || '')
+      );
       const pathname = new URL(item.link, WORDPRESS_ORIGIN).pathname.replace(/^\/+|\/+$/g, '');
 
       await content.updateOne(

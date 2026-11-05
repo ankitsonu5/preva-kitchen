@@ -351,7 +351,12 @@ function fallbackFor(dish) {
 }
 
 function pairingsFor(dish, profile) {
-  return profile?.pairings?.length ? profile.pairings : asList(dish?.pairings);
+  const savedPairings = asList(dish?.pairings);
+  return savedPairings.length ? savedPairings : (profile?.pairings || []);
+}
+
+export function getDishPairingNames(dish) {
+  return asList(dish?.pairings);
 }
 
 export function getDefaultAboutTitle(dish) {
