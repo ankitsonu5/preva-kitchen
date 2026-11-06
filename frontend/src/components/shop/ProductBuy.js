@@ -53,6 +53,7 @@ export default function ProductBuy({ product }) {
         links={links}
         subject={productName}
         item={{ ...product, name: productName, price: money(priceCents), priceCents, options: chosenOptions }}
+        pickupAsCall
       />
     </section>
   );

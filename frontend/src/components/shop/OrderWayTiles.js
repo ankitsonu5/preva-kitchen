@@ -1,6 +1,6 @@
 'use client';
 
-import { ShoppingBag } from 'lucide-react';
+import { Phone, ShoppingBag } from 'lucide-react';
 import { trackEvent } from '@/components/GoogleAnalytics';
 
 const DoorDashIcon = () => (
@@ -23,12 +23,20 @@ const GrubhubIcon = () => (
  * delivery partner's app (or by phone for pickup), so there is no cart here.
  * `subject` is the dish or restaurant name used in the accessible labels.
  */
-export default function OrderWayTiles({ links, subject, item }) {
+export default function OrderWayTiles({ links, subject, item, pickupAsCall = false }) {
   const tiles = [
     { name: 'Uber Eats', href: links.ubereats, mark: <span className="ps-way__uber">Uber<b>Eats</b></span> },
     { name: 'DoorDash', href: links.doordash, mark: <DoorDashIcon />, label: 'DoorDash' },
     { name: 'Grubhub', href: links.grubhub, mark: <GrubhubIcon />, label: 'Grubhub' },
-    { name: 'Pickup', href: links.pickup, mark: <ShoppingBag size={26} color="#c5a059" aria-hidden="true" />, label: 'Pickup', external: false }
+    {
+      name: 'Pickup',
+      href: links.pickup,
+      mark: pickupAsCall
+        ? <Phone size={26} color="#c5a059" aria-hidden="true" />
+        : <ShoppingBag size={26} color="#c5a059" aria-hidden="true" />,
+      label: pickupAsCall ? 'Call for Pickup' : 'Pickup',
+      external: false
+    }
   ];
 
   return (
@@ -39,7 +47,9 @@ export default function OrderWayTiles({ links, subject, item }) {
           className="ps-way__tile"
           href={tile.href}
           {...(tile.external === false ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
-          aria-label={tile.name === 'Pickup' ? `Call to order ${subject} for pickup` : `Order ${subject} on ${tile.name}`}
+          aria-label={tile.name === 'Pickup'
+            ? `Call ${subject} for pickup`
+            : `Order ${subject} on ${tile.name}`}
           onClick={() => trackEvent('menu_order_click', {
             item_id: item?.slug,
             item_name: subject,
@@ -52,7 +62,9 @@ export default function OrderWayTiles({ links, subject, item }) {
         >
           <span className="ps-way__mark">{tile.mark}</span>
           {tile.label && <span className="ps-way__name">{tile.label}</span>}
-          <span className="ps-way__cta">Buy Now</span>
+          <span className="ps-way__cta">
+            {pickupAsCall && tile.name === 'Pickup' ? 'Call Now' : 'Buy Now'}
+          </span>
         </a>
       ))}
     </div>

@@ -60,6 +60,7 @@ const nextConfig = {
 
   async redirects() {
     return [
+      { source: '/menu/staek-and-cheese-eggrolls', destination: '/menu/steak-and-cheese-eggrolls', permanent: true },
       {
         source: '/:path*',
         has: [{ type: 'host', value: 'www.prevakitchen.com' }],
